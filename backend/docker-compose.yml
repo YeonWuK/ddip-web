@@ -1,0 +1,30 @@
+version: "3.8"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ddip
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-proot" ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+networks:
+  redis-cluster-net:
+    external: true
+  kafka-net:
+    external: true
+  elk-net:
+    external: true
+
+volumes:
+  mysql-data:
