@@ -1,10 +1,10 @@
-package com.deep.backend;
+package com.ddip.backend;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class DeepApplicationTests {
+class DdipApplicationTests {
 
     @Test
     void contextLoads() {

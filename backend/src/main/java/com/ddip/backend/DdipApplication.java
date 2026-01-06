@@ -1,13 +1,13 @@
-package com.deep.backend;
+package com.ddip.backend;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class DeepApplication {
+public class DdipApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(DeepApplication.class, args);
+        SpringApplication.run(DdipApplication.class, args);
     }
 
 }
