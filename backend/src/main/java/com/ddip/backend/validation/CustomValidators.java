@@ -1,5 +1,7 @@
 package com.ddip.backend.validation;
 
+import com.ddip.backend.repository.UserRepository;
+import com.ddip.backend.security.auth.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;

@@ -1,4 +1,4 @@
-package com.ddip.backend.enums;
+package com.ddip.backend.dto.enums;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

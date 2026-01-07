@@ -1,4 +1,4 @@
-package com.ddip.backend.dto;
+package com.ddip.backend.dto.crowd;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -21,7 +21,6 @@ public class CreateRewardTierRequest {
     private String description;
 
     @NotNull
-    @Min(1)
     private Long price;
 
     // null이면 무제한

@@ -1,8 +1,8 @@
 package com.ddip.backend.dto;
 
 import com.ddip.backend.entity.User;
-import com.ddip.backend.enums.BankType;
-import com.ddip.backend.enums.Role;
+import com.ddip.backend.dto.enums.BankType;
+import com.ddip.backend.dto.enums.Role;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserResponse {
+public class UserResponseDto {
 
     private Long id;
     private String email;
@@ -25,11 +25,11 @@ public class UserResponse {
     private BankType bankType;
     private boolean isActive;
 
-    public UserResponse from(User user) {
-        return UserResponse.builder()
+    public UserResponseDto from(User user) {
+        return UserResponseDto.builder()
                 .id(user.getId())
                 .email(user.getEmail())
-                .name(user.getName())
+                .name(user.getUsername())
                 .nickname(user.getNickname())
                 .phoneNumber(user.getPhoneNumber())
                 .account(user.getAccount())

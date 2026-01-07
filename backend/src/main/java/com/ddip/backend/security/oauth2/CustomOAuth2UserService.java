@@ -1,9 +1,9 @@
 package com.ddip.backend.security.oauth2;
 
-import com.skytracker.dto.user.SocialUserRequestDto;
-import com.skytracker.entity.User;
-import com.skytracker.repository.UserRepository;
-import com.skytracker.security.auth.CustomUserDetails;
+import com.ddip.backend.dto.SocialUserRequestDto;
+import com.ddip.backend.entity.User;
+import com.ddip.backend.repository.UserRepository;
+import com.ddip.backend.security.auth.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;

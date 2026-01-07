@@ -1,2 +1,5 @@
-package com.ddip.backend.dto.enums;public class PledgeStatus {
+package com.ddip.backend.dto.enums;
+
+public enum PledgeStatus {
+    PENDING, CONFIRMED, CANCELED
 }

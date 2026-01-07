@@ -1,7 +1,7 @@
 package com.ddip.backend.dto;
 
-import com.ddip.backend.enums.BankType;
-import com.ddip.backend.enums.Role;
+import com.ddip.backend.dto.enums.BankType;
+import com.ddip.backend.dto.enums.Role;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserRequest {
+public class UserRequestDto {
 
     private String email;
     private String password;

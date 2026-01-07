@@ -1,4 +1,4 @@
-package com.ddip.backend.dto;
+package com.ddip.backend.dto.crowd;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -37,7 +37,6 @@ public class CreateProjectRequest {
     @NotNull
     private LocalDateTime endAt;
 
-    // 선택 필드들
     @Size(max = 100)
     private String categoryPath;
 

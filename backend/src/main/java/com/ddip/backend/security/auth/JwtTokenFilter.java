@@ -37,7 +37,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             return;
         }
 
-        if (tokenBlackListService.isBlackList(token)) {
+        if (tokenBlackListService.isBlackListed(token)) {
             log.info("Blacklisted token: {}", token);
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid access token");
             return;
