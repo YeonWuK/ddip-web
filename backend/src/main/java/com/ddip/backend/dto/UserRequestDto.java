@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserRequest {
+
     private String email;
     private String password;
     private String name;
@@ -21,4 +22,5 @@ public class UserRequest {
     private String accountHolder;
     private Role role;
     private BankType bankType;
+
 }
