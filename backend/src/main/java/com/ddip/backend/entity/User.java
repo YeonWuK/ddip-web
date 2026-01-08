@@ -63,13 +63,13 @@ public class User extends BaseTimeEntity{
     @Column(name = "is_active", nullable = false)
     private Boolean isActive;
 
-    @OneToMany(mappedBy = "project", orphanRemoval = true, cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "creator", orphanRemoval = true, cascade = CascadeType.ALL)
     private List<Project> projects = new ArrayList<>();
 
-    @OneToMany(mappedBy = "pledge", orphanRemoval = true, cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "user", orphanRemoval = true, cascade = CascadeType.ALL)
     private List<Pledge> pledges = new ArrayList<>();
 
-    @OneToMany(mappedBy = "user_address", orphanRemoval = true, cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "user", orphanRemoval = true, cascade = CascadeType.ALL)
     private List<UserAddress> addresses = new ArrayList<>();
 
     public static User from(UserRequestDto dto) {
