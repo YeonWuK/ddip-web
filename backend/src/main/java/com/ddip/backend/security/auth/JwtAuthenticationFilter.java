@@ -23,13 +23,11 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
     private final TokenBlackListService tokenBlackListService;
-    private final ObjectMapper objectMapper;
 
-    public JwtAuthenticationFilter(AuthenticationManager authenticationManager, TokenBlackListService tokenBlackList, JwtUtils jwtUtils, ObjectMapper objectMapper) {
+    public JwtAuthenticationFilter(AuthenticationManager authenticationManager, TokenBlackListService tokenBlackList, JwtUtils jwtUtils) {
         this.authenticationManager = authenticationManager;
         this.jwtUtils = jwtUtils;
         this.tokenBlackListService = tokenBlackList;
-        this.objectMapper = objectMapper;
 
         setFilterProcessesUrl("/api/users/login");
     }
@@ -40,7 +38,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
                 request.getMethod(), request.getRequestURI(), request.getContentLength(), request.getContentType());
         try{
             // 로그인 시 DB 에서 사용자 조회 후 인증객체 반환
-            LoginUserRequest loginUserRequest = objectMapper.readValue(request.getInputStream(), LoginUserRequest.class);
+            LoginUserRequest loginUserRequest = new ObjectMapper().readValue(request.getInputStream(), LoginUserRequest.class);
             UsernamePasswordAuthenticationToken authenticationToken =
                     new UsernamePasswordAuthenticationToken(loginUserRequest.getEmail(), loginUserRequest.getPassword());
             return authenticationManager.authenticate(authenticationToken);
@@ -51,7 +49,8 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
     @Override
     public void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResults) throws IOException {
-        String accessToken = jwtUtils.generateToken(authResults.getName());
+        CustomUserDetails userDetails = (CustomUserDetails) authResults.getPrincipal();
+        String accessToken = jwtUtils.generateToken(userDetails.getEmail());
 
         response.addHeader("Authorization", "Bearer " + accessToken);
 

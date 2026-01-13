@@ -38,14 +38,14 @@ public class SecurityConfig {
     private final CustomAuthenticationEntryPoint entryPoint;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
     private final JwtTokenFilter jwtTokenFilter;
-    private final ObjectMapper objectMapper;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         AuthenticationManager authenticationManager = authenticationManager(http.getSharedObject(AuthenticationConfiguration.class));
-        JwtAuthenticationFilter jwtAuthenticationFilter = new JwtAuthenticationFilter(authenticationManager, tokenBlackListService, jwtUtils, objectMapper);
+        JwtAuthenticationFilter jwtAuthenticationFilter = new JwtAuthenticationFilter(authenticationManager, tokenBlackListService, jwtUtils);
 
         http.csrf(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
                 .exceptionHandling(e -> e
                         .authenticationEntryPoint(entryPoint)
@@ -63,8 +63,8 @@ public class SecurityConfig {
                         .successHandler(oAuth2SuccessHandler)
                 )
 
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(jwtTokenFilter, JwtAuthenticationFilter.class);
+                .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAt(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -86,6 +86,9 @@ public class SecurityConfig {
         config.setAllowCredentials(true);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
+
+        // 추가: 클라이언트가 Authorization 헤더를 읽을 수 있게 허용
+        config.setExposedHeaders(List.of("Authorization", "access_token"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);

@@ -80,4 +80,12 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+        return path.equals("/api/users/login")
+                || path.equals("/api/users/register")
+                || path.equals("/api/users/refresh-token");
+    }
 }
