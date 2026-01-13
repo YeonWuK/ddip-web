@@ -1,4 +1,4 @@
-name: Build & Deploy Price Alert
+name: Build & Deploy Ddip-web
 
 on:
   push:
@@ -33,8 +33,8 @@ jobs:
       - name: Build & Push Docker Image (multi-arch)
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: apps/price-alert/Dockerfile
+          context: ./backend
+          file: ./backend/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
