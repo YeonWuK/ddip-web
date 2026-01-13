@@ -80,10 +80,12 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(List.of("*")); // 전체 허용
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        // 와일드카드(*) 대신 특정 origin 명시 (allowCredentials와 함께 사용 불가)
+        config.setAllowedOrigins(List.of("http://localhost:3000")); // 프론트엔드 URL
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(false); // 자격 증명 필요 없을 때만 허용
+        config.setAllowCredentials(true); // 쿠키를 포함한 요청을 허용하기 위해 true로 변경
+        config.setExposedHeaders(List.of("Authorization")); // Authorization 헤더를 클라이언트에 노출
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
