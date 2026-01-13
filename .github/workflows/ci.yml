@@ -6,8 +6,8 @@ on:
       - "main"
       - "feature/**"
     paths:
-      - "apps/price-alert/**"
-      - ".github/workflows/price-alert-ci.yml"
+      - "backend/**"
+      - ".github/workflows/**"
 
 jobs:
   build-and-push-price-alert:
