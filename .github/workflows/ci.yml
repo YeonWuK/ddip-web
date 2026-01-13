@@ -3,6 +3,7 @@ name: Build & Deploy Price Alert
 on:
   push:
     branches:
+      - "main"
       - "feature/**"
     paths:
       - "apps/price-alert/**"
