@@ -2,7 +2,6 @@ package com.ddip.backend.service;
 
 import com.ddip.backend.dto.crowd.ProjectRequestDto;
 import com.ddip.backend.dto.crowd.ProjectResponseDto;
-import com.ddip.backend.dto.crowd.ProjectUpdateRequestDto;
 import com.ddip.backend.dto.crowd.RewardTierRequestDto;
 import com.ddip.backend.entity.Project;
 import com.ddip.backend.entity.RewardTier;
@@ -24,7 +23,7 @@ public class CrowdFundingService {
 
     /**
      *  Crowdfunding 프로젝트 생성
-     **/
+     */
     public long createProject(ProjectRequestDto requestDto, Long userId) {
 
         if (requestDto.getRewardTiers() == null || requestDto.getRewardTiers().isEmpty()) {
@@ -53,7 +52,7 @@ public class CrowdFundingService {
 
     /**
      *  Crowdfunding 프로젝트 가져오기
-     **/
+     */
     @Transactional(readOnly = true)
     public ProjectResponseDto getProject(Long projectId) {
         Project project = projectRepository.findByIdWithRewardTiers(projectId)
@@ -64,7 +63,7 @@ public class CrowdFundingService {
 
     /**
      *  Crowdfunding 프로젝트 삭제
-     **/
+     */
     public void deleteProject(Long projectId, Long userId) {
         User user = userService.getUser(userId);
 

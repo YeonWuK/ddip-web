@@ -1,5 +1,6 @@
 package com.ddip.backend.entity;
 
+import com.ddip.backend.dto.enums.AuthProvider;
 import com.ddip.backend.dto.enums.BankType;
 import com.ddip.backend.dto.enums.Role;
 import com.ddip.backend.dto.oauth2.SocialUserRequestDto;
@@ -38,7 +39,8 @@ public class User extends BaseTimeEntity{
     private String username;
 
     @Column(name = "provider", nullable = false)
-    private String provider;
+    @Enumerated(EnumType.STRING)
+    private AuthProvider provider;
 
     @Column(name = "nickname", nullable = false)
     private String nickname;
@@ -79,7 +81,7 @@ public class User extends BaseTimeEntity{
                 .username(dto.getUsername())
                 .nickname(dto.getNickname())
                 .phoneNumber(dto.getPhoneNumber())
-                .provider("LOCAL")
+                .provider(AuthProvider.LOCAL)
                 .role(Role.USER)
                 .bankType(dto.getBankType())
                 .account(dto.getAccount())

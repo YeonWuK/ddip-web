@@ -1,6 +1,8 @@
 package com.ddip.backend.dto.crowd;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -13,10 +15,8 @@ import java.util.List;
 @AllArgsConstructor
 public class PledgeCreateRequestDto {
 
-    // 추가 후원(선택) - null이면 0으로 처리
-    @Min(0)
-    private Long donateAmount;
-
+    @NotEmpty
+    @Valid
     private List<PledgeItemRequestDto> items;
 
     @Getter

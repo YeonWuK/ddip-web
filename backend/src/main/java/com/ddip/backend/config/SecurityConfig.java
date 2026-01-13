@@ -8,6 +8,7 @@ import com.ddip.backend.security.auth.JwtTokenFilter;
 import com.ddip.backend.security.auth.JwtUtils;
 import com.ddip.backend.security.oauth2.CustomOAuth2UserService;
 import com.ddip.backend.service.TokenBlackListService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,11 +38,12 @@ public class SecurityConfig {
     private final CustomAuthenticationEntryPoint entryPoint;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
     private final JwtTokenFilter jwtTokenFilter;
+    private final ObjectMapper objectMapper;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         AuthenticationManager authenticationManager = authenticationManager(http.getSharedObject(AuthenticationConfiguration.class));
-        JwtAuthenticationFilter jwtAuthenticationFilter = new JwtAuthenticationFilter(authenticationManager, tokenBlackListService, jwtUtils);
+        JwtAuthenticationFilter jwtAuthenticationFilter = new JwtAuthenticationFilter(authenticationManager, tokenBlackListService, jwtUtils, objectMapper);
 
         http.csrf(AbstractHttpConfigurer::disable)
 
