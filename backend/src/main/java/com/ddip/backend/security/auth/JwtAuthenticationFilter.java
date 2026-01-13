@@ -30,11 +30,14 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         this.jwtUtils = jwtUtils;
         this.tokenBlackListService = tokenBlackList;
         this.objectMapper = objectMapper;
+
         setFilterProcessesUrl("/api/users/login");
     }
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
+        log.info("[LOGIN FILTER] method={}, uri={}, contentLength={}, contentType={}",
+                request.getMethod(), request.getRequestURI(), request.getContentLength(), request.getContentType());
         try{
             // 로그인 시 DB 에서 사용자 조회 후 인증객체 반환
             LoginUserRequest loginUserRequest = objectMapper.readValue(request.getInputStream(), LoginUserRequest.class);
