@@ -23,11 +23,13 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
     private final TokenBlackListService tokenBlackListService;
+    private final ObjectMapper objectMapper;
 
-    public JwtAuthenticationFilter(AuthenticationManager authenticationManager, TokenBlackListService tokenBlackList, JwtUtils jwtUtils) {
+    public JwtAuthenticationFilter(AuthenticationManager authenticationManager, TokenBlackListService tokenBlackList, JwtUtils jwtUtils, ObjectMapper objectMapper) {
         this.authenticationManager = authenticationManager;
         this.jwtUtils = jwtUtils;
         this.tokenBlackListService = tokenBlackList;
+        this.objectMapper = objectMapper;
         setFilterProcessesUrl("/api/users/login");
     }
 
@@ -35,9 +37,9 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
         try{
             // 로그인 시 DB 에서 사용자 조회 후 인증객체 반환
-            LoginUserRequest loginUserRequest = new ObjectMapper().readValue(request.getInputStream(), LoginUserRequest.class);
+            LoginUserRequest loginUserRequest = objectMapper.readValue(request.getInputStream(), LoginUserRequest.class);
             UsernamePasswordAuthenticationToken authenticationToken =
-                    new UsernamePasswordAuthenticationToken(loginUserRequest.getUsername(), loginUserRequest.getPassword());
+                    new UsernamePasswordAuthenticationToken(loginUserRequest.getEmail(), loginUserRequest.getPassword());
             return authenticationManager.authenticate(authenticationToken);
         } catch (IOException e) {
             throw new RuntimeException(e);

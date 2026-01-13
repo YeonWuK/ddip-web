@@ -1,5 +1,6 @@
 package com.ddip.backend.security.oauth2;
 
+import com.ddip.backend.dto.enums.AuthProvider;
 import lombok.RequiredArgsConstructor;
 
 import java.util.Map;
@@ -16,7 +17,7 @@ public class GoogleUserInfo implements Oauth2UserInfo {
 
     @Override
     public String getProvider() {
-        return "google";
+        return AuthProvider.GOOGLE.name();
     }
 
     @Override
