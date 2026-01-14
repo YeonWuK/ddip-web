@@ -137,6 +137,7 @@ public class CrowdFundingService {
             throw new IllegalArgumentException("프로젝트 작성자만 오픈할 수 있습니다.");
         }
 
+        log.info("현재 프로젝트 상태 : {}", project.getStatus());
         // 상태 전이 검증
         ProjectStatus status = project.getStatus();
 
