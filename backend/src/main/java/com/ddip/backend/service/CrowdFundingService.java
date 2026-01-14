@@ -7,6 +7,10 @@ import com.ddip.backend.dto.enums.ProjectStatus;
 import com.ddip.backend.entity.Project;
 import com.ddip.backend.entity.RewardTier;
 import com.ddip.backend.entity.User;
+import com.ddip.backend.exception.project.InvalidProjectStatusException;
+import com.ddip.backend.exception.project.ProjectAccessDeniedException;
+import com.ddip.backend.exception.project.ProjectNotFoundException;
+import com.ddip.backend.exception.reward.RewardTierRequiredException;
 import com.ddip.backend.repository.ProjectRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +34,7 @@ public class CrowdFundingService {
     public long createProject(ProjectRequestDto requestDto, Long userId) {
 
         if (requestDto.getRewardTiers() == null || requestDto.getRewardTiers().isEmpty()) {
-            throw new IllegalArgumentException("리워드는 최소 1개 이상 필요합니다.");
+            throw new RewardTierRequiredException();
         }
 
         User user = userService.getUser(userId);
@@ -59,7 +63,7 @@ public class CrowdFundingService {
     @Transactional(readOnly = true)
     public ProjectResponseDto getProject(Long projectId) {
         Project project = projectRepository.findByIdWithCreatorAndRewardTier(projectId)
-                .orElseThrow(() -> new IllegalArgumentException("Project not found: " + projectId));
+                .orElseThrow(() -> new ProjectNotFoundException(projectId));
 
         return ProjectResponseDto.from(project);
     }
@@ -71,15 +75,15 @@ public class CrowdFundingService {
         User user = userService.getUser(userId);
 
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new IllegalArgumentException("Project not found: " + projectId));
+                .orElseThrow(() -> new ProjectNotFoundException(projectId));
 
         // 본인 프로젝트만 삭제 가능
         if (!project.getCreator().getId().equals(user.getId())) {
-            throw new IllegalStateException("본인 프로젝트만 삭제할 수 있습니다.");
+            throw new ProjectAccessDeniedException(projectId, userId);
         }
 
-        log.info("successfully deleted project with id {}", projectId);
         project.cancel();
+        log.info("successfully deleted project with id {}", projectId);
     }
 
     @Transactional(readOnly = true)
@@ -130,11 +134,11 @@ public class CrowdFundingService {
 
     public void openFunding(Long userId, Long projectId) {
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 프로젝트입니다. projectId=" + projectId));
+                .orElseThrow(() -> new ProjectNotFoundException(projectId));
 
         Long creatorId = project.getCreator().getId();
         if (!creatorId.equals(userId)) {
-            throw new IllegalArgumentException("프로젝트 작성자만 오픈할 수 있습니다.");
+            throw new ProjectAccessDeniedException(projectId, userId);
         }
 
         log.info("현재 프로젝트 상태 : {}", project.getStatus());
@@ -147,12 +151,12 @@ public class CrowdFundingService {
         }
 
         if (status != ProjectStatus.DRAFT) {
-            throw new IllegalStateException("DRAFT 상태의 프로젝트만 OPEN으로 전환할 수 있습니다. 현재 상태=" + status);
+            throw new InvalidProjectStatusException(status, ProjectStatus.DRAFT);
         }
 
-         if (project.getRewardTiers() == null || project.getRewardTiers().isEmpty()) {
-             throw new IllegalStateException("리워드가 1개 이상 등록되어야 오픈할 수 있습니다.");
-         }
+        if (project.getRewardTiers() == null || project.getRewardTiers().isEmpty()) {
+            throw new RewardTierRequiredException(projectId);
+        }
 
         // 4) 상태 변경 (더티체킹으로 반영)
         project.openFunding();

@@ -92,7 +92,6 @@ public class SecurityConfig {
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("*"));
 
-        // 추가: 클라이언트가 Authorization 헤더를 읽을 수 있게 허용
         config.setExposedHeaders(List.of("Authorization", "access_token"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
