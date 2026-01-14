@@ -108,6 +108,7 @@ public class PledgeService {
         // 금액 환원(정책에 따라)
         Project project = pledge.getProject();
         project.decreaseCurrentAmount(pledge.getAmount()); // 메서드 없으면 setCurrentAmount - amount
+        log.info("성공적으로 취소 되었습니다. userId= {} , pledgeId = {}", userId, pledgeId);
     }
 
 }
