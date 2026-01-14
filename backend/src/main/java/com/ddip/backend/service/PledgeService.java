@@ -8,6 +8,14 @@ import com.ddip.backend.entity.Pledge;
 import com.ddip.backend.entity.Project;
 import com.ddip.backend.entity.RewardTier;
 import com.ddip.backend.entity.User;
+import com.ddip.backend.exception.pledge.PledgeAccessDeniedException;
+import com.ddip.backend.exception.pledge.PledgeNotFoundException;
+import com.ddip.backend.exception.project.InvalidProjectStatusException;
+import com.ddip.backend.exception.project.ProjectNotFoundException;
+import com.ddip.backend.exception.reward.InvalidQuantityException;
+import com.ddip.backend.exception.reward.RewardMismatchException;
+import com.ddip.backend.exception.reward.RewardNotFoundException;
+import com.ddip.backend.exception.user.UserNotFoundException;
 import com.ddip.backend.repository.PledgeRepository;
 import com.ddip.backend.repository.ProjectRepository;
 import com.ddip.backend.repository.RewardTierRepository;
@@ -33,29 +41,29 @@ public class PledgeService {
     public PledgeResponseDto createPledge(Long userId, Long projectId, PledgeCreateRequestDto requestDto) {
         // 1) 사용자 확인
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다. userId=" + userId));
+                .orElseThrow(() -> new UserNotFoundException(userId));
 
         // 2) 프로젝트 확인
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 프로젝트입니다. projectId=" + projectId));
+                .orElseThrow(() -> new ProjectNotFoundException(projectId));
 
         // 프로젝트 상태 검증: 진행중일 때만 후원 가능 등
          if (project.getStatus() != ProjectStatus.OPEN) {
-             throw new IllegalStateException("현재 후원할 수 없는 프로젝트 상태입니다.");
+             throw new InvalidProjectStatusException(project.getStatus(), ProjectStatus.OPEN);
          }
 
         // 3) 리워드 티어 확인
         RewardTier rewardTier = rewardTierRepository.findById(requestDto.getRewardTierId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 리워드입니다. rewardTierId=" + requestDto.getRewardTierId()));
+                .orElseThrow(() -> new RewardNotFoundException(requestDto.getRewardTierId()));
 
         // 4) 리워드 티어가 해당 프로젝트 소속인지 검증
         if (rewardTier.getProject() == null || !rewardTier.getProject().getId().equals(projectId)) {
-            throw new IllegalArgumentException("해당 프로젝트의 리워드가 아닙니다.");
+            throw new RewardMismatchException(rewardTier.getId(), projectId);
         }
 
         int quantity = requestDto.getQuantity();
         if (quantity <= 0) {
-            throw new IllegalArgumentException("수량은 1 이상이어야 합니다.");
+            throw new InvalidQuantityException(quantity);
         }
 
         // 5) 금액 계산 (rewardTier 가격 필드명은 예시: getPrice())
@@ -88,10 +96,10 @@ public class PledgeService {
 
     public void cancelPledge(Long userId, Long pledgeId) {
         Pledge pledge = pledgeRepository.findById(pledgeId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 후원입니다. pledgeId=" + pledgeId));
+                .orElseThrow(() -> new PledgeNotFoundException(pledgeId));
 
         if (!pledge.getUser().getId().equals(userId)) {
-            throw new org.springframework.security.access.AccessDeniedException("본인의 후원만 취소할 수 있습니다.");
+            throw new PledgeAccessDeniedException(pledgeId,userId);
         }
 
         // 상태 전이 체크: 이미 취소된 건 취소 불가 등

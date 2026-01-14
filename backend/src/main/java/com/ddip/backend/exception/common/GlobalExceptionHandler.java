@@ -1,10 +1,7 @@
-package com.ddip.backend.handler;
+package com.ddip.backend.exception.common;
 
-import com.ddip.backend.exception.BusinessException;
-import com.ddip.backend.exception.security.CustomAccessDeniedException;
-import com.ddip.backend.exception.ErrorCode;
-import com.ddip.backend.exception.ErrorResponse;
-import com.ddip.backend.exception.security.CustomAuthenticationException;
+import com.ddip.backend.dto.exception.security.CustomAccessDeniedException;
+import com.ddip.backend.dto.exception.security.CustomAuthenticationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -20,10 +17,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<Object> handleBusinessException(BusinessException e) {
-
         log.info("BusinessException", e);
-
-        return build(ErrorCode.INTERNAL_SERVER_ERROR);
+        return build(e.getErrorCode(), e.getDetail());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
