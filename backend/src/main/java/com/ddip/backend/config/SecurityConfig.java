@@ -1,14 +1,14 @@
 package com.ddip.backend.config;
 
-import com.ddip.backend.handler.CustomAccessDeniedHandler;
-import com.ddip.backend.handler.CustomAuthenticationEntryPoint;
+import com.ddip.backend.security.utils.CustomAccessDeniedHandler;
+import com.ddip.backend.security.utils.CustomAuthenticationEntryPoint;
 import com.ddip.backend.handler.OAuth2SuccessHandler;
 import com.ddip.backend.security.auth.JwtAuthenticationFilter;
 import com.ddip.backend.security.auth.JwtTokenFilter;
 import com.ddip.backend.security.auth.JwtUtils;
 import com.ddip.backend.security.oauth2.CustomOAuth2UserService;
+import com.ddip.backend.security.utils.ProfileCompleteAuthorizationManager;
 import com.ddip.backend.service.TokenBlackListService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,6 +31,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    private final ProfileCompleteAuthorizationManager profileCompleteAuthorizationManager;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final TokenBlackListService tokenBlackListService;
     private final JwtUtils jwtUtils;
@@ -52,8 +53,10 @@ public class SecurityConfig {
                         .accessDeniedHandler(accessDeniedHandler))
 
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/oauth2/**", "/login/oauth2/**", "/login/oauth2/code/**",
-                                "/oauth2/callback/**", "/api/users/refresh-token", "/api/users/register").permitAll()
+                        .requestMatchers("/oauth2/**", "/login/oauth2/**", "/login/oauth2/code/**", "/api/users/login",
+                                "/oauth2/callback/**", "/api/users/refresh-token", "/api/users/register",
+                                "/api/users/update-profile","/api/users/find-password").permitAll()
+                        .requestMatchers("/api/**").access(profileCompleteAuthorizationManager)
                         .anyRequest().authenticated()
                 )
 
@@ -82,12 +85,10 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        // 와일드카드(*) 대신 특정 origin 명시 (allowCredentials와 함께 사용 불가)
-        config.setAllowedOrigins(List.of("http://localhost:3000")); // 프론트엔드 URL
+        config.setAllowedOrigins(List.of("http://localhost:3000"));
+        config.setAllowCredentials(true);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true); // 쿠키를 포함한 요청을 허용하기 위해 true로 변경
-        config.setExposedHeaders(List.of("Authorization")); // Authorization 헤더를 클라이언트에 노출
 
         // 추가: 클라이언트가 Authorization 헤더를 읽을 수 있게 허용
         config.setExposedHeaders(List.of("Authorization", "access_token"));
