@@ -31,14 +31,15 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final ProfileCompleteAuthorizationManager profileCompleteAuthorizationManager;
-    private final CustomOAuth2UserService customOAuth2UserService;
-    private final TokenBlackListService tokenBlackListService;
     private final JwtUtils jwtUtils;
-    private final CustomAccessDeniedHandler  accessDeniedHandler;
+    private final JwtTokenFilter jwtTokenFilter;
     private final CustomAuthenticationEntryPoint entryPoint;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
-    private final JwtTokenFilter jwtTokenFilter;
+    private final TokenBlackListService tokenBlackListService;
+    private final CustomAccessDeniedHandler  accessDeniedHandler;
+    private final CustomOAuth2UserService customOAuth2UserService;
+    private final ProfileCompleteAuthorizationManager profileCompleteAuthorizationManager;
+
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -56,7 +57,7 @@ public class SecurityConfig {
                         .requestMatchers("/error",
                                 "/oauth2/**", "/login/oauth2/**", "/login/oauth2/code/**", "/api/users/login",
                                 "/oauth2/callback/**", "/api/users/refresh-token", "/api/users/register",
-                                "/api/users/find-password").permitAll()
+                                "/api/users/find-password","/api/users/update-profile").permitAll()
                         .requestMatchers("/api/**").access(profileCompleteAuthorizationManager)
                         .anyRequest().authenticated()
                 )
