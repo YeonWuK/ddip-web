@@ -1,8 +1,10 @@
 package com.ddip.backend.security.utils;
 
 import com.ddip.backend.dto.exception.security.ProfileIncompleteDeniedException;
-import com.ddip.backend.service.UserService;
+import com.ddip.backend.security.auth.CustomUserDetails;
+import com.ddip.backend.security.auth.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.core.Authentication;
@@ -16,24 +18,22 @@ import java.util.function.Supplier;
 public class ProfileCompleteAuthorizationManager
         implements AuthorizationManager<RequestAuthorizationContext> {
 
-    private final UserService userService;
+    private final CustomUserDetailsService userDetailsService;
 
     @Override
     public AuthorizationDecision check(Supplier<Authentication> authentication, RequestAuthorizationContext object) {
 
         Authentication auth = authentication.get();
 
-        if (auth == null || !auth.isAuthenticated()
-                || "anonymousUser".equals(auth.getPrincipal())) {
-            return new AuthorizationDecision(false);
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+            throw new AuthenticationCredentialsNotFoundException("인증 필요");
         }
 
         String email = auth.getName();
 
-        boolean complete = userService.getIsActive(email);
+        CustomUserDetails userDetails = (CustomUserDetails) userDetailsService.loadUserByUsername(email);
 
-
-        if (!complete) {
+        if (!userDetails.getIsActive()) {
             throw new ProfileIncompleteDeniedException("프로필을 먼저 완료하세요.");
         }
 
