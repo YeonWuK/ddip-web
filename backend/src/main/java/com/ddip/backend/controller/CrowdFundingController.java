@@ -19,7 +19,6 @@ import java.util.List;
 public class CrowdFundingController {
 
     private final CrowdFundingService crowdFundingService;
-//    private final PledgeService pledgeService;
 
     /**
      * 크라우드 펀딩 프로젝트 생성 API
@@ -82,24 +81,20 @@ public class CrowdFundingController {
     }
 
     /**
-     * 프로젝트 후원(펀딩 참여) 생성 API
-     *
-     * 인증된 사용자만 후원 가능
-     *
-     * (현재 비활성화 상태) - 후원금이랑 펀딩이랑 따로 할건지에 대한 논의
+     * Get All Projects 전달
+     * @return ProjectResponseDto
      */
-//    @PostMapping("/{projectId}/pledges")
-//    public ResponseEntity<PledgeResponseDto> createPledge(@AuthenticationPrincipal CustomUserDetails customUserDetails,
-//                                                          @PathVariable Long projectId,
-//                                                          @Valid @RequestBody PledgeCreateRequestDto requestDto) {
-//        Long userId = customUserDetails.getUserId();
-//        PledgeResponseDto responseDto = pledgeService.createPledge(userId, projectId, requestDto);
-//    }
-
     @GetMapping
     public ResponseEntity<List<ProjectResponseDto>> getAllCrowdFunding(){
         List<ProjectResponseDto> allProjects = crowdFundingService.getAllProjects();
         return ResponseEntity.ok(allProjects);
+    }
+
+    @PatchMapping("/{projectId}/open")
+    public ResponseEntity<?> fundingOpen(@AuthenticationPrincipal CustomUserDetails customUserDetails,
+                                         @PathVariable Long projectId){
+        crowdFundingService.openFunding(customUserDetails.getUserId(), projectId);
+        return ResponseEntity.ok().build();
     }
 
 }

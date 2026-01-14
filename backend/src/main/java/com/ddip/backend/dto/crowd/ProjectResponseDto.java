@@ -27,6 +27,7 @@ public class ProjectResponseDto {
     private String categoryPath;
     private String tags;
     private String summary;
+    private CreatorDto creator;
     private List<RewardTierResponseDto> rewardTiers;
 
     public static ProjectResponseDto from(Project project){
@@ -42,6 +43,7 @@ public class ProjectResponseDto {
                 .categoryPath(project.getCategoryPath())
                 .tags(project.getTags())
                 .summary(project.getSummary())
+                .creator(CreatorDto.from(project.getCreator()))
                 .rewardTiers(
                         project.getRewardTiers().stream()
                                 .map(RewardTierResponseDto::from)
@@ -49,4 +51,5 @@ public class ProjectResponseDto {
                 )
                 .build();
     }
+
 }
