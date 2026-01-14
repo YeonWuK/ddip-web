@@ -1,7 +1,7 @@
 package com.ddip.backend.exception.common;
 
-import com.ddip.backend.dto.exception.security.CustomAccessDeniedException;
-import com.ddip.backend.dto.exception.security.CustomAuthenticationException;
+import com.ddip.backend.exception.security.CustomAccessDeniedException;
+import com.ddip.backend.exception.security.CustomAuthenticationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;

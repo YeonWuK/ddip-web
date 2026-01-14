@@ -1,4 +1,4 @@
-package com.ddip.backend.dto.exception.security;
+package com.ddip.backend.exception.security;
 
 import com.ddip.backend.exception.common.ErrorCode;
 
