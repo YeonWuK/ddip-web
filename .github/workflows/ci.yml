@@ -1,14 +1,6 @@
-name: CI (Backend - Gradle)
+name: CI/CD (Backend - Gradle + Docker)
 
 on:
-  pull_request:
-    branches:
-      - "main"
-      - "develop"
-      - "feature/**"
-    paths:
-      - "backend/**"
-      - ".github/workflows/**"
   push:
     branches:
       - "main"
@@ -17,9 +9,17 @@ on:
     paths:
       - "backend/**"
       - ".github/workflows/**"
+  pull_request:
+    branches:
+      - "main"
+      - "develop"
+    paths:
+      - "backend/**"
+      - ".github/workflows/**"
 
 jobs:
-  build:
+  ci-build:
+    name: CI - Gradle Build
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -39,3 +39,36 @@ jobs:
 
       - name: Build
         run: ./gradlew clean build
+
+  cd-docker:
+    name: CD - Docker Build & Push
+    runs-on: ubuntu-latest
+    needs: ci-build
+
+    # PR에서는 절대 push 하지 않게 막고, push 이벤트일 때만 도커 푸시
+    if: github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build & Push (amd64)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            yeonwoo02/ddip-backend:latest
+            yeonwoo02/ddip-backend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
