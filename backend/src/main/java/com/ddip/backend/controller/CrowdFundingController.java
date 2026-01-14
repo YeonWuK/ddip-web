@@ -10,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Slf4j
 @RestController
 @RequestMapping("/api/crowd")
@@ -93,5 +95,11 @@ public class CrowdFundingController {
 //        Long userId = customUserDetails.getUserId();
 //        PledgeResponseDto responseDto = pledgeService.createPledge(userId, projectId, requestDto);
 //    }
+
+    @GetMapping
+    public ResponseEntity<List<ProjectResponseDto>> getAllCrowdFunding(){
+        List<ProjectResponseDto> allProjects = crowdFundingService.getAllProjects();
+        return ResponseEntity.ok(allProjects);
+    }
 
 }

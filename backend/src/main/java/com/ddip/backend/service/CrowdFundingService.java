@@ -12,6 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Slf4j
 @Service
 @Transactional
@@ -79,6 +81,11 @@ public class CrowdFundingService {
         project.cancel();
     }
 
+    public List<ProjectResponseDto> getAllProjects() {
+        return projectRepository.findAll().stream()
+                .map(ProjectResponseDto::from)
+                .toList();
+    }
    /* public void updateProject(Long projectId, Long userId, ProjectUpdateRequestDto requestDto) {
         User user = userService.getUser(userId);
 

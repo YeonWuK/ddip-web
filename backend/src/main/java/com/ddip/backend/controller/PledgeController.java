@@ -24,11 +24,8 @@
 //     * POST /api/crowd/{projectId}/pledges
 //     */
 //    @PostMapping("/{projectId}/pledges")
-//    public ResponseEntity<PledgeResponseDto> createPledge(
-//            @AuthenticationPrincipal CustomUserDetails userDetails,
-//            @PathVariable Long projectId,
-//            @Valid @RequestBody PledgeCreateRequestDto requestDto
-//    ) {
+//    public ResponseEntity<PledgeResponseDto> createPledge(@AuthenticationPrincipal CustomUserDetails userDetails,
+//            @PathVariable Long projectId, @Valid @RequestBody PledgeCreateRequestDto requestDto) {
 //        Long userId = userDetails.getUserId();
 //        PledgeResponseDto response = pledgeService.createPledge(userId, projectId, requestDto);
 //        return ResponseEntity.status(201).body(response);
@@ -41,8 +38,7 @@
 //    @GetMapping("/pledges/{pledgeId}")
 //    public ResponseEntity<PledgeResponseDto> getPledge(
 //            @AuthenticationPrincipal CustomUserDetails userDetails,
-//            @PathVariable Long pledgeId
-//    ) {
+//            @PathVariable Long pledgeId) {
 //        Long userId = userDetails.getUserId();
 //        PledgeResponseDto response = pledgeService.getPledge(userId, pledgeId);
 //        return ResponseEntity.ok(response);
