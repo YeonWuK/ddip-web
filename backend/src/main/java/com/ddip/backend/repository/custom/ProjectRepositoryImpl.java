@@ -14,11 +14,15 @@ public class ProjectRepositoryImpl implements ProjectCustomRepository {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Optional<Project> findByIdWithRewardTiers(Long projectId) {
+    public Optional<Project> findByIdWithCreatorAndRewardTier(Long projectId) {
+        QProject p = QProject.project;
+        QRewardTier rt = QRewardTier.rewardTier;
+
         Project result = queryFactory
-                .selectFrom(QProject.project)
-                .leftJoin(QProject.project.rewardTiers, QRewardTier.rewardTier).fetchJoin()
-                .where(QProject.project.id.eq(projectId))
+                .selectFrom(p)
+                .join(p.creator).fetchJoin()
+                .leftJoin(p.rewardTiers, rt).fetchJoin()
+                .where(p.id.eq(projectId))
                 .distinct()
                 .fetchOne();
 

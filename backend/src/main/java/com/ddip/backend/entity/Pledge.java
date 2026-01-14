@@ -40,4 +40,8 @@ public class Pledge extends BaseTimeEntity {
     @Column(length = 20, nullable = false)
     private PledgeStatus status;
 
+    public void cancel() {
+        this.status = PledgeStatus.CANCELED;
+    }
+
 }

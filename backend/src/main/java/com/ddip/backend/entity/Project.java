@@ -98,18 +98,22 @@ public class Project extends BaseTimeEntity {
                 .build();
     }
 
-    public void update(ProjectUpdateRequestDto dto) {
-        this.title = dto.getTitle();
-        this.description = dto.getDescription();
-        this.targetAmount = dto.getTargetAmount();
-        this.startAt = dto.getStartAt();
-        this.endAt = dto.getEndAt();
-        this.categoryPath = dto.getCategoryPath();
-        this.tags = dto.getTags();
-        this.summary = dto.getSummary();
+    public void increaseCurrentAmount(long amount) {
+        this.currentAmount += amount;
+    }
+
+    public void decreaseCurrentAmount(long amount) {
+        long nextAmount = this.currentAmount - amount;
+        // 음수 방지 (데이터 깨짐 방어)
+        this.currentAmount = Math.max(nextAmount, 0L);
     }
 
     public void cancel() {
         this.status = ProjectStatus.CANCELED;
     }
+
+    public void openFunding() {
+        this.status = ProjectStatus.OPEN;
+    }
+
 }

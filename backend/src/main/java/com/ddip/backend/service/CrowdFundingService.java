@@ -3,6 +3,7 @@ package com.ddip.backend.service;
 import com.ddip.backend.dto.crowd.ProjectRequestDto;
 import com.ddip.backend.dto.crowd.ProjectResponseDto;
 import com.ddip.backend.dto.crowd.RewardTierRequestDto;
+import com.ddip.backend.dto.enums.ProjectStatus;
 import com.ddip.backend.entity.Project;
 import com.ddip.backend.entity.RewardTier;
 import com.ddip.backend.entity.User;
@@ -57,7 +58,7 @@ public class CrowdFundingService {
      */
     @Transactional(readOnly = true)
     public ProjectResponseDto getProject(Long projectId) {
-        Project project = projectRepository.findByIdWithRewardTiers(projectId)
+        Project project = projectRepository.findByIdWithCreatorAndRewardTier(projectId)
                 .orElseThrow(() -> new IllegalArgumentException("Project not found: " + projectId));
 
         return ProjectResponseDto.from(project);
@@ -81,11 +82,13 @@ public class CrowdFundingService {
         project.cancel();
     }
 
+    @Transactional(readOnly = true)
     public List<ProjectResponseDto> getAllProjects() {
         return projectRepository.findAll().stream()
                 .map(ProjectResponseDto::from)
                 .toList();
     }
+
    /* public void updateProject(Long projectId, Long userId, ProjectUpdateRequestDto requestDto) {
         User user = userService.getUser(userId);
 
@@ -124,4 +127,34 @@ public class CrowdFundingService {
                 project.addRewardTier(tier);
             }
         }*/
+
+    public void openFunding(Long userId, Long projectId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 프로젝트입니다. projectId=" + projectId));
+
+        Long creatorId = project.getCreator().getId();
+        if (!creatorId.equals(userId)) {
+            throw new IllegalArgumentException("프로젝트 작성자만 오픈할 수 있습니다.");
+        }
+
+        // 상태 전이 검증
+        ProjectStatus status = project.getStatus();
+
+        if (status == ProjectStatus.OPEN) {
+            // 이미 오픈이면 그대로 두기 (idempotent)
+            return;
+        }
+
+        if (status != ProjectStatus.DRAFT) {
+            throw new IllegalStateException("DRAFT 상태의 프로젝트만 OPEN으로 전환할 수 있습니다. 현재 상태=" + status);
+        }
+
+         if (project.getRewardTiers() == null || project.getRewardTiers().isEmpty()) {
+             throw new IllegalStateException("리워드가 1개 이상 등록되어야 오픈할 수 있습니다.");
+         }
+
+        // 4) 상태 변경 (더티체킹으로 반영)
+        project.openFunding();
+        log.info("successfully open funding for project with id {}", projectId);
+    }
 }
