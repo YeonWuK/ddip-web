@@ -1,6 +1,7 @@
 package com.ddip.backend.service;
 
 import com.ddip.backend.dto.crowd.ProjectRequestDto;
+import com.ddip.backend.exception.reward.RewardTierRequiredException;
 import com.ddip.backend.repository.ProjectRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,12 +32,12 @@ class CrowdFundingServiceTest {
                 .title("테스트 프로젝트")
                 .description("설명")
                 .targetAmount(10000L)
-                .rewardTiers(List.of()) // 비어 있음
+                .rewardTiers(List.of())
                 .build();
 
         // when & then
         assertThrows(
-                IllegalArgumentException.class,
+                RewardTierRequiredException.class,
                 () -> crowdFundingService.createProject(dto, 1L)
         );
     }

@@ -65,12 +65,15 @@ public class User extends BaseTimeEntity{
     @Column(name = "is_active", nullable = false)
     private Boolean isActive;
 
+    @Builder.Default
     @OneToMany(mappedBy = "creator", orphanRemoval = true, cascade = CascadeType.ALL)
     private List<Project> projects = new ArrayList<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "user", orphanRemoval = true, cascade = CascadeType.ALL)
     private List<Pledge> pledges = new ArrayList<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "user", orphanRemoval = true, cascade = CascadeType.ALL)
     private List<UserAddress> addresses = new ArrayList<>();
 
