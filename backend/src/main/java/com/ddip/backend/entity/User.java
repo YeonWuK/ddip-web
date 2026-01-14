@@ -96,6 +96,7 @@ public class User extends BaseTimeEntity{
                 .username("TMP")
                 .nickname(dto.getNickname())
                 .phoneNumber("TMP")
+                .provider(AuthProvider.valueOf(dto.getProvider()))
                 .role(dto.getRole())
                 .isActive(false)
                 .build();

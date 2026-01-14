@@ -92,6 +92,17 @@ public class UserApiController {
     }
 
     /**
+     * 프로필 조회
+     */
+    @GetMapping("/profile")
+    public ResponseEntity<?> getProfile(@AuthenticationPrincipal CustomUserDetails customUserDetails) {
+
+        UserResponseDto dto = userService.getUserProfile(customUserDetails.getUserId());
+
+        return ResponseEntity.ok(dto);
+    }
+
+    /**
      *  미완성 프로필 작성
      */
     @PatchMapping("/update-profile")

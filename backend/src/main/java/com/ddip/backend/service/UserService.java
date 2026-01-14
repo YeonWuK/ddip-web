@@ -31,10 +31,21 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public User getUser(Long id) {
+
+        return userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+    }
+
+    @Transactional(readOnly = true)
+    public UserResponseDto getUserProfile(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        return user;
+        UserResponseDto dto = UserResponseDto.from(user);
+
+        log.info("User profile: {}", dto.getEmail());
+
+        return dto;
     }
 
     public void deleteUser(Long id) {
@@ -68,6 +79,7 @@ public class UserService {
     }
 
     public UserResponseDto putProfile(Long id, ProfileRequestDto requestDto) {
+
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
