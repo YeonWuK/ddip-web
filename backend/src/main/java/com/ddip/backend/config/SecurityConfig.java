@@ -53,7 +53,8 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/oauth2/**", "/login/oauth2/**", "/login/oauth2/code/**", "/api/users/login",
-                                "/oauth2/callback/**", "/api/users/refresh-token", "/api/users/register").permitAll()
+                                "/oauth2/callback/**", "/api/users/refresh-token", "/api/users/register",
+                                "/api/users/update-profile","/api/users/find-password").permitAll()
                         .anyRequest().authenticated()
                 )
 

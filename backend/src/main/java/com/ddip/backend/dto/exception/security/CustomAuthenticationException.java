@@ -1,6 +1,6 @@
-package com.ddip.backend.dto.error.security;
+package com.ddip.backend.dto.exception.security;
 
-import com.ddip.backend.dto.error.ErrorCode;
+import com.ddip.backend.dto.exception.ErrorCode;
 import lombok.Getter;
 import org.springframework.security.core.AuthenticationException;
 

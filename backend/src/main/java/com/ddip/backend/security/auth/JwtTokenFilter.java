@@ -1,7 +1,7 @@
 package com.ddip.backend.security.auth;
 
-import com.ddip.backend.dto.error.security.ProfileIncompleteDeniedException;
-import com.ddip.backend.dto.error.security.TokenExpiredException;
+import com.ddip.backend.dto.exception.security.ProfileIncompleteDeniedException;
+import com.ddip.backend.dto.exception.security.TokenExpiredException;
 import com.ddip.backend.service.TokenBlackListService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -44,9 +44,9 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             return;
         }
 
-        String username = jwtUtils.extractUserEmail(token);
+        String email = jwtUtils.extractUserEmail(token);
 
-        if (username == null) {
+        if (email == null) {
             log.info("Invalid token, Incorrect username");
             filterChain.doFilter(request, response);
             return;
@@ -58,7 +58,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             return;
         }
 
-        CustomUserDetails userDetails = (CustomUserDetails) userDetailsService.loadUserByUsername(username);
+        CustomUserDetails userDetails = (CustomUserDetails) userDetailsService.loadUserByUsername(email);
 
         if (!jwtUtils.isValidToken(token, userDetails.getEmail())) {
             throw new TokenExpiredException("invalid token or Expired");
@@ -86,6 +86,8 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         String path = request.getServletPath();
         return path.equals("/api/users/login")
                 || path.equals("/api/users/register")
+                || path.equals("/api/users/update-profile")
+                || path.equals("/api/users/update-password")
                 || path.equals("/api/users/refresh-token");
     }
 }
