@@ -1,14 +1,14 @@
 package com.ddip.backend.config;
 
-import com.ddip.backend.handler.CustomAccessDeniedHandler;
-import com.ddip.backend.handler.CustomAuthenticationEntryPoint;
+import com.ddip.backend.security.utils.CustomAccessDeniedHandler;
+import com.ddip.backend.security.utils.CustomAuthenticationEntryPoint;
 import com.ddip.backend.handler.OAuth2SuccessHandler;
 import com.ddip.backend.security.auth.JwtAuthenticationFilter;
 import com.ddip.backend.security.auth.JwtTokenFilter;
 import com.ddip.backend.security.auth.JwtUtils;
 import com.ddip.backend.security.oauth2.CustomOAuth2UserService;
+import com.ddip.backend.security.utils.ProfileCompleteAuthorizationManager;
 import com.ddip.backend.service.TokenBlackListService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,6 +31,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    private final ProfileCompleteAuthorizationManager profileCompleteAuthorizationManager;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final TokenBlackListService tokenBlackListService;
     private final JwtUtils jwtUtils;
@@ -55,6 +56,7 @@ public class SecurityConfig {
                         .requestMatchers("/oauth2/**", "/login/oauth2/**", "/login/oauth2/code/**", "/api/users/login",
                                 "/oauth2/callback/**", "/api/users/refresh-token", "/api/users/register",
                                 "/api/users/update-profile","/api/users/find-password").permitAll()
+                        .requestMatchers("/api/**").access(profileCompleteAuthorizationManager)
                         .anyRequest().authenticated()
                 )
 
