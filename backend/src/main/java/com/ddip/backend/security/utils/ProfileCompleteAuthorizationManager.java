@@ -4,6 +4,7 @@ import com.ddip.backend.exception.security.ProfileIncompleteDeniedException;
 import com.ddip.backend.security.auth.CustomUserDetails;
 import com.ddip.backend.security.auth.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
@@ -13,12 +14,11 @@ import org.springframework.stereotype.Component;
 
 import java.util.function.Supplier;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class ProfileCompleteAuthorizationManager
         implements AuthorizationManager<RequestAuthorizationContext> {
-
-    private final CustomUserDetailsService userDetailsService;
 
     @Override
     public AuthorizationDecision check(Supplier<Authentication> authentication, RequestAuthorizationContext object) {
@@ -29,9 +29,9 @@ public class ProfileCompleteAuthorizationManager
             throw new AuthenticationCredentialsNotFoundException("인증 필요");
         }
 
-        String email = auth.getName();
+        CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
 
-        CustomUserDetails userDetails = (CustomUserDetails) userDetailsService.loadUserByUsername(email);
+        log.info(userDetails.getEmail());
 
         if (!userDetails.getIsActive()) {
             throw new ProfileIncompleteDeniedException("프로필을 먼저 완료하세요.");
