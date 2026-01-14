@@ -111,7 +111,9 @@ public class UserApiController {
 
         UserResponseDto userResponseDto = userService.putProfile(customUserDetails.getEmail(), dto);
 
-        return ResponseEntity.ok(userResponseDto);
+        String newAccessToken = jwtUtils.generateToken(userResponseDto.getEmail());
+
+        return ResponseEntity.ok("{\"newAccessToken\": \"" + newAccessToken + "\"}");
     }
 
     /**
