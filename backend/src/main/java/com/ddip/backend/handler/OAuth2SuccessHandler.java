@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 
@@ -46,8 +47,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         refreshTokenCookie.setMaxAge(Math.toIntExact(jwtUtils.getRefreshExpiration()));
         response.addCookie(refreshTokenCookie);
 
-        response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8");
-        response.getWriter().write("{ \"access_token\": \"" + accessToken + "\"");
+        String redirectUrl = "https://localhost:3000/oauth/callback?access_token=" + accessToken;
+        response.sendRedirect(redirectUrl);
     }
 }
