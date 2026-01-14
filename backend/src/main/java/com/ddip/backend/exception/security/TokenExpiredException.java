@@ -1,6 +1,6 @@
-package com.ddip.backend.dto.exception.security;
+package com.ddip.backend.exception.security;
 
-import com.ddip.backend.dto.exception.ErrorCode;
+import com.ddip.backend.exception.ErrorCode;
 
 public class TokenExpiredException extends CustomAuthenticationException {
     public TokenExpiredException(String detail) {

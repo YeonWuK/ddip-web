@@ -1,6 +1,6 @@
-package com.ddip.backend.dto.exception.security;
+package com.ddip.backend.exception.security;
 
-import com.ddip.backend.dto.exception.ErrorCode;
+import com.ddip.backend.exception.ErrorCode;
 
 public class ProfileIncompleteDeniedException extends CustomAccessDeniedException {
     public ProfileIncompleteDeniedException(String detail) {

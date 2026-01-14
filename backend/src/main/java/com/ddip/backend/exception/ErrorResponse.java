@@ -1,4 +1,4 @@
-package com.ddip.backend.dto.exception;
+package com.ddip.backend.exception;
 
 import lombok.Getter;
 
