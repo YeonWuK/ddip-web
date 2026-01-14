@@ -20,6 +20,8 @@ import java.util.function.Supplier;
 public class ProfileCompleteAuthorizationManager
         implements AuthorizationManager<RequestAuthorizationContext> {
 
+
+
     @Override
     public AuthorizationDecision check(Supplier<Authentication> authentication, RequestAuthorizationContext object) {
 
@@ -33,7 +35,7 @@ public class ProfileCompleteAuthorizationManager
 
         log.info(userDetails.getEmail());
 
-        if (userDetails.getIsActive()) {
+        if (!userDetails.getIsActive()) {
             throw new ProfileIncompleteDeniedException("프로필을 먼저 완료하세요.");
         }
 
