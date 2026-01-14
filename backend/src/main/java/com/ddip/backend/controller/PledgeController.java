@@ -25,7 +25,7 @@ public class PledgeController {
      * 리워드 구매
      * POST /api/crowd/pledges/{projectId}
      */
-    @PostMapping("{projectId}}")
+    @PostMapping("{projectId}")
     public ResponseEntity<PledgeResponseDto> createPledge(@AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long projectId, @Valid @RequestBody PledgeCreateRequestDto requestDto) {
         Long userId = userDetails.getUserId();
@@ -34,7 +34,7 @@ public class PledgeController {
     }
 
     /**
-     * 리워드 조회 (본인 것만)
+     * 리워드 전체 조회 (본인 것만)
      * GET /api/crowd/pledges/{pledgeId}
      */
     @GetMapping
