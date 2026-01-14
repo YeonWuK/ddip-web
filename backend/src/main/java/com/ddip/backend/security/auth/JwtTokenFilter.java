@@ -1,7 +1,6 @@
 package com.ddip.backend.security.auth;
 
-import com.ddip.backend.dto.exception.security.ProfileIncompleteDeniedException;
-import com.ddip.backend.dto.exception.security.TokenExpiredException;
+import com.ddip.backend.exception.security.TokenExpiredException;
 import com.ddip.backend.service.TokenBlackListService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -82,7 +81,6 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         String path = request.getServletPath();
         return path.equals("/api/users/login")
                 || path.equals("/api/users/register")
-                || path.equals("/api/users/update-profile")
                 || path.equals("/api/users/update-password")
                 || path.equals("/api/users/refresh-token");
     }

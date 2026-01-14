@@ -1,6 +1,6 @@
 package com.ddip.backend.security.utils;
 
-import com.ddip.backend.dto.exception.security.ProfileIncompleteDeniedException;
+import com.ddip.backend.exception.security.ProfileIncompleteDeniedException;
 import com.ddip.backend.security.auth.CustomUserDetails;
 import com.ddip.backend.security.auth.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;

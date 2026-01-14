@@ -86,9 +86,9 @@ public class UserService {
         return UserResponseDto.from(user);
     }
 
-    public UserResponseDto putProfile(Long id, ProfileRequestDto requestDto) {
+    public UserResponseDto putProfile(String email, ProfileRequestDto requestDto) {
 
-        User user = userRepository.findById(id)
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         user.updateProfile(requestDto);

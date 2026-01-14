@@ -1,10 +1,10 @@
 package com.ddip.backend.handler;
 
-import com.ddip.backend.dto.exception.BusinessException;
-import com.ddip.backend.dto.exception.security.CustomAccessDeniedException;
-import com.ddip.backend.dto.exception.ErrorCode;
-import com.ddip.backend.dto.exception.ErrorResponse;
-import com.ddip.backend.dto.exception.security.CustomAuthenticationException;
+import com.ddip.backend.exception.BusinessException;
+import com.ddip.backend.exception.security.CustomAccessDeniedException;
+import com.ddip.backend.exception.ErrorCode;
+import com.ddip.backend.exception.ErrorResponse;
+import com.ddip.backend.exception.security.CustomAuthenticationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;

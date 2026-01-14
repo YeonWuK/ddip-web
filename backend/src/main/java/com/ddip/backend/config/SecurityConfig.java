@@ -56,7 +56,7 @@ public class SecurityConfig {
                         .requestMatchers("/error",
                                 "/oauth2/**", "/login/oauth2/**", "/login/oauth2/code/**", "/api/users/login",
                                 "/oauth2/callback/**", "/api/users/refresh-token", "/api/users/register",
-                                "/api/users/update-profile","/api/users/find-password").permitAll()
+                                "/api/users/find-password").permitAll()
                         .requestMatchers("/api/**").access(profileCompleteAuthorizationManager)
                         .anyRequest().authenticated()
                 )
