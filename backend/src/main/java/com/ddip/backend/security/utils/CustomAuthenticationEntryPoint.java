@@ -1,4 +1,4 @@
-package com.ddip.backend.handler;
+package com.ddip.backend.security.utils;
 
 import io.micrometer.common.lang.NonNull;
 import jakarta.servlet.ServletException;

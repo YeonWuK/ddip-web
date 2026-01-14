@@ -67,10 +67,6 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         log.info("Successfully validate token");
         setAuthentication(userDetails, request);
 
-        if (!userDetails.getIsActive()) {
-            throw new ProfileIncompleteDeniedException("Invalid profile");
-        }
-
         filterChain.doFilter(request, response);
     }
 

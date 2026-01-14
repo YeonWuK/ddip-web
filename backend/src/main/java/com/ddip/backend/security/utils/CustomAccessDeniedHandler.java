@@ -1,4 +1,4 @@
-package com.ddip.backend.handler;
+package com.ddip.backend.security.utils;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

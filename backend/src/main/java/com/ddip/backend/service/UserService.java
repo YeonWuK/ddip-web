@@ -48,6 +48,14 @@ public class UserService {
         return dto;
     }
 
+    @Transactional(readOnly = true)
+    public boolean getIsActive(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        return user.getIsActive();
+    }
+
     public void deleteUser(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
