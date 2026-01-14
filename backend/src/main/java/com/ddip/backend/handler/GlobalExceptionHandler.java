@@ -1,5 +1,6 @@
 package com.ddip.backend.handler;
 
+import com.ddip.backend.dto.exception.BusinessException;
 import com.ddip.backend.dto.exception.security.CustomAccessDeniedException;
 import com.ddip.backend.dto.exception.ErrorCode;
 import com.ddip.backend.dto.exception.ErrorResponse;
@@ -16,6 +17,14 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<Object> handleBusinessException(BusinessException e) {
+
+        log.info("BusinessException", e);
+
+        return build(ErrorCode.INTERNAL_SERVER_ERROR);
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Object> handleValidationException(MethodArgumentNotValidException e) {
