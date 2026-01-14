@@ -47,7 +47,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         refreshTokenCookie.setMaxAge(Math.toIntExact(jwtUtils.getRefreshExpiration()));
         response.addCookie(refreshTokenCookie);
 
-        String redirectUrl = "https://localhost:3000/oauth/callback?access_token=" + accessToken;
+        String redirectUrl = "http://localhost:3000/oauth/callback?access_token=" + accessToken;
         response.sendRedirect(redirectUrl);
     }
 }
