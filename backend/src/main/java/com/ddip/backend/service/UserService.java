@@ -91,7 +91,7 @@ public class UserService {
     public UserResponseDto putProfile(String email, ProfileRequestDto requestDto) {
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException(id));
+                .orElseThrow(() -> new UserNotFoundException(email));
 
         user.updateProfile(requestDto);
         user.setIsActive();
