@@ -35,7 +35,7 @@ public class User extends BaseTimeEntity{
     @Column(name = "password")
     private String password;
 
-    @Column(name = "name", nullable = false)
+    @Column(name = "username", nullable = false)
     private String username;
 
     @Column(name = "provider", nullable = false)
@@ -104,6 +104,7 @@ public class User extends BaseTimeEntity{
 
     public void updateProfile(ProfileRequestDto dto) {
         this.username = dto.getUsername();
+        this.nickname = dto.getNickname();
         this.phoneNumber = dto.getPhoneNumber();
     }
 
