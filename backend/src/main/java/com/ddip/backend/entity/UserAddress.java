@@ -1,5 +1,6 @@
 package com.ddip.backend.entity;
 
+import com.ddip.backend.exception.address.AddressAccessDeniedException;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -58,5 +59,10 @@ public class UserAddress extends BaseTimeEntity {
 
     public void unmarkDefault() {
         this.isDefault = false;
+    }
+
+    // 본인의 것만 접근할 수 있는 검증 로직
+    public void assertOwnedBy(Long userId) {
+        if (!userId.equals(getUser().getId())) throw new AddressAccessDeniedException(id, userId);
     }
 }

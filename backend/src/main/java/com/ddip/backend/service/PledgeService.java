@@ -66,7 +66,7 @@ public class PledgeService {
             throw new InvalidQuantityException(quantity);
         }
 
-        // 5) 금액 계산 (rewardTier 가격 필드명은 예시: getPrice())
+        // 5) 금액 계산
         long unitPrice = rewardTier.getPrice();
         long amount = unitPrice * (long) quantity;
 

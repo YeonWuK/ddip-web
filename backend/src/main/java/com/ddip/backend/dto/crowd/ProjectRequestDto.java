@@ -46,6 +46,14 @@ public class ProjectRequestDto {
     @Size(max = 200)
     private String summary;
 
+    @NotBlank
+    private String thumbnailImageUrl;
+
+//    // 본문 이미지들 (2~3개, 순서 중요)
+//    @NotNull
+//    @Size(max = 5)
+//    private List<@NotBlank String> contentImageUrls;
+
     @NotNull
     @Valid
     private List<RewardTierRequestDto> rewardTiers;
