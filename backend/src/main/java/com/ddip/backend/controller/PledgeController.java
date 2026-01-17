@@ -30,7 +30,7 @@ public class PledgeController {
             @PathVariable Long projectId, @Valid @RequestBody PledgeCreateRequestDto requestDto) {
         Long userId = userDetails.getUserId();
         PledgeResponseDto response = pledgeService.createPledge(userId, projectId, requestDto);
-        return ResponseEntity.status(201).body(response);
+        return ResponseEntity.ok(response);
     }
 
     /**
