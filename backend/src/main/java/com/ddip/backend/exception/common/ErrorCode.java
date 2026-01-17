@@ -36,13 +36,21 @@ public enum ErrorCode {
     // ===== Reward =====
     REWARD_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 리워드입니다."),
 
+    // ===== Auction =====
+    AUCTION_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 경매입니다."),
+    AUCTION_ENDED(HttpStatus.BAD_REQUEST, "해당 경매는 종료 되었습니다."),
+
     // ===== Common =====
     NOT_FOUND(HttpStatus.NOT_FOUND, "요청하신 리소스를 찾을 수 없습니다."),
     CONFLICT(HttpStatus.CONFLICT, "이미 존재하는 리소스입니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다."),
 
     // ===== Address =====
-    ADDRESS_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 주소입니다.");
+    ADDRESS_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 주소입니다."),
+
+    // ===== DistributedLock =====
+    LOCK_NOT_AVAILABLE(HttpStatus.CONFLICT,"동시 입찰이 발생했습니다. 잠시 후 다시 시도해 주십시오."),
+    LOCK_INTERRUPTED_ERROR(HttpStatus.SERVICE_UNAVAILABLE, "요청 처리 중 문제가 발생했습니다. 잠시 후 다시 시도해 주십시오.");
 
     public final HttpStatus httpStatus;
     public final String message;
