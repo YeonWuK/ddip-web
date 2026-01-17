@@ -84,6 +84,7 @@ public class PledgeService {
         // currentAmount 누적 증가
         project.increaseCurrentAmount(amount);
 
+        log.info("성공적으로 구매 되었습니다. userId= {} , pledgeId = {}", userId, pledge.getId());
         return PledgeResponseDto.from(saved);
     }
 

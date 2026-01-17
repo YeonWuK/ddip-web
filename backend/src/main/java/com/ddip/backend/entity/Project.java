@@ -1,7 +1,7 @@
 package com.ddip.backend.entity;
 
 import com.ddip.backend.dto.crowd.ProjectRequestDto;
-import com.ddip.backend.dto.crowd.ProjectUpdateRequestDto;
+import com.ddip.backend.dto.crowd.RewardTierRequestDto;
 import com.ddip.backend.dto.enums.ProjectStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -76,8 +76,8 @@ public class Project extends BaseTimeEntity {
     @Builder.Default
     private List<Pledge> pledges = new ArrayList<>();
 
-    public static Project from(ProjectRequestDto requestDto, User creator) {
-        return Project.builder()
+    public static Project toEntity(ProjectRequestDto requestDto, User creator) {
+        Project project = Project.builder()
                 //Not null
                 .title(requestDto.getTitle())
                 .description(requestDto.getDescription())
@@ -94,9 +94,25 @@ public class Project extends BaseTimeEntity {
                 // 상태/캐시 값
                 .status(ProjectStatus.DRAFT)
                 .currentAmount(0L)
-                // 컬렉션은 Builder.Default로 초기화됨
                 .build();
+
+        requestDto.getRewardTiers().forEach(project::addRewardTier);
+
+        return project;
     }
+
+    public void addRewardTier(RewardTierRequestDto dto) {
+        RewardTier tier = RewardTier.builder()
+                .project(this)
+                .title(dto.getTitle())
+                .description(dto.getDescription())
+                .price(dto.getPrice())
+                .limitQuantity(dto.getLimitQuantity())
+                .build();
+
+        this.rewardTiers.add(tier);
+    }
+
 
     public void increaseCurrentAmount(long amount) {
         this.currentAmount += amount;
