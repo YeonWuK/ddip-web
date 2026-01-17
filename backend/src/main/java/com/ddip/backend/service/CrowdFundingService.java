@@ -38,22 +38,10 @@ public class CrowdFundingService {
         }
 
         User user = userService.getUser(userId);
-        Project project = Project.from(requestDto, user);
-
-        for (RewardTierRequestDto tierDto : requestDto.getRewardTiers()) {
-            RewardTier tier = RewardTier.builder()
-                    .project(project)
-                    .title(tierDto.getTitle())
-                    .description(tierDto.getDescription())
-                    .price(tierDto.getPrice())
-                    .limitQuantity(tierDto.getLimitQuantity())
-                    .build();
-
-            project.getRewardTiers().add(tier);
-        }
+        Project project = Project.toEntity(requestDto, user);
 
         projectRepository.save(project);
-        log.info("successfully created project with id {}", project.getId());
+        log.info("성공적으로 프로젝트가 생성되었습니다 projectId = {}", project.getId());
         return project.getId();
     }
 
@@ -83,7 +71,7 @@ public class CrowdFundingService {
         }
 
         project.cancel();
-        log.info("successfully deleted project with id {}", projectId);
+        log.info("성공적으로 삭제 되었습니다. projectId={}", projectId);
     }
 
     @Transactional(readOnly = true)
@@ -147,6 +135,7 @@ public class CrowdFundingService {
 
         if (status == ProjectStatus.OPEN) {
             // 이미 오픈이면 그대로 두기 (idempotent)
+            log.info("이미 OPEN 된 상태 입니다. projectId={}", projectId);
             return;
         }
 
@@ -158,8 +147,7 @@ public class CrowdFundingService {
             throw new RewardTierRequiredException(projectId);
         }
 
-        // 4) 상태 변경 (더티체킹으로 반영)
         project.openFunding();
-        log.info("successfully open funding for project with id {}", projectId);
+        log.info("성공적으로 open funding 상태가 되었습니다. projectId={}", projectId);
     }
 }
