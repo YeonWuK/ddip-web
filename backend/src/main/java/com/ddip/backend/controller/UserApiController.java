@@ -109,7 +109,7 @@ public class UserApiController {
     public ResponseEntity<?> updateProfile(@AuthenticationPrincipal CustomUserDetails customUserDetails,
                                            @RequestBody ProfileRequestDto dto)  {
 
-        UserResponseDto userResponseDto = userService.putProfile(customUserDetails.getEmail(), dto);
+        UserResponseDto userResponseDto = userService.completeProfile(customUserDetails.getEmail(), dto);
 
         return ResponseEntity.ok(userResponseDto);
     }
