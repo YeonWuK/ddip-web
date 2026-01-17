@@ -6,6 +6,7 @@ import com.ddip.backend.dto.enums.Role;
 import com.ddip.backend.dto.oauth2.SocialUserRequestDto;
 import com.ddip.backend.dto.user.ProfileRequestDto;
 import com.ddip.backend.dto.user.UserRequestDto;
+import com.ddip.backend.dto.user.UserResponseDto;
 import com.ddip.backend.dto.user.UserUpdateRequestDto;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -63,7 +64,7 @@ public class User extends BaseTimeEntity{
     private String accountHolder;
 
     @Column(name = "is_active", nullable = false)
-    private Boolean isActive;
+    private boolean isActive;
 
     @Builder.Default
     @OneToMany(mappedBy = "creator", orphanRemoval = true, cascade = CascadeType.ALL)
@@ -76,6 +77,14 @@ public class User extends BaseTimeEntity{
     @Builder.Default
     @OneToMany(mappedBy = "user", orphanRemoval = true, cascade = CascadeType.ALL)
     private List<UserAddress> addresses = new ArrayList<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "seller", orphanRemoval = true, cascade = CascadeType.ALL)
+    private List<Auction> auctions = new ArrayList<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "user", orphanRemoval = true, cascade = CascadeType.ALL)
+    private List<MyBids> myAuctions = new ArrayList<>();
 
     public static User from(UserRequestDto dto) {
         return User.builder()
@@ -90,6 +99,21 @@ public class User extends BaseTimeEntity{
                 .account(dto.getAccount())
                 .accountHolder(dto.getAccountHolder())
                 .isActive(true)
+                .build();
+    }
+
+    public static User from(UserResponseDto dto) {
+        return User.builder()
+                .id(dto.getId())
+                .email(dto.getEmail())
+                .username(dto.getUsername())
+                .nickname(dto.getNickname())
+                .phoneNumber(dto.getPhoneNumber())
+                .bankType(dto.getBankType())
+                .account(dto.getAccount())
+                .accountHolder(dto.getAccountHolder())
+                .role(dto.getRole())
+                .isActive(dto.isActive())
                 .build();
     }
 

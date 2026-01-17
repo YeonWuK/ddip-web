@@ -49,14 +49,6 @@ public class UserService {
         return dto;
     }
 
-    @Transactional(readOnly = true)
-    public boolean getIsActive(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException(email));
-
-        return user.getIsActive();
-    }
-
     public void deleteUser(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
@@ -88,8 +80,7 @@ public class UserService {
         return UserResponseDto.from(user);
     }
 
-    public UserResponseDto putProfile(String email, ProfileRequestDto requestDto) {
-
+    public UserResponseDto completeProfile(String email, ProfileRequestDto requestDto) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException(email));
 

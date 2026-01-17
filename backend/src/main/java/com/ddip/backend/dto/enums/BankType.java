@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum BankType {
 
-    KAKAObank("카카오뱅"),
+    KAKAO("카카오뱅크"),
     NH("NH농협은행"),
     KB("KB국민은행"),
     SHINHAN("신한은행"),
