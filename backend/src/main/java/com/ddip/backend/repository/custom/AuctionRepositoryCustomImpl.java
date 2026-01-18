@@ -12,10 +12,11 @@ import java.util.Optional;
 
 import static com.ddip.backend.entity.QAuction.auction;
 import static com.ddip.backend.entity.QMyBids.myBids;
+import static com.ddip.backend.entity.QUser.user;
 
 
 @RequiredArgsConstructor
-public class AuctionRepositoryCustomImpl implements AuctionCustomRepository {
+public class AuctionRepositoryCustomImpl implements AuctionRepositoryCustom {
 
     private final JPAQueryFactory jpaQueryFactory;
 
@@ -50,6 +51,16 @@ public class AuctionRepositoryCustomImpl implements AuctionCustomRepository {
                 )
                 .orderBy(auction.endAt.asc(), auction.id.asc())
                 .limit(limit)
+                .fetch();
+    }
+
+    @Override
+    public List<Auction> findAuctionsByUserId(Long userId) {
+        return jpaQueryFactory
+                .selectFrom(auction)
+                .leftJoin(auction.seller, user).fetchJoin()
+                .where(auction.seller.id.eq(userId))
+                .orderBy(auction.id.desc())
                 .fetch();
     }
 }
