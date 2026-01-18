@@ -7,11 +7,13 @@ import java.util.List;
 import java.util.Optional;
 
 
-public interface AuctionCustomRepository {
+public interface AuctionRepositoryCustom {
 
     Optional<Auction> findDetailById(Long auctionId);
 
     List<Auction> findAllDesc();
 
     List<Auction> findEndAuctions(LocalDateTime now, int limit);
+
+    List<Auction> findAuctionsByUserId(Long userId);
 }
