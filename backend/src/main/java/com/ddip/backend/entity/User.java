@@ -84,7 +84,7 @@ public class User extends BaseTimeEntity{
 
     @Builder.Default
     @OneToMany(mappedBy = "user", orphanRemoval = true, cascade = CascadeType.ALL)
-    private List<MyBids> myAuctions = new ArrayList<>();
+    private List<MyBids> myBids = new ArrayList<>();
 
     public static User from(UserRequestDto dto) {
         return User.builder()

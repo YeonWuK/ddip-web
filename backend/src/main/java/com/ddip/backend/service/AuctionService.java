@@ -105,9 +105,11 @@ public class AuctionService {
                 continue;
             }
 
+            // 가장 높은 입찰가 조회
             Optional<Bids> bids = bidsRepository.findTopBidByAuctionId(auction.getId());
 
             if (bids.isPresent()) {
+                // 입찰자 선정
                 Bids topBid = bids.get();
                 auction.updateWinner(topBid.getUser());
             } else {
@@ -116,6 +118,7 @@ public class AuctionService {
 
             Long winnerId = auction.getWinner() != null ? auction.getWinner().getId() : null;
 
+            // 해당 경매 유저 경매 상태 변경
             for (MyBids myBids : auction.getMyBids()) {
                 if (myBids.getUser().getId().equals(winnerId)) {
                     myBids.markWon();
@@ -123,10 +126,12 @@ public class AuctionService {
                     myBids.markLost();
                 }
             }
+
             auction.updateAuctionStatus(AuctionStatus.ENDED);
 
             AuctionEndedEventDto dto = AuctionEndedEventDto.from(auction);
 
+            // 경매 종료 응답 프론트에 STOMP로 보냄
             messagingTemplate.convertAndSend("/topic/auction/" + auction.getId(), dto);
         }
     }

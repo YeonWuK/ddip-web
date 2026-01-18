@@ -27,22 +27,6 @@ public class UserApiController {
     private final JwtUtils jwtUtils;
     private final TokenBlackListService tokenBlackListService;
 
-    /**
-     * 로그아웃
-     */
-    @PostMapping("/logout")
-    public ResponseEntity<?> logout(HttpServletRequest request) {
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String accessToken = authHeader.substring(7);
-            long expiration = jwtUtils.extractAllClaims(accessToken).getExpiration().getTime() - System.currentTimeMillis();
-
-            tokenBlackListService.addToBlackList(accessToken, expiration);
-        }
-
-        SecurityContextHolder.clearContext();
-        return ResponseEntity.ok().body("로그아웃 완료");
-    }
 
     /**
      * 회원가입
@@ -103,6 +87,17 @@ public class UserApiController {
     }
 
     /**
+     * 마이페이지 조회
+     */
+    @GetMapping("/my-page")
+    public ResponseEntity<?> getMyPage(@AuthenticationPrincipal CustomUserDetails customUserDetails) {
+
+        UserPageResponseDto dto = userService.getUserPage(customUserDetails.getUserId());
+
+        return ResponseEntity.ok(dto);
+    }
+
+    /**
      *  미완성 프로필 작성
      */
     @PatchMapping("/update-profile")
@@ -112,6 +107,23 @@ public class UserApiController {
         UserResponseDto userResponseDto = userService.completeProfile(customUserDetails.getEmail(), dto);
 
         return ResponseEntity.ok(userResponseDto);
+    }
+
+    /**
+     * 로그아웃
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String accessToken = authHeader.substring(7);
+            long expiration = jwtUtils.extractAllClaims(accessToken).getExpiration().getTime() - System.currentTimeMillis();
+
+            tokenBlackListService.addToBlackList(accessToken, expiration);
+        }
+
+        SecurityContextHolder.clearContext();
+        return ResponseEntity.ok().body("로그아웃 완료");
     }
 
     /**

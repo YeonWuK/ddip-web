@@ -48,39 +48,44 @@ public class BidsService {
             throw new EndedAuctionException(AuctionStatus.RUNNING);
         }
 
+        // 입찰 최저가 + 현 입찰가
         long minPrice = auction.getCurrentPrice() + auction.getBidStep();
 
         if (dto.getPrice() == null || dto.getPrice() < minPrice) {
             throw new InvalidBidStepException(dto.getPrice());
         }
 
+        // 입찰가 갱신 요청 값으로 갱신
         auction.updateCurrentPrice(dto.getPrice());
 
         CreateBidsDto createBidsDto = new CreateBidsDto(user, auction, dto.getPrice());
 
         CreateMyBidsDto createMyBidsDto = new CreateMyBidsDto(user, auction, dto.getPrice());
 
+        // 해당 유저의 MyBids 가 없으면 생성, 있으면 갱신
         MyBids myBids = myBidsRepository.findByUserIdAndAuctionId(userId, auctionId)
                         .orElseGet(() -> MyBids.from(createMyBidsDto));
 
         User currentWinner = auction.getCurrentWinner();
 
+        // 기존 선두가 있으면 OUTBID 처리
         if (currentWinner != null && !currentWinner.getId().equals(userId)) {
             MyBids old = myBidsRepository.findByUserIdAndAuctionId(currentWinner.getId(), auctionId)
                     .orElseThrow(() -> new UserNotFoundException(currentWinner.getId()));
             old.markOutBid();
         }
 
+        // 해당 유저의 상태를 LEADING 으로 갱신
         myBids.updateLastBidPrice(dto.getPrice());
         myBids.markLeadBid();
-
         myBidsRepository.save(myBids);
 
+        // 경매의 현재 선두 갱신
         auction.updateCurrentWinner(user);
 
-        Bids bids = Bids.from(createBidsDto);
+        // 입찰 기록 저장
+        Bids bids = bidsRepository.save(Bids.from(createBidsDto));
 
-        Bids saved = bidsRepository.save(bids);
-        return BidsResponseDto.from(saved);
+        return BidsResponseDto.from(bids);
     }
 }
