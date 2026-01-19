@@ -60,7 +60,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         }
 
         // refreshToken 생성 및 쿠키에 추가
-        String refreshToken = jwtUtils.generateRefreshToken(authResults.getName());
+        String refreshToken = jwtUtils.generateRefreshToken(userDetails.getEmail());
         Cookie refreshTokenCookie = new Cookie("refresh_token", refreshToken);
         refreshTokenCookie.setPath("/");
         refreshTokenCookie.setHttpOnly(true);
