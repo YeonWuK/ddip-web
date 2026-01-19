@@ -4,6 +4,6 @@ import com.ddip.backend.entity.Project;
 
 import java.util.Optional;
 
-public interface ProjectCustomRepository {
+public interface ProjectRepositoryCustom {
     Optional<Project> findByIdWithCreatorAndRewardTier(Long projectId);
 }

@@ -9,7 +9,7 @@ import lombok.RequiredArgsConstructor;
 import java.util.Optional;
 
 @RequiredArgsConstructor
-public class ProjectRepositoryImpl implements ProjectCustomRepository {
+public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
 
