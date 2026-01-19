@@ -8,7 +8,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
@@ -51,8 +53,11 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             return;
         }
 
-        if (SecurityContextHolder.getContext().getAuthentication() != null) {
-            log.info("SecurityContext already has auth, skip");
+        Authentication existing = SecurityContextHolder.getContext().getAuthentication();
+
+        if (existing != null && existing.isAuthenticated()
+                && !(existing instanceof AnonymousAuthenticationToken)) {
+            log.info("SecurityContext already has authenticated user, skip");
             filterChain.doFilter(request, response);
             return;
         }

@@ -7,6 +7,7 @@ import com.ddip.backend.repository.UserRepository;
 import com.ddip.backend.security.auth.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
@@ -29,13 +30,16 @@ public class ProfileCompleteAuthorizationManager
 
         Authentication auth = authentication.get();
 
-        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+        if (auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken) {
             throw new AuthenticationCredentialsNotFoundException("인증 필요");
         }
 
-        CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
+        Object principal = auth.getPrincipal();
+        if (!(principal instanceof CustomUserDetails userDetails)) {
+            throw new AuthenticationCredentialsNotFoundException("인증 principal 타입 오류");
+        }
 
-        User user = userRepository.findByEmail(userDetails.getUsername())
+        User user = userRepository.findByEmail(userDetails.getEmail())
                 .orElseThrow(() -> new UserNotFoundException(userDetails.getUsername()));
 
         if (!user.isActive()) {
