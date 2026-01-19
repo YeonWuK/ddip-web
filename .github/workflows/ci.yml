@@ -2,12 +2,12 @@ name: Backend - CI/CD (Gradle + Docker)
 
 on:
   push:
-    branches: [ "main", "develop" ]
+    branches: [ "main", "dev" ]
     paths:
       - "backend/**"
       - ".github/workflows/**"
   pull_request:
-    branches: [ "main", "develop" ]
+    branches: [ "main", "dev" ]
     paths:
       - "backend/**"
       - ".github/workflows/**"
@@ -36,10 +36,10 @@ jobs:
         run: ./gradlew clean build
 
   cd-docker:
-    name: CD - Docker Build & Push (main/develop push only)
+    name: CD - Docker Build & Push (main/dev push only)
     runs-on: ubuntu-latest
     needs: ci-build
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')
 
     steps:
       - uses: actions/checkout@v4
