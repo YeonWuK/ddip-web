@@ -67,7 +67,7 @@ public class AuctionService {
      */
     @Transactional(readOnly = true)
     public List<AuctionResponseDto> getAllAuctions() {
-        return auctionRepository.findAllDesc().stream()
+        return auctionRepository.findAllByOrderByIdDesc().stream()
                 .map(AuctionResponseDto::from)
                 .collect(Collectors.toList());
     }

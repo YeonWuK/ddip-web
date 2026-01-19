@@ -10,7 +10,7 @@ public interface AuctionRepositoryCustom {
 
     Optional<Auction> findDetailById(Long auctionId);
 
-    List<Auction> findAllDesc();
+    List<Auction> findAllByOrderByIdDesc();
 
     List<Auction> findEndAuctions(LocalDateTime now, int limit);
 
