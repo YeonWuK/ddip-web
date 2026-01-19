@@ -31,7 +31,7 @@ public class AuctionRepositoryCustomImpl implements AuctionRepositoryCustom {
     }
 
     @Override
-    public List<Auction> findAllDesc() {
+    public List<Auction> findAllByOrderByIdDesc() {
         return jpaQueryFactory.selectFrom(auction)
                 .leftJoin(auction.seller, new QUser("seller")).fetchJoin()
                 .leftJoin(auction.winner, new QUser("winner")).fetchJoin()
