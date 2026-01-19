@@ -29,11 +29,10 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         Oauth2UserInfo oauth2UserInfo = getOauth2UserInfo(registrationId, oAuth2UserAttributes);
 
-        User user = createUserFromOauth(oauth2UserInfo);
+        User newUser = createUserFromOauth(oauth2UserInfo);
 
-        if (!userRepository.existsByEmail(user.getEmail())){
-            userRepository.save(user);
-        }
+        User user = userRepository.findByEmail(newUser.getEmail())
+                .orElseGet(() -> userRepository.save(newUser));
         
         return new CustomUserDetails(user, oAuth2UserAttributes);
     }
