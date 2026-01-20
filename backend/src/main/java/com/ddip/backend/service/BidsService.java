@@ -66,6 +66,8 @@ public class BidsService {
         MyBids myBids = myBidsRepository.findByUserIdAndAuctionId(userId, auctionId)
                         .orElseGet(() -> MyBids.from(createMyBidsDto));
 
+        myBidsRepository.save(myBids);
+
         User currentWinner = auction.getCurrentWinner();
 
         // 기존 선두가 있으면 OUTBID 처리
@@ -78,7 +80,6 @@ public class BidsService {
         // 해당 유저의 상태를 LEADING 으로 갱신
         myBids.updateLastBidPrice(dto.getPrice());
         myBids.markLeadBid();
-        myBidsRepository.save(myBids);
 
         // 경매의 현재 선두 갱신
         auction.updateCurrentWinner(user);
