@@ -14,7 +14,7 @@ public enum ErrorCode {
     MISSING_PARAMETER(HttpStatus.BAD_REQUEST, "필수 요청 값이 누락되었습니다."),
     INVALID_STATE(HttpStatus.BAD_REQUEST, "요청 상태가 올바르지 않습니다."),
 
-    // ===== Auth =====
+    // ===== Authentication =====
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다."),
     EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "만료된 토큰입니다."),

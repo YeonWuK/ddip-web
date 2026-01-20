@@ -47,13 +47,14 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
         String email = jwtUtils.extractUserEmail(token);
 
+        log.info("user: {} ", email);
+
         if (email == null) {
             log.info("Invalid token, Incorrect username");
             filterChain.doFilter(request, response);
             return;
         }
 
-        log.info("user: {} ", email);
 
         Authentication existing = SecurityContextHolder.getContext().getAuthentication();
 
