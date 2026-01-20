@@ -2,6 +2,7 @@ package com.ddip.backend.entity;
 
 import com.ddip.backend.dto.auction.AuctionRequestDto;
 import com.ddip.backend.dto.enums.AuctionStatus;
+import com.ddip.backend.dto.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -56,6 +57,10 @@ public class Auction extends BaseTimeEntity{
     @Column(name = "auction_status", nullable = false)
     private AuctionStatus auctionStatus;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_status")
+    private PaymentStatus paymentStatus;
+
     @Column(name = "start_at", nullable = false)
     private LocalDateTime startAt;
 
@@ -81,6 +86,7 @@ public class Auction extends BaseTimeEntity{
                 .currentPrice(dto.getStartPrice())
                 .bidStep(dto.getBidStep())
                 .auctionStatus(AuctionStatus.RUNNING)
+                .paymentStatus(null)
                 .startAt(LocalDateTime.now())
                 .endAt(LocalDateTime.parse(dto.getEndAt()))
                 .build();
@@ -102,4 +108,7 @@ public class Auction extends BaseTimeEntity{
         this.auctionStatus = status;
     }
 
+    public void updatePaymentStatus(PaymentStatus status) {
+        this.paymentStatus = status;
+    }
 }

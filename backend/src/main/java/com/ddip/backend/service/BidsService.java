@@ -6,6 +6,7 @@ import com.ddip.backend.dto.bids.BidsResponseDto;
 import com.ddip.backend.dto.bids.CreateBidsDto;
 import com.ddip.backend.dto.bids.CreateMyBidsDto;
 import com.ddip.backend.dto.enums.AuctionStatus;
+import com.ddip.backend.dto.enums.PaymentStatus;
 import com.ddip.backend.entity.Auction;
 import com.ddip.backend.entity.Bids;
 import com.ddip.backend.entity.MyBids;
@@ -13,6 +14,7 @@ import com.ddip.backend.entity.User;
 import com.ddip.backend.exception.auction.AuctionNotFoundException;
 import com.ddip.backend.exception.auction.EndedAuctionException;
 import com.ddip.backend.exception.auction.InvalidBidStepException;
+import com.ddip.backend.exception.user.InSufficientDdipPointsException;
 import com.ddip.backend.exception.user.UserNotFoundException;
 import com.ddip.backend.repository.AuctionRepository;
 import com.ddip.backend.repository.BidsRepository;
@@ -57,6 +59,12 @@ public class BidsService {
             throw new InvalidBidStepException(intValue(dto.getPrice()));
         }
 
+        if (user.getDdipPoints() < dto.getPrice()) {
+            throw new InSufficientDdipPointsException(user.getDdipPoints(), dto.getPrice());
+        }
+
+        // 유저의 포인트 차감(결제 시스템)
+        user.deductDdipPoints(dto.getPrice());
         // 입찰가 갱신 요청 값으로 갱신
         auction.updateCurrentPrice(dto.getPrice());
 
@@ -91,4 +99,18 @@ public class BidsService {
 
         return BidsResponseDto.from(bids);
     }
+//    public void cancelBid(Long userId, Long auctionId) {
+//
+//        User user = userRepository.findById(userId)
+//                .orElseThrow(() -> new UserNotFoundException(userId));
+//
+//        Auction auction = auctionRepository.findById(auctionId)
+//                .orElseThrow(() -> new AuctionNotFoundException(auctionId));
+//
+//        auction.updatePaymentStatus(PaymentStatus.CANCELED);
+//
+//        bidsRepository.deleteAllByAuctionIdAndUserId(user.getId(), auction.getId());
+//
+//
+//    }
 }

@@ -1,6 +1,7 @@
 package com.ddip.backend.dto.auction;
 
 import com.ddip.backend.dto.enums.AuctionStatus;
+import com.ddip.backend.dto.enums.PaymentStatus;
 import com.ddip.backend.entity.Auction;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,6 +28,8 @@ public class AuctionSummaryDto {
 
     private AuctionStatus auctionStatus;
 
+    private PaymentStatus paymentStatus;
+
     private LocalDateTime startAt;
 
     private LocalDateTime endAt;
@@ -39,6 +42,7 @@ public class AuctionSummaryDto {
                 .sellerId(auction.getSeller().getId())
                 .seller(auction.getSeller().getUsername())
                 .auctionStatus(auction.getAuctionStatus())
+                .paymentStatus(auction.getPaymentStatus())
                 .startAt(auction.getStartAt())
                 .endAt(auction.getEndAt())
                 .build();

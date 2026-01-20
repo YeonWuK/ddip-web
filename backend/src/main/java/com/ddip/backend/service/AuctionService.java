@@ -3,6 +3,7 @@ package com.ddip.backend.service;
 import com.ddip.backend.dto.auction.AuctionRequestDto;
 import com.ddip.backend.dto.auction.AuctionResponseDto;
 import com.ddip.backend.dto.enums.AuctionStatus;
+import com.ddip.backend.dto.enums.PaymentStatus;
 import com.ddip.backend.entity.Auction;
 import com.ddip.backend.entity.Bids;
 import com.ddip.backend.entity.MyBids;
@@ -127,7 +128,9 @@ public class AuctionService {
                 }
             }
 
+            // 경매 종료 및 결제 대기 상태
             auction.updateAuctionStatus(AuctionStatus.ENDED);
+            auction.updatePaymentStatus(PaymentStatus.PENDING);
 
             AuctionEndedEventDto dto = AuctionEndedEventDto.from(auction);
 

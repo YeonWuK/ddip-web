@@ -27,4 +27,14 @@ public class BiddingController {
 
         return ResponseEntity.ok(bidsResponseDto);
     }
+
+    /**
+     * 입찰 결제 취소
+     */
+    @PostMapping("/cancel/{auctionId}")
+    public ResponseEntity<?> cancelBidding(@AuthenticationPrincipal CustomUserDetails customUserDetails,
+                                           @PathVariable Long auctionId) {
+
+    }
+
 }

@@ -26,6 +26,7 @@ public enum ErrorCode {
 
     // ===== User =====
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 사용자입니다."),
+    INSUFFICIENT_DDIP_POINTS(HttpStatus.BAD_REQUEST, "띱 포인트가 부족합니다."),
 
     // ===== Project =====
     PROJECT_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 프로젝트입니다."),

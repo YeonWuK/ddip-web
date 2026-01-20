@@ -2,6 +2,7 @@ package com.ddip.backend.dto.auction;
 
 import com.ddip.backend.dto.bids.BidsSummaryDto;
 import com.ddip.backend.dto.enums.AuctionStatus;
+import com.ddip.backend.dto.enums.PaymentStatus;
 import com.ddip.backend.dto.user.UserResponseDto;
 import com.ddip.backend.entity.Auction;
 import lombok.AllArgsConstructor;
@@ -36,7 +37,9 @@ public class AuctionResponseDto {
 
     private int bidStep;
 
-    private AuctionStatus status;
+    private AuctionStatus auctionStatus;
+
+    private PaymentStatus paymentStatus;
 
     private LocalDateTime startAt;
 
@@ -54,7 +57,8 @@ public class AuctionResponseDto {
                 .startPrice(auction.getStartPrice())
                 .currentPrice(auction.getCurrentPrice())
                 .bidStep(auction.getBidStep())
-                .status(auction.getAuctionStatus())
+                .auctionStatus(auction.getAuctionStatus())
+                .paymentStatus(auction.getPaymentStatus())
                 .startAt(auction.getStartAt())
                 .endAt(String.valueOf(auction.getEndAt()))
                 .bids(auction.getBids().stream()
