@@ -11,8 +11,8 @@ public class CustomAuthenticationException extends AuthenticationException {
     private final ErrorCode errorCode;
     private final String detail;
 
-    public CustomAuthenticationException(String msg, ErrorCode errorCode, String detail) {
-        super(msg);
+    public CustomAuthenticationException(ErrorCode errorCode, String detail) {
+        super(detail);
         this.errorCode = errorCode;
         this.detail = detail;
     }

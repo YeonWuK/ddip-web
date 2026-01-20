@@ -1,5 +1,6 @@
 package com.ddip.backend.security.auth;
 
+import com.ddip.backend.exception.security.BlackListedTokenException;
 import com.ddip.backend.exception.security.TokenExpiredException;
 import com.ddip.backend.service.TokenBlackListService;
 import jakarta.servlet.FilterChain;
@@ -41,8 +42,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         String token = header.substring(7);
 
         if (tokenBlackListService.isBlackListed(token)) {
-            filterChain.doFilter(request, response);
-            return;
+            throw new BlackListedTokenException("Token is blacklisted");
         }
 
         String email = jwtUtils.extractUserEmail(token);
@@ -52,6 +52,8 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
+
+        log.info("user: {} ", email);
 
         Authentication existing = SecurityContextHolder.getContext().getAuthentication();
 
