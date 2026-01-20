@@ -48,43 +48,24 @@ public class PledgeService {
                 .orElseThrow(() -> new ProjectNotFoundException(projectId));
 
         // 프로젝트 상태 검증: 진행중일 때만 후원 가능 등
-         if (project.getStatus() != ProjectStatus.OPEN) {
-             throw new InvalidProjectStatusException(project.getStatus(), ProjectStatus.OPEN);
-         }
+        project.assertOpen();
 
         // 3) 리워드 티어 확인
         RewardTier rewardTier = rewardTierRepository.findById(requestDto.getRewardTierId())
                 .orElseThrow(() -> new RewardNotFoundException(requestDto.getRewardTierId()));
 
         // 4) 리워드 티어가 해당 프로젝트 소속인지 검증
-        if (rewardTier.getProject() == null || !rewardTier.getProject().getId().equals(projectId)) {
-            throw new RewardMismatchException(rewardTier.getId(), projectId);
-        }
+        rewardTier.assertBelongsTo(project);
 
-        int quantity = requestDto.getQuantity();
-        if (quantity <= 0) {
-            throw new InvalidQuantityException(quantity);
-        }
-
-        // 5) 금액 계산
-        long unitPrice = rewardTier.getPrice();
-        long amount = unitPrice * (long) quantity;
-
-        // 6) Pledge 생성
-        Pledge pledge = Pledge.builder()
-                .user(user)
-                .project(project)
-                .rewardTier(rewardTier)
-                .amount(amount)
-                .status(PledgeStatus.PENDING)
-                .build();
-
+        Pledge pledge = Pledge.toEntity(user, project, rewardTier, requestDto.getQuantity());
         Pledge saved = pledgeRepository.save(pledge);
 
-        // currentAmount 누적 증가
-        project.increaseCurrentAmount(amount);
+        // Project 전체 currentAmount 누적 증가
+        project.increaseCurrentAmount(saved.getAmount());
+        // rewardTier 재고 검증 및 판매 수량 증가
+        rewardTier.increaseSoldQuantity(requestDto.getQuantity());
 
-        log.info("성공적으로 구매 되었습니다. userId= {} , pledgeId = {}", userId, pledge.getId());
+        log.info("성공적으로 구매 되었습니다. userId={}, pledgeId={}", userId, saved.getId());
         return PledgeResponseDto.from(saved);
     }
 

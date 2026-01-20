@@ -1,6 +1,7 @@
 package com.ddip.backend.entity;
 
 import com.ddip.backend.dto.enums.PledgeStatus;
+import com.ddip.backend.exception.reward.InvalidQuantityException;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -42,6 +43,24 @@ public class Pledge extends BaseTimeEntity {
 
     public void cancel() {
         this.status = PledgeStatus.CANCELED;
+    }
+
+    public static Pledge toEntity(User user, Project project, RewardTier rewardTier, int quantity) {
+
+        if (quantity <= 0) {
+            throw new InvalidQuantityException(quantity);
+        }
+
+        long unitPrice = rewardTier.getPrice();
+        long amount = unitPrice * (long) quantity;
+
+        return Pledge.builder()
+                .user(user)
+                .project(project)
+                .rewardTier(rewardTier)
+                .amount(amount)
+                .status(PledgeStatus.PENDING)
+                .build();
     }
 
 }
