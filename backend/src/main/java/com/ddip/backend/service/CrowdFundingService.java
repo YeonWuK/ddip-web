@@ -28,6 +28,10 @@ public class CrowdFundingService {
     private final ProjectRepository projectRepository;
     private final UserService userService;
 
+    public Project getProjectEntity(Long projectId){
+        return projectRepository.findById(projectId).orElseThrow(() -> new ProjectNotFoundException(projectId));
+    }
+
     /**
      *  Crowdfunding 프로젝트 생성
      */
@@ -49,7 +53,7 @@ public class CrowdFundingService {
      *  Crowdfunding 프로젝트 가져오기
      */
     @Transactional(readOnly = true)
-    public ProjectResponseDto getProject(Long projectId) {
+    public ProjectResponseDto getProjects(Long projectId) {
         Project project = projectRepository.findByIdWithCreatorAndRewardTier(projectId)
                 .orElseThrow(() -> new ProjectNotFoundException(projectId));
 
@@ -60,15 +64,10 @@ public class CrowdFundingService {
      *  Crowdfunding 프로젝트 삭제
      */
     public void deleteProject(Long projectId, Long userId) {
-        User user = userService.getUser(userId);
-
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new ProjectNotFoundException(projectId));
+        Project project = getProjectEntity(projectId);
 
         // 본인 프로젝트만 삭제 가능
-        if (!project.getCreator().getId().equals(user.getId())) {
-            throw new ProjectAccessDeniedException(projectId, userId);
-        }
+        project.assertOwnedBy(userId);
 
         project.cancel();
         log.info("성공적으로 삭제 되었습니다. projectId={}", projectId);
@@ -121,13 +120,9 @@ public class CrowdFundingService {
         }*/
 
     public void openFunding(Long userId, Long projectId) {
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new ProjectNotFoundException(projectId));
+        Project project = getProjectEntity(projectId);
 
-        Long creatorId = project.getCreator().getId();
-        if (!creatorId.equals(userId)) {
-            throw new ProjectAccessDeniedException(projectId, userId);
-        }
+        project.assertOwnedBy(userId);
 
         log.info("현재 프로젝트 상태 : {}", project.getStatus());
         // 상태 전이 검증
