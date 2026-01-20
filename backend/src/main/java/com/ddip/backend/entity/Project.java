@@ -3,6 +3,8 @@ package com.ddip.backend.entity;
 import com.ddip.backend.dto.crowd.ProjectRequestDto;
 import com.ddip.backend.dto.crowd.RewardTierRequestDto;
 import com.ddip.backend.dto.enums.ProjectStatus;
+import com.ddip.backend.exception.project.InvalidProjectStatusException;
+import com.ddip.backend.exception.project.ProjectAccessDeniedException;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -113,7 +115,6 @@ public class Project extends BaseTimeEntity {
         this.rewardTiers.add(tier);
     }
 
-
     public void increaseCurrentAmount(long amount) {
         this.currentAmount += amount;
     }
@@ -130,6 +131,14 @@ public class Project extends BaseTimeEntity {
 
     public void openFunding() {
         this.status = ProjectStatus.OPEN;
+    }
+
+    public void assertOwnedBy(Long userId) {
+        if (!this.getCreator().getId().equals(userId)) throw new ProjectAccessDeniedException(this.id ,userId);
+    }
+
+    public void assertOpen() {
+        if (this.status != ProjectStatus.OPEN) {throw new InvalidProjectStatusException(this.status, ProjectStatus.OPEN);}
     }
 
 }

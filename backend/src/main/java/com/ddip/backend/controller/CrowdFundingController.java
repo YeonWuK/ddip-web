@@ -43,7 +43,7 @@ public class CrowdFundingController {
      */
     @GetMapping("/{projectId}")
     public ResponseEntity<ProjectResponseDto> getCrowdFunding(@PathVariable Long projectId ){
-        ProjectResponseDto response = crowdFundingService.getProject(projectId);
+        ProjectResponseDto response = crowdFundingService.getProjects(projectId);
         return ResponseEntity.ok(response);
     }
 
