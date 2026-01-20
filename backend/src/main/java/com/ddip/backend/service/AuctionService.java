@@ -141,10 +141,10 @@ public class AuctionService {
      */
     private void validateBidStep(Long startPrice, int bidStep) {
         if (startPrice == null || startPrice <= 0) {
-            throw new InvalidBidStepException((long) bidStep);
+            throw new InvalidBidStepException(bidStep);
         }
         if (bidStep <= 0) {
-            throw new InvalidBidStepException((long) bidStep);
+            throw new InvalidBidStepException(bidStep);
         }
 
         long required;
@@ -155,7 +155,7 @@ public class AuctionService {
         }
 
         if (bidStep < required) {
-            throw new InvalidBidStepException((long) bidStep);
+            throw new InvalidBidStepException(bidStep);
         }
     }
 

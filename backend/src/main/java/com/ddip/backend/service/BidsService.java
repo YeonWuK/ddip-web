@@ -22,6 +22,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import static org.aspectj.runtime.internal.Conversions.intValue;
+
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -51,8 +53,8 @@ public class BidsService {
         // 입찰 최저가 + 현 입찰가
         long minPrice = auction.getCurrentPrice() + auction.getBidStep();
 
-        if (dto.getPrice() == null || dto.getPrice() < minPrice) {
-            throw new InvalidBidStepException(dto.getPrice());
+        if (dto.getPrice() < minPrice) {
+            throw new InvalidBidStepException(intValue(dto.getPrice()));
         }
 
         // 입찰가 갱신 요청 값으로 갱신

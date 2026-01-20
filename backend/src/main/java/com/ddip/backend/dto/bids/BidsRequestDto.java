@@ -11,5 +11,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class BidsRequestDto {
 
-    private Long price;
+    private long price;
 }
