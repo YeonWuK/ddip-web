@@ -26,7 +26,6 @@ public enum ErrorCode {
 
     // ===== User =====
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 사용자입니다."),
-    INSUFFICIENT_DDIP_POINTS(HttpStatus.BAD_REQUEST, "띱 포인트가 부족합니다."),
 
     // ===== Project =====
     PROJECT_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 프로젝트입니다."),
@@ -51,7 +50,10 @@ public enum ErrorCode {
 
     // ===== DistributedLock =====
     LOCK_NOT_AVAILABLE(HttpStatus.CONFLICT,"동시 입찰이 발생했습니다. 잠시 후 다시 시도해 주십시오."),
-    LOCK_INTERRUPTED_ERROR(HttpStatus.SERVICE_UNAVAILABLE, "요청 처리 중 문제가 발생했습니다. 잠시 후 다시 시도해 주십시오.");
+    LOCK_INTERRUPTED_ERROR(HttpStatus.SERVICE_UNAVAILABLE, "요청 처리 중 문제가 발생했습니다. 잠시 후 다시 시도해 주십시오."),
+
+    // ===== ES =====
+    SEARCH_RESPONSE_NOT_FOUND(HttpStatus.NOT_FOUND, "검색 결과가 존재하지 않습니다.");
 
     public final HttpStatus httpStatus;
     public final String message;

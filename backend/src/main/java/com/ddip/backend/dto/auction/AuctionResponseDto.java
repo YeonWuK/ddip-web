@@ -58,7 +58,6 @@ public class AuctionResponseDto {
                 .currentPrice(auction.getCurrentPrice())
                 .bidStep(auction.getBidStep())
                 .auctionStatus(auction.getAuctionStatus())
-                .paymentStatus(auction.getPaymentStatus())
                 .startAt(auction.getStartAt())
                 .endAt(String.valueOf(auction.getEndAt()))
                 .bids(auction.getBids().stream()

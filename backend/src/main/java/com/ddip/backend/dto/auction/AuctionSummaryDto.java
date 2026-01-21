@@ -28,7 +28,6 @@ public class AuctionSummaryDto {
 
     private AuctionStatus auctionStatus;
 
-    private PaymentStatus paymentStatus;
 
     private LocalDateTime startAt;
 
@@ -42,7 +41,6 @@ public class AuctionSummaryDto {
                 .sellerId(auction.getSeller().getId())
                 .seller(auction.getSeller().getUsername())
                 .auctionStatus(auction.getAuctionStatus())
-                .paymentStatus(auction.getPaymentStatus())
                 .startAt(auction.getStartAt())
                 .endAt(auction.getEndAt())
                 .build();
