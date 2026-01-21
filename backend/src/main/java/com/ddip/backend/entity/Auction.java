@@ -2,7 +2,6 @@ package com.ddip.backend.entity;
 
 import com.ddip.backend.dto.auction.AuctionRequestDto;
 import com.ddip.backend.dto.enums.AuctionStatus;
-import com.ddip.backend.dto.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

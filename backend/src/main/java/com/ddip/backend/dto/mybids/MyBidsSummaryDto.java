@@ -2,7 +2,6 @@ package com.ddip.backend.dto.mybids;
 
 import com.ddip.backend.dto.auction.AuctionSummaryDto;
 import com.ddip.backend.dto.enums.MyAuctionStatus;
-import com.ddip.backend.dto.enums.PaymentStatus;
 import com.ddip.backend.entity.MyBids;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,7 +20,6 @@ public class MyBidsSummaryDto {
 
     private MyAuctionStatus myAuctionStatus;
 
-    private PaymentStatus paymentStatus;
 
     private long lastBidPrice;
 
@@ -31,7 +29,6 @@ public class MyBidsSummaryDto {
                 .auction(AuctionSummaryDto.from(myBids.getAuction()))
                 .lastBidPrice(myBids.getLastBidPrice())
                 .myAuctionStatus(myBids.getMyAuctionState())
-                .paymentStatus(myBids.getAuction().getPaymentStatus())
                 .build();
     }
 }
