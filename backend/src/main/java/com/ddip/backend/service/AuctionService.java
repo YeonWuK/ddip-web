@@ -6,6 +6,8 @@ import com.ddip.backend.dto.enums.AuctionStatus;
 import com.ddip.backend.entity.Auction;
 import com.ddip.backend.entity.MyBids;
 import com.ddip.backend.entity.User;
+import com.ddip.backend.es.document.AuctionDocument;
+import com.ddip.backend.es.repository.AuctionElasticSearchRepository;
 import com.ddip.backend.exception.auction.AuctionDeniedException;
 import com.ddip.backend.dto.auction.AuctionEndedEventDto;
 import com.ddip.backend.exception.auction.AuctionNotFoundException;
@@ -34,6 +36,7 @@ public class AuctionService {
     private final AuctionRepository auctionRepository;
     private final MyBidsRepository myBidsRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final AuctionElasticSearchRepository auctionEsRepository;
 
     /**
      * 경매 생성
@@ -46,6 +49,10 @@ public class AuctionService {
 
         Auction auction = Auction.from(user, dto);
         auctionRepository.save(auction);
+
+        // Es 인덱스 생성
+        AuctionDocument auctionDocument = AuctionDocument.from(auction);
+        auctionEsRepository.save(auctionDocument);
 
         return AuctionResponseDto.from(auction);
     }
