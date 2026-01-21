@@ -30,17 +30,10 @@ public class ProfileCompleteAuthorizationManager
 
         Authentication auth = authentication.get();
 
-        if (auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken) {
-            throw new AuthenticationCredentialsNotFoundException("인증 필요");
-        }
-
-        Object principal = auth.getPrincipal();
-        if (!(principal instanceof CustomUserDetails userDetails)) {
-            throw new AuthenticationCredentialsNotFoundException("인증 principal 타입 오류");
-        }
+        CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
 
         User user = userRepository.findByEmail(userDetails.getEmail())
-                .orElseThrow(() -> new UserNotFoundException(userDetails.getUsername()));
+                .orElseThrow(() -> new UserNotFoundException(userDetails.getEmail()));
 
         if (!user.isActive()) {
             throw new ProfileIncompleteDeniedException("프로필을 먼저 완료하세요.");
