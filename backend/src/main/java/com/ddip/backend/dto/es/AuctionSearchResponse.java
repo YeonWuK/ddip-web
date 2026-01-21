@@ -1,6 +1,5 @@
 package com.ddip.backend.dto.es;
 
-import com.ddip.backend.es.document.AuctionDocument;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -20,6 +19,8 @@ public class AuctionSearchResponse {
 
     private String seller;
 
+    private String description;
+
     private Long startPrice;
 
     private Long currentPrice;
@@ -29,17 +30,4 @@ public class AuctionSearchResponse {
     private LocalDateTime startAt;
 
     private LocalDateTime endAt;
-
-    public static AuctionSearchResponse from(AuctionDocument auctionDocument) {
-        return AuctionSearchResponse.builder()
-                .id(auctionDocument.getId())
-                .title(auctionDocument.getTitle())
-                .seller(auctionDocument.getSeller())
-                .startPrice(auctionDocument.getStartPrice())
-                .currentPrice(auctionDocument.getCurrentPrice())
-                .status(auctionDocument.getStatus())
-                .startAt(auctionDocument.getStartAt())
-                .endAt(auctionDocument.getEndAt())
-                .build();
-    }
 }
