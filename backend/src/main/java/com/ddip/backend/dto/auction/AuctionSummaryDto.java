@@ -27,6 +27,7 @@ public class AuctionSummaryDto {
 
     private AuctionStatus auctionStatus;
 
+
     private LocalDateTime startAt;
 
     private LocalDateTime endAt;
