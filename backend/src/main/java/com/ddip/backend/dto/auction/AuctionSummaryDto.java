@@ -1,6 +1,7 @@
 package com.ddip.backend.dto.auction;
 
 import com.ddip.backend.dto.enums.AuctionStatus;
+import com.ddip.backend.dto.enums.PaymentStatus;
 import com.ddip.backend.entity.Auction;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,6 +27,7 @@ public class AuctionSummaryDto {
     private String seller;
 
     private AuctionStatus auctionStatus;
+
 
     private LocalDateTime startAt;
 
