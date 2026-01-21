@@ -1,13 +1,16 @@
 package com.ddip.backend.entity;
 
 import com.ddip.backend.dto.enums.PledgeStatus;
+import com.ddip.backend.exception.pledge.PledgeAccessDeniedException;
 import com.ddip.backend.exception.reward.InvalidQuantityException;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Entity
 @Getter
 @Builder
@@ -29,13 +32,10 @@ public class Pledge extends BaseTimeEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reward_tier_id")
-    private RewardTier rewardTier; // null 가능
+    private RewardTier rewardTier;
 
     @Column(name = "amount", nullable = false)
     private Long amount;
-
-    @Column(name = "donate_price")
-    private Long donatePrice;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20, nullable = false)
@@ -59,8 +59,18 @@ public class Pledge extends BaseTimeEntity {
                 .project(project)
                 .rewardTier(rewardTier)
                 .amount(amount)
-                .status(PledgeStatus.PENDING)
+                .status(PledgeStatus.CONFIRMED)
                 .build();
+    }
+
+    public void assertOwnedBy(Long userId) {
+        if (!this.user.getId().equals(userId)) throw new PledgeAccessDeniedException(this.id ,userId);
+    }
+
+    public void assertNotCanceled() {
+        if (this.status == PledgeStatus.CANCELED) {
+            throw new IllegalStateException("이미 취소된 후원입니다.");
+        }
     }
 
 }

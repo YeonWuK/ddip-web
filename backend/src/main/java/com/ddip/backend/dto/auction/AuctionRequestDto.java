@@ -20,4 +20,5 @@ public class AuctionRequestDto {
     private int bidStep;
 
     private String endAt;
+
 }

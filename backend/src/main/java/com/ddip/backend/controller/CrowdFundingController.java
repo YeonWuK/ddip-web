@@ -54,14 +54,16 @@ public class CrowdFundingController {
      *
      * (현재 비활성화 상태) - 리워드 수정 따로 Project 수정 따로 할지에 대한 논의
      */
-//    @PatchMapping("/{projectId}")
-//    public ResponseEntity<?> updateCrowdFunding( @AuthenticationPrincipal CustomUserDetails customUserDetails,
-//                                                    @PathVariable Long projectId,
-//                                                    @Valid @RequestBody ProjectUpdateRequestDto requestDto) {
-//        Long userId = customUserDetails.getUserId();
-//        crowdFundingService.updateProject(projectId, userId, requestDto);
-//        return ResponseEntity.ok().build();
-//    }
+    @PatchMapping("/{projectId}")
+    public ResponseEntity<?> updateCrowdFunding(
+            @AuthenticationPrincipal CustomUserDetails customUserDetails, @PathVariable Long projectId,
+            @Valid @RequestBody ProjectUpdateRequestDto requestDto) {
+
+        Long userId = customUserDetails.getUserId();
+        crowdFundingService.updateProject(projectId, userId, requestDto);
+        return ResponseEntity.ok().build();
+
+    }
 
     /**
      * 크라우드 펀딩 프로젝트 삭제 API

@@ -39,7 +39,6 @@ public class RewardTier extends BaseTimeEntity{
     @Column(name = "limit_quantity")
     private Integer limitQuantity; // null이면 무제한
 
-    @Builder.Default
     @Column(name = "sold_quantity", nullable = false)
     private Integer soldQuantity = 0; // 캐시
 
