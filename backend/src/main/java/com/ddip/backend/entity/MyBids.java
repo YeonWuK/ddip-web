@@ -56,12 +56,4 @@ public class MyBids extends BaseTimeEntity{
     public void markOutBid() {
         this.myAuctionState = MyAuctionStatus.OUTBID;
     }
-
-    public void markWon() {
-        this.myAuctionState = MyAuctionStatus.WON;
-    }
-
-    public void markLost() {
-        this.myAuctionState = MyAuctionStatus.LOST;
-    }
 }

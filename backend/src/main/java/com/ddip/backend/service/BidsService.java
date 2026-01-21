@@ -59,13 +59,6 @@ public class BidsService {
             throw new InvalidBidStepException(intValue(dto.getPrice()));
         }
 
-        if (user.getDdipPoints() < dto.getPrice()) {
-            throw new InSufficientDdipPointsException(user.getDdipPoints(), dto.getPrice());
-        }
-
-        // 유저의 포인트 차감(결제 시스템)
-        user.deductDdipPoints(dto.getPrice());
-        // 입찰가 갱신 요청 값으로 갱신
         auction.updateCurrentPrice(dto.getPrice());
 
         CreateBidsDto createBidsDto = new CreateBidsDto(user, auction, dto.getPrice());

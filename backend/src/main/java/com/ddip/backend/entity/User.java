@@ -60,9 +60,6 @@ public class User extends BaseTimeEntity{
     @Column(name = "account")
     private String account;
 
-    @Column(name = "ddip_points")
-    private Long ddipPoints;
-
     @Column(name = "account_holder")
     private String accountHolder;
 
@@ -101,7 +98,6 @@ public class User extends BaseTimeEntity{
                 .bankType(dto.getBankType())
                 .account(dto.getAccount())
                 .accountHolder(dto.getAccountHolder())
-                .ddipPoints(0L)
                 .isActive(true)
                 .build();
     }
@@ -113,7 +109,6 @@ public class User extends BaseTimeEntity{
                 .nickname(dto.getNickname())
                 .phoneNumber("TMP")
                 .provider(AuthProvider.valueOf(dto.getProvider()))
-                .ddipPoints(0L)
                 .role(dto.getRole())
                 .isActive(false)
                 .build();
@@ -142,9 +137,5 @@ public class User extends BaseTimeEntity{
 
     public void updatePassword(String password) {
         this.password = password;
-    }
-
-    public void deductDdipPoints(long price) {
-        this.ddipPoints -= price;
     }
 }
