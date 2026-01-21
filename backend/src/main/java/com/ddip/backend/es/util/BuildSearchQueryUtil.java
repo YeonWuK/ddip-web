@@ -1,6 +1,10 @@
 package com.ddip.backend.es.util;
 
-import co.elastic.clients.elasticsearch._types.query_dsl.*;
+import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.MatchQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
+import co.elastic.clients.json.JsonData;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -26,12 +30,10 @@ public class BuildSearchQueryUtil {
         }
 
         if (endAt != null) {
-            boolQuery.filter(q -> q.range(r -> r
-                    .date(d -> d
-                            .field("endAt")
-                            .lte(ES_DATE_FORMATTER.format(endAt))
-                    )
-            ));
+            // And (조건 <= endAt)
+            boolQuery.must(QueryBuilders.range().field("endAt")
+                    .lte(JsonData.of(ES_DATE_FORMATTER.format(endAt)))
+                    .build()._toQuery());
         }
 
         return boolQuery.build()._toQuery();
