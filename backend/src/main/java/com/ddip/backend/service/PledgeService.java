@@ -80,24 +80,17 @@ public class PledgeService {
         Pledge pledge = pledgeRepository.findById(pledgeId)
                 .orElseThrow(() -> new PledgeNotFoundException(pledgeId));
 
-        if (!pledge.getUser().getId().equals(userId)) {
-            throw new PledgeAccessDeniedException(pledgeId,userId);
-        }
+        pledge.assertOwnedBy(userId);
 
         // 상태 전이 체크: 이미 취소된 건 취소 불가 등
-        if (pledge.getStatus() == PledgeStatus.CANCELED) {
-            return;
-        }
+        pledge.assertNotCanceled();
+        // 취소 가능한 상태인지 확인 Payment 엔티티 만들어서 따로 확인 할 예정
+//        pledge.assertCancelable();
 
-        // (선택) 취소 가능한 상태인지 확인
-        // if (pledge.getStatus() != PledgeStatus.PAID) {
-        //     throw new IllegalStateException("취소할 수 없는 상태입니다.");
-        // }
-
-        pledge.cancel(); // 메서드 없으면 pledge.setStatus(PledgeStatus.CANCELED)
-        // 금액 환원(정책에 따라)
+        pledge.cancel();
+        // 금액 환원
         Project project = pledge.getProject();
-        project.decreaseCurrentAmount(pledge.getAmount()); // 메서드 없으면 setCurrentAmount - amount
+        project.decreaseCurrentAmount(pledge.getAmount());
         log.info("성공적으로 취소 되었습니다. userId= {} , pledgeId = {}", userId, pledgeId);
     }
 

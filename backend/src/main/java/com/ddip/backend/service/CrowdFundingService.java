@@ -2,8 +2,10 @@ package com.ddip.backend.service;
 
 import com.ddip.backend.dto.crowd.ProjectRequestDto;
 import com.ddip.backend.dto.crowd.ProjectResponseDto;
+import com.ddip.backend.dto.crowd.ProjectUpdateRequestDto;
 import com.ddip.backend.dto.crowd.RewardTierRequestDto;
 import com.ddip.backend.dto.enums.ProjectStatus;
+import com.ddip.backend.dto.enums.Role;
 import com.ddip.backend.entity.Project;
 import com.ddip.backend.entity.RewardTier;
 import com.ddip.backend.entity.User;
@@ -11,7 +13,9 @@ import com.ddip.backend.exception.project.InvalidProjectStatusException;
 import com.ddip.backend.exception.project.ProjectAccessDeniedException;
 import com.ddip.backend.exception.project.ProjectNotFoundException;
 import com.ddip.backend.exception.reward.RewardTierRequiredException;
+import com.ddip.backend.exception.user.UserNotFoundException;
 import com.ddip.backend.repository.ProjectRepository;
+import com.ddip.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,7 +30,7 @@ import java.util.List;
 public class CrowdFundingService {
 
     private final ProjectRepository projectRepository;
-    private final UserService userService;
+    private final UserRepository userRepository;
 
     public Project getProjectEntity(Long projectId){
         return projectRepository.findById(projectId).orElseThrow(() -> new ProjectNotFoundException(projectId));
@@ -41,7 +45,7 @@ public class CrowdFundingService {
             throw new RewardTierRequiredException();
         }
 
-        User user = userService.getUser(userId);
+        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
         Project project = Project.toEntity(requestDto, user);
 
         projectRepository.save(project);
@@ -73,6 +77,9 @@ public class CrowdFundingService {
         log.info("성공적으로 삭제 되었습니다. projectId={}", projectId);
     }
 
+    /**
+     *  Crowdfunding 전체 프로젝트 가져오기
+     */
     @Transactional(readOnly = true)
     public List<ProjectResponseDto> getAllProjects() {
         return projectRepository.findAll().stream()
@@ -80,46 +87,36 @@ public class CrowdFundingService {
                 .toList();
     }
 
-   /* public void updateProject(Long projectId, Long userId, ProjectUpdateRequestDto requestDto) {
-        User user = userService.getUser(userId);
+    public void updateProject(Long projectId, Long userId, ProjectUpdateRequestDto requestDto) {
 
-        Project project = projectRepository.findByIdWithRewardTiers(projectId)
-                .orElseThrow(() -> new IllegalArgumentException("Project not found: " + projectId));
+        Project project = getProjectEntity(projectId);
 
         // 본인 프로젝트만 수정 가능
-        if (!project.getCreator().getId().equals(user.getId())) {
-            throw new IllegalStateException("본인 프로젝트만 수정할 수 있습니다.");
-        }
+        project.assertOwnedBy(userId);
+
+        // DRAFT 상태일 때만 구조 수정 허용
+        project.assertEditable();
 
         // 날짜 검증(둘 다 들어왔을 때만)
         if (requestDto.getStartAt() != null && requestDto.getEndAt() != null
                 && !requestDto.getEndAt().isAfter(requestDto.getStartAt())) {
+            log.info("날짜를 다시 확인하세요. projectId={}", projectId);
             throw new IllegalArgumentException("종료일은 시작일 이후여야 합니다.");
         }
 
         // 기본 필드 부분 수정
-        project.update(requestDto);
-
-        // 리워드 수정(1차: 전체 교체 전략)
-        if (requestDto.getRewardTiers() != null) {
-            if (requestDto.getRewardTiers().isEmpty()) {
-                throw new IllegalArgumentException("리워드는 최소 1개 이상 필요합니다.");
-            }
-
-            project.clearRewardTiers();
-            for (RewardTierRequestDto tierDto : requestDto.getRewardTiers()) {
-                RewardTier tier = RewardTier.builder()
-                        .title(tierDto.getTitle())
-                        .description(tierDto.getDescription())
-                        .price(tierDto.getPrice())
-                        .limitQuantity(tierDto.getLimitQuantity())
-                        .build();
-
-                project.addRewardTier(tier);
-            }
-        }*/
+        project.updateFrom(requestDto);
+    }
 
     public void openFunding(Long userId, Long projectId) {
+//        관리자만 Open 시킬 것인가에 대한 논의
+//        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+//        Role role = user.getRole();
+//        if (role != Role.ADMIN) {
+//            log.info("관리자만 접근할 수 있습니다. projectId={}, userRole={}", projectId, role);
+//            return;
+//        }
+
         Project project = getProjectEntity(projectId);
 
         project.assertOwnedBy(userId);

@@ -2,6 +2,7 @@ package com.ddip.backend.dto.crowd;
 
 
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -38,4 +39,5 @@ public class ProjectUpdateRequestDto {
     private String summary;
 
     private List<RewardTierRequestDto> rewardTiers;
+
 }

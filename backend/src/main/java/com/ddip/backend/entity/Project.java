@@ -1,6 +1,7 @@
 package com.ddip.backend.entity;
 
 import com.ddip.backend.dto.crowd.ProjectRequestDto;
+import com.ddip.backend.dto.crowd.ProjectUpdateRequestDto;
 import com.ddip.backend.dto.crowd.RewardTierRequestDto;
 import com.ddip.backend.dto.enums.ProjectStatus;
 import com.ddip.backend.exception.project.InvalidProjectStatusException;
@@ -141,4 +142,26 @@ public class Project extends BaseTimeEntity {
         if (this.status != ProjectStatus.OPEN) {throw new InvalidProjectStatusException(this.status, ProjectStatus.OPEN);}
     }
 
+    public void assertEditable() {
+        if (this.status != ProjectStatus.DRAFT) {
+            throw new InvalidProjectStatusException(this.status, ProjectStatus.DRAFT);
+        }
+    }
+
+    public void updateFrom(ProjectUpdateRequestDto dto) {
+        this.title = dto.getTitle();
+        this.description = dto.getDescription();
+        this.targetAmount = dto.getTargetAmount();
+        this.startAt = dto.getStartAt();
+        this.endAt = dto.getEndAt();
+        this.categoryPath = dto.getCategoryPath();
+        this.tags = dto.getTags();
+        this.summary = dto.getSummary();
+
+        // 기존 리워드들 싹 비우고
+        this.rewardTiers.clear();
+
+        // 새 DTO 리스트 기준으로 다시 채우기
+        dto.getRewardTiers().forEach(this::addRewardTier);
+    }
 }
