@@ -1,6 +1,7 @@
 package com.ddip.backend.es.document;
 
 import com.ddip.backend.entity.Auction;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.springframework.data.annotation.Id;
 import lombok.*;
 import org.springframework.data.elasticsearch.annotations.*;
@@ -11,9 +12,10 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 @Document(indexName = "auction", createIndex = true)
-@Setting(settingPath = "elasticsearch/ticket-setting.json")
-@Mapping(mappingPath = "elasticsearch/ticket-mapping.json")
+@Setting(settingPath = "elasticsearch/tokenizer-setting.json")
+@Mapping(mappingPath = "elasticsearch/auction-mapping.json")
 public class AuctionDocument {
 
     @Id
@@ -22,6 +24,9 @@ public class AuctionDocument {
 
     @Field(type = FieldType.Text)
     private String title;
+
+    @Field(type = FieldType.Text)
+    private String description;
 
     @Field(type = FieldType.Text)
     private String seller;
@@ -45,6 +50,7 @@ public class AuctionDocument {
         return AuctionDocument.builder()
                 .id(auction.getId())
                 .title(auction.getTitle())
+                .description(auction.getDescription())
                 .seller(auction.getSeller().getUsername())
                 .startPrice(auction.getStartPrice())
                 .currentPrice(auction.getCurrentPrice())

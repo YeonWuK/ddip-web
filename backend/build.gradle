@@ -19,6 +19,7 @@ repositories {
 }
 
 dependencies {
+    implementation 'co.elastic.clients:elasticsearch-java:8.11.2'
     implementation 'org.redisson:redisson-spring-boot-starter:3.23.2'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
     implementation 'org.springframework.boot:spring-boot-starter-security'
