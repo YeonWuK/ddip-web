@@ -11,8 +11,8 @@ public class CustomAccessDeniedException extends AccessDeniedException {
     private final ErrorCode errorCode;
     private final String detail;
 
-    public CustomAccessDeniedException(String msg, ErrorCode errorCode, String detail) {
-        super(msg);
+    public CustomAccessDeniedException(ErrorCode errorCode, String detail) {
+        super(detail);
         this.errorCode = errorCode;
         this.detail = detail;
     }

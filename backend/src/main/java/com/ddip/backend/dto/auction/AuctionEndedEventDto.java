@@ -28,7 +28,7 @@ public class AuctionEndedEventDto {
         return AuctionEndedEventDto.builder()
                 .auctionId(auction.getId())
                 .auctionStatus(auction.getAuctionStatus())
-                .user(UserResponseDto.from(auction.getWinner()))
+                .user(auction.getWinner() == null ? null : UserResponseDto.from(auction.getWinner()))
                 .currentPrice(auction.getCurrentPrice())
                 .endAt(String.valueOf(auction.getEndAt()))
                 .build();

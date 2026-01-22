@@ -36,7 +36,8 @@ public class AuctionResponseDto {
 
     private int bidStep;
 
-    private AuctionStatus status;
+    private AuctionStatus auctionStatus;
+
 
     private LocalDateTime startAt;
 
@@ -54,7 +55,7 @@ public class AuctionResponseDto {
                 .startPrice(auction.getStartPrice())
                 .currentPrice(auction.getCurrentPrice())
                 .bidStep(auction.getBidStep())
-                .status(auction.getAuctionStatus())
+                .auctionStatus(auction.getAuctionStatus())
                 .startAt(auction.getStartAt())
                 .endAt(String.valueOf(auction.getEndAt()))
                 .bids(auction.getBids().stream()

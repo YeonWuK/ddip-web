@@ -107,21 +107,6 @@ public class User extends BaseTimeEntity{
                 .build();
     }
 
-    public static User from(UserResponseDto dto) {
-        return User.builder()
-                .id(dto.getId())
-                .email(dto.getEmail())
-                .username(dto.getUsername())
-                .nickname(dto.getNickname())
-                .phoneNumber(dto.getPhoneNumber())
-                .bankType(dto.getBankType())
-                .account(dto.getAccount())
-                .accountHolder(dto.getAccountHolder())
-                .role(dto.getRole())
-                .isActive(dto.isActive())
-                .build();
-    }
-
     public static User from(SocialUserRequestDto dto) {
         return User.builder()
                 .email(dto.getEmail())

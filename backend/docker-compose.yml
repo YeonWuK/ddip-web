@@ -93,10 +93,6 @@ services:
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
 
-      ES_HOST: elasticsearch
-      ES_PORT: 9200
-    networks:
-      - app-network
 
 volumes:
   mysql-data:

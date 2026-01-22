@@ -43,8 +43,6 @@ public class AuctionRepositoryCustomImpl implements AuctionRepositoryCustom {
     public List<Auction> findEndAuctions(LocalDateTime now, int limit) {
         return jpaQueryFactory
                 .selectFrom(auction)
-                .leftJoin(auction.myBids, myBids).fetchJoin()
-                .leftJoin(myBids.user, new QUser("bidder")).fetchJoin()
                 .where(
                         auction.auctionStatus.eq(AuctionStatus.RUNNING),
                         auction.endAt.loe(now)

@@ -39,7 +39,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
             return;
         }
 
-        String refreshToken = jwtUtils.generateRefreshToken(authentication.getName());
+        String refreshToken = jwtUtils.generateRefreshToken(email);
         Cookie refreshTokenCookie = new Cookie("refresh_token", refreshToken);
         refreshTokenCookie.setPath("/");
         refreshTokenCookie.setHttpOnly(true);

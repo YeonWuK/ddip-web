@@ -20,6 +20,7 @@ public class MyBidsSummaryDto {
 
     private MyAuctionStatus myAuctionStatus;
 
+
     private long lastBidPrice;
 
     public static MyBidsSummaryDto from(MyBids myBids) {

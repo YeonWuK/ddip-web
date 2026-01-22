@@ -15,7 +15,7 @@ public enum ErrorCode {
     INVALID_STATE(HttpStatus.BAD_REQUEST, "요청 상태가 올바르지 않습니다."),
     INSUFFICIENT_POINT(HttpStatus.BAD_REQUEST, "포인트가 부족합니다."),
 
-    // ===== Auth =====
+    // ===== Authentication =====
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다."),
     EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "만료된 토큰입니다."),
@@ -51,7 +51,10 @@ public enum ErrorCode {
 
     // ===== DistributedLock =====
     LOCK_NOT_AVAILABLE(HttpStatus.CONFLICT,"동시 입찰이 발생했습니다. 잠시 후 다시 시도해 주십시오."),
-    LOCK_INTERRUPTED_ERROR(HttpStatus.SERVICE_UNAVAILABLE, "요청 처리 중 문제가 발생했습니다. 잠시 후 다시 시도해 주십시오.");
+    LOCK_INTERRUPTED_ERROR(HttpStatus.SERVICE_UNAVAILABLE, "요청 처리 중 문제가 발생했습니다. 잠시 후 다시 시도해 주십시오."),
+
+    // ===== ES =====
+    SEARCH_RESPONSE_NOT_FOUND(HttpStatus.NOT_FOUND, "검색 결과가 존재하지 않습니다.");
 
     public final HttpStatus httpStatus;
     public final String message;

@@ -19,12 +19,14 @@ repositories {
 }
 
 dependencies {
+    implementation 'co.elastic.clients:elasticsearch-java:8.11.2'
     implementation 'org.redisson:redisson-spring-boot-starter:3.23.2'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
     implementation "com.solapi:sdk:1.0.3"

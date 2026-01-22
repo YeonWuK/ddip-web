@@ -22,6 +22,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import static org.aspectj.runtime.internal.Conversions.intValue;
+
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -51,11 +53,10 @@ public class BidsService {
         // 입찰 최저가 + 현 입찰가
         long minPrice = auction.getCurrentPrice() + auction.getBidStep();
 
-        if (dto.getPrice() == null || dto.getPrice() < minPrice) {
-            throw new InvalidBidStepException(dto.getPrice());
+        if (dto.getPrice() < minPrice) {
+            throw new InvalidBidStepException(intValue(dto.getPrice()));
         }
 
-        // 입찰가 갱신 요청 값으로 갱신
         auction.updateCurrentPrice(dto.getPrice());
 
         CreateBidsDto createBidsDto = new CreateBidsDto(user, auction, dto.getPrice());
@@ -65,6 +66,8 @@ public class BidsService {
         // 해당 유저의 MyBids 가 없으면 생성, 있으면 갱신
         MyBids myBids = myBidsRepository.findByUserIdAndAuctionId(userId, auctionId)
                         .orElseGet(() -> MyBids.from(createMyBidsDto));
+
+        myBidsRepository.save(myBids);
 
         User currentWinner = auction.getCurrentWinner();
 
@@ -78,7 +81,6 @@ public class BidsService {
         // 해당 유저의 상태를 LEADING 으로 갱신
         myBids.updateLastBidPrice(dto.getPrice());
         myBids.markLeadBid();
-        myBidsRepository.save(myBids);
 
         // 경매의 현재 선두 갱신
         auction.updateCurrentWinner(user);
@@ -88,4 +90,18 @@ public class BidsService {
 
         return BidsResponseDto.from(bids);
     }
+//    public void cancelBid(Long userId, Long auctionId) {
+//
+//        User user = userRepository.findById(userId)
+//                .orElseThrow(() -> new UserNotFoundException(userId));
+//
+//        Auction auction = auctionRepository.findById(auctionId)
+//                .orElseThrow(() -> new AuctionNotFoundException(auctionId));
+//
+//        auction.updatePaymentStatus(PaymentStatus.CANCELED);
+//
+//        bidsRepository.deleteAllByAuctionIdAndUserId(user.getId(), auction.getId());
+//
+//
+//    }
 }

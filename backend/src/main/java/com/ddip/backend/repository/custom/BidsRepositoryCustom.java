@@ -12,4 +12,6 @@ public interface BidsRepositoryCustom {
     List<Bids> findBidsByUserId(Long userId);
 
     Optional<Bids> findTopBidByAuctionId(Long auctionId);
+
+    void deleteAllByAuctionIdAndUserId(Long auctionId, Long userId);
 }

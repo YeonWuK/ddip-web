@@ -40,4 +40,12 @@ public class BidsRepositoryCustomImpl implements BidsRepositoryCustom {
                         .fetchFirst()
         );
     }
+
+    @Override
+    public void deleteAllByAuctionIdAndUserId(Long auctionId, Long userId) {
+        jpaQueryFactory.delete(bids)
+                .where(bids.auction.id.eq(auctionId),
+                        bids.user.id.eq(userId))
+                .execute();
+    }
 }
