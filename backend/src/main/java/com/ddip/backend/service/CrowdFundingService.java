@@ -28,7 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
@@ -58,7 +57,9 @@ public class CrowdFundingService {
             throw new RewardTierRequiredException();
         }
 
-        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+
         Project project = Project.toEntity(requestDto, user);
 
         String prefix = s3UrlPrefixFactory.projectPrefix(project.getId());
