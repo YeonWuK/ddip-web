@@ -13,6 +13,7 @@ public enum ErrorCode {
     INVALID_PARAMETER(HttpStatus.BAD_REQUEST, "요청 파라미터가 올바르지 않습니다."),
     MISSING_PARAMETER(HttpStatus.BAD_REQUEST, "필수 요청 값이 누락되었습니다."),
     INVALID_STATE(HttpStatus.BAD_REQUEST, "요청 상태가 올바르지 않습니다."),
+    INSUFFICIENT_POINT(HttpStatus.BAD_REQUEST, "포인트가 부족합니다."),
 
     // ===== Authentication =====
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),

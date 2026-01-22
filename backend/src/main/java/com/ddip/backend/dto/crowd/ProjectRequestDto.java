@@ -10,6 +10,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -32,10 +33,10 @@ public class ProjectRequestDto {
     private Long targetAmount;
 
     @NotNull
-    private LocalDateTime startAt;
+    private LocalDate startAt;
 
     @NotNull
-    private LocalDateTime endAt;
+    private LocalDate endAt;
 
     @Size(max = 100)
     private String categoryPath;
