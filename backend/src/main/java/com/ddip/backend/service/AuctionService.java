@@ -3,6 +3,8 @@ package com.ddip.backend.service;
 import com.ddip.backend.dto.auction.AuctionRequestDto;
 import com.ddip.backend.dto.auction.AuctionResponseDto;
 import com.ddip.backend.dto.enums.AuctionStatus;
+import com.ddip.backend.dto.enums.PointLedgerSource;
+import com.ddip.backend.dto.enums.PointLedgerType;
 import com.ddip.backend.entity.Auction;
 import com.ddip.backend.entity.AuctionImage;
 import com.ddip.backend.entity.MyBids;
@@ -38,14 +40,16 @@ import java.util.stream.Collectors;
 public class AuctionService {
 
     private final AwsS3Util awsS3Util;
+    private final PointService pointService;
     private final S3UrlPrefixFactory s3UrlPrefixFactory;
 
     private final UserRepository userRepository;
     private final MyBidsRepository myBidsRepository;
     private final AuctionRepository auctionRepository;
-    private final SimpMessagingTemplate messagingTemplate;
     private final AuctionImageRepository auctionImageRepository;
     private final AuctionElasticSearchRepository auctionEsRepository;
+
+    private final SimpMessagingTemplate messagingTemplate;
 
     /**
      * 경매 생성
@@ -125,6 +129,14 @@ public class AuctionService {
             awsS3Util.deleteByKey(auctionImage.getS3Key());
         }
 
+        Long currentWinnerId = auction.getCurrentWinner().getId();
+
+        if (currentWinnerId != null) {
+            pointService.changePoint(currentWinnerId, +auction.getCurrentPrice(),
+                    PointLedgerType.REFUND, PointLedgerSource.AUCTION,
+                    auction.getId(), "경매 삭제 입찰자 환불");
+        }
+
         auctionRepository.delete(auction);
     }
 
@@ -156,8 +168,11 @@ public class AuctionService {
                 // 낙찰자 유저 제외 모든 유저 LOST 로 변경
                 myBidsRepository.markWon(auction.getId(), winner.getId());
                 myBidsRepository.markLostExceptWinner(auction.getId(), winner.getId());
-
             }
+
+            pointService.changePoint(auction.getSeller().getId(), +auction.getCurrentPrice(),
+                    PointLedgerType.CHARGE, PointLedgerSource.AUCTION,
+                    auction.getId(), "경매 종료 판매자 입금");
 
             auction.updateAuctionStatus(AuctionStatus.ENDED);
 
