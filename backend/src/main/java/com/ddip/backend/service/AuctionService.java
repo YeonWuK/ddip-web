@@ -96,6 +96,9 @@ public class AuctionService {
     }
 
 
+    /**
+     * 경메 종료
+     */
     @Scheduled(cron = "0 * * * * *")
     public void endExpiredAuction() {
         LocalDateTime now = LocalDateTime.now();
