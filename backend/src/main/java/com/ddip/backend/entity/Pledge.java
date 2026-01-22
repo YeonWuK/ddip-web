@@ -55,7 +55,7 @@ public class Pledge extends BaseTimeEntity {
         if (!this.user.getId().equals(userId)) throw new PledgeAccessDeniedException(this.id ,userId);
     }
 
-    public void assertNotCanceled() {
+    public void assertCancelable() {
         if (this.status == PledgeStatus.CANCELED) {
             throw new IllegalStateException("이미 취소된 후원입니다.");
         }
