@@ -26,26 +26,4 @@ public class BidsRepositoryCustomImpl implements BidsRepositoryCustom {
                 .orderBy(bids.createTime.desc())
                 .fetch();
     }
-
-    @Override
-    public Optional<Bids>  findTopBidByAuctionId(Long auctionId) {
-        return Optional.ofNullable(
-                jpaQueryFactory
-                        .selectFrom(bids)
-                        .where(bids.auction.id.eq(auctionId))
-                        .orderBy(
-                                bids.price.desc(),
-                                bids.id.asc()
-                        )
-                        .fetchFirst()
-        );
-    }
-
-    @Override
-    public void deleteAllByAuctionIdAndUserId(Long auctionId, Long userId) {
-        jpaQueryFactory.delete(bids)
-                .where(bids.auction.id.eq(auctionId),
-                        bids.user.id.eq(userId))
-                .execute();
-    }
 }

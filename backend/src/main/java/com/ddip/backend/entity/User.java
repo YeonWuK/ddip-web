@@ -69,7 +69,7 @@ public class User extends BaseTimeEntity{
     private boolean isActive;
 
     @Column(name = "point_balance")
-    private long pointBalance;
+    private Long pointBalance;
 
     @Builder.Default
     @OneToMany(mappedBy = "creator", orphanRemoval = true, cascade = CascadeType.ALL)
@@ -103,6 +103,7 @@ public class User extends BaseTimeEntity{
                 .bankType(dto.getBankType())
                 .account(dto.getAccount())
                 .accountHolder(dto.getAccountHolder())
+                .pointBalance(0L)
                 .isActive(true)
                 .build();
     }
@@ -115,6 +116,7 @@ public class User extends BaseTimeEntity{
                 .phoneNumber("TMP")
                 .provider(AuthProvider.valueOf(dto.getProvider()))
                 .role(dto.getRole())
+                .pointBalance(0L)
                 .isActive(false)
                 .build();
     }

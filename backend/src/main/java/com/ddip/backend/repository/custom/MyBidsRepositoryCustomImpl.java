@@ -43,6 +43,22 @@ public class MyBidsRepositoryCustomImpl implements MyBidsRepositoryCustom {
     }
 
     @Override
+    public Optional<MyBids> findTopByAuctionId(Long auctionId) {
+        return Optional.ofNullable(
+                jpaQueryFactory
+                        .selectFrom(myBids)
+                        .leftJoin(myBids.user, user).fetchJoin()
+                        .where(myBids.auction.id.eq(auctionId))
+                        .orderBy(
+                                myBids.lastBidPrice.desc(),
+                                myBids.modifiedDate.asc(),
+                                myBids.id.asc()
+                        )
+                        .fetchFirst()
+        );
+    }
+
+    @Override
     public void markWon(Long auctionId, Long winnerUserId) {
         jpaQueryFactory
                 .update(myBids)
