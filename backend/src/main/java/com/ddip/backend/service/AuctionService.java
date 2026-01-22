@@ -3,13 +3,14 @@ package com.ddip.backend.service;
 import com.ddip.backend.dto.auction.AuctionRequestDto;
 import com.ddip.backend.dto.auction.AuctionResponseDto;
 import com.ddip.backend.dto.enums.AuctionStatus;
+import com.ddip.backend.dto.enums.PointLedgerSource;
+import com.ddip.backend.dto.enums.PointLedgerType;
 import com.ddip.backend.entity.Auction;
 import com.ddip.backend.entity.AuctionImage;
 import com.ddip.backend.entity.MyBids;
 import com.ddip.backend.entity.User;
 import com.ddip.backend.es.document.AuctionDocument;
 import com.ddip.backend.es.repository.AuctionElasticSearchRepository;
-import com.ddip.backend.es.service.AuctionSearchService;
 import com.ddip.backend.exception.auction.AuctionDeniedException;
 import com.ddip.backend.dto.auction.AuctionEndedEventDto;
 import com.ddip.backend.exception.auction.AuctionNotFoundException;
@@ -38,18 +39,17 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AuctionService {
 
-    private final AuctionSearchService auctionSearchService;
-
     private final AwsS3Util awsS3Util;
+    private final PointService pointService;
     private final S3UrlPrefixFactory s3UrlPrefixFactory;
 
     private final UserRepository userRepository;
     private final MyBidsRepository myBidsRepository;
     private final AuctionRepository auctionRepository;
-    private final SimpMessagingTemplate messagingTemplate;
     private final AuctionImageRepository auctionImageRepository;
     private final AuctionElasticSearchRepository auctionEsRepository;
 
+    private final SimpMessagingTemplate messagingTemplate;
 
     /**
      * 경매 생성
@@ -66,24 +66,16 @@ public class AuctionService {
 
         String prefix = s3UrlPrefixFactory.auctionPrefix(auction.getId());
 
-        String mainImageKey = null;
-
         // 이미지 다중 저장
         for (MultipartFile multipartFile : auctionFiles) {
             String key = awsS3Util.uploadFile(multipartFile, prefix);
-
-            if (mainImageKey == null) {
-                mainImageKey = key;
-            }
-
             AuctionImage auctionImage = AuctionImage.from(auction, key);
+
             auctionImageRepository.save(auctionImage);
         }
 
-        auction.updateMainImageKey(mainImageKey);
-
         // Es 인덱스 생성
-        AuctionDocument auctionDocument = AuctionDocument.from(auction, mainImageKey);
+        AuctionDocument auctionDocument = AuctionDocument.from(auction);
         auctionEsRepository.save(auctionDocument);
 
         return AuctionResponseDto.from(auction);
@@ -131,8 +123,15 @@ public class AuctionService {
             awsS3Util.deleteByKey(auctionImage.getS3Key());
         }
 
+        Long currentWinnerId = auction.getCurrentWinner().getId();
+
+        if (currentWinnerId != null) {
+            pointService.changePoint(currentWinnerId, +auction.getCurrentPrice(),
+                    PointLedgerType.REFUND, PointLedgerSource.AUCTION,
+                    auction.getId(), "경매 삭제 입찰자 환불");
+        }
+
         auctionRepository.delete(auction);
-        auctionEsRepository.deleteById(auctionId);
     }
 
 
@@ -165,11 +164,11 @@ public class AuctionService {
                 myBidsRepository.markLostExceptWinner(auction.getId(), winner.getId());
             }
 
+            pointService.changePoint(auction.getSeller().getId(), +auction.getCurrentPrice(),
+                    PointLedgerType.CHARGE, PointLedgerSource.AUCTION,
+                    auction.getId(), "경매 종료 판매자 입금");
+
             auction.updateAuctionStatus(AuctionStatus.ENDED);
-
-            AuctionDocument auctionDocument = AuctionDocument.from(auction, auction.getMainImagKey());
-
-            auctionEsRepository.save(auctionDocument);
 
             // 프론트에 STOMP 로 알림
             AuctionEndedEventDto dto = AuctionEndedEventDto.from(auction);
