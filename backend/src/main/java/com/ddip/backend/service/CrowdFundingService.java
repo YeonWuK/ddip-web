@@ -18,9 +18,12 @@ import com.ddip.backend.repository.ProjectRepository;
 import com.ddip.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
@@ -31,6 +34,7 @@ public class CrowdFundingService {
 
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
+    private final PledgeService pledgeService;
 
     public Project getProjectEntity(Long projectId){
         return projectRepository.findById(projectId).orElseThrow(() -> new ProjectNotFoundException(projectId));
@@ -121,25 +125,33 @@ public class CrowdFundingService {
 
         project.assertOwnedBy(userId);
 
-        log.info("현재 프로젝트 상태 : {}", project.getStatus());
-        // 상태 전이 검증
-        ProjectStatus status = project.getStatus();
+        // 상태 전이 검증 — DRAFT 만 허용
+        project.assertStatus(ProjectStatus.DRAFT);
 
-        if (status == ProjectStatus.OPEN) {
-            // 이미 오픈이면 그대로 두기 (idempotent)
-            log.info("이미 OPEN 된 상태 입니다. projectId={}", projectId);
-            return;
-        }
-
-        if (status != ProjectStatus.DRAFT) {
-            throw new InvalidProjectStatusException(status, ProjectStatus.DRAFT);
-        }
-
-        if (project.getRewardTiers() == null || project.getRewardTiers().isEmpty()) {
+        if (project.getRewardTiers().isEmpty()) {
             throw new RewardTierRequiredException(projectId);
         }
 
         project.openFunding();
         log.info("성공적으로 open funding 상태가 되었습니다. projectId={}", projectId);
     }
+
+    @Scheduled(cron = "59 59 23 * * *")
+    public void closeExpireProjects(){
+
+        LocalDate today = LocalDate.now();
+
+        List<Project> expiredProjects = projectRepository.findByStatusAndEndAtLessThanEqual(ProjectStatus.OPEN, today);
+
+        for (Project project : expiredProjects) {
+            boolean success = project.closeProject();
+
+            if (!success) {
+                // 펀딩 실패 → 환불
+                pledgeService.refundAllFailedProjects(project.getId());
+            }
+        }
+    }
+
+
 }

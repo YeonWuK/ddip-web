@@ -7,7 +7,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 
 @Getter
@@ -22,8 +22,8 @@ public class ProjectResponseDto {
     private Long targetAmount;
     private Long currentAmount;
     private ProjectStatus status;
-    private LocalDateTime startAt;
-    private LocalDateTime endAt;
+    private LocalDate startAt;
+    private LocalDate endAt;
     private String categoryPath;
     private String tags;
     private String summary;

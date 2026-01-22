@@ -17,6 +17,8 @@ services:
       timeout: 5s
       retries: 20
       start_period: 20s
+    networks:
+      - app-network
 
   redis:
     image: redis:7.2
@@ -31,6 +33,42 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+    networks:
+      - app-network
+
+  elasticsearch:
+    image: yeonwoo02/ddip-es-nori:8.6.0   # 커스텀 ES+Nori 이미지
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - cluster.name=ddip-es
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9200 >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - app-network
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.6.0
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    networks:
+      - app-network
 
   backend:
     image: yeonwoo02/ddip-backend:latest
@@ -41,7 +79,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-
+      elasticsearch:
+        condition: service_healthy
     ports:
       - "8080:8080"
     env_file:
@@ -54,6 +93,16 @@ services:
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
 
+      ES_HOST: elasticsearch
+      ES_PORT: 9200
+    networks:
+      - app-network
+
 volumes:
   mysql-data:
   redis-data:
+  es-data:
+
+networks:
+  app-network:
+    driver: bridge

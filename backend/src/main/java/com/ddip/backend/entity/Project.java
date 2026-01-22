@@ -11,11 +11,13 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Entity
 @Getter
 @Builder
@@ -52,10 +54,10 @@ public class Project extends BaseTimeEntity {
     private ProjectStatus status;
 
     @Column(name = "start_at")
-    private LocalDateTime startAt;
+    private LocalDate startAt;
 
     @Column(name = "end_at")
-    private LocalDateTime endAt;
+    private LocalDate endAt;
 
     @Column(name = "thumbnail_url", length = 500)
     private String thumbnailUrl;
@@ -138,8 +140,10 @@ public class Project extends BaseTimeEntity {
         if (!this.getCreator().getId().equals(userId)) throw new ProjectAccessDeniedException(this.id ,userId);
     }
 
-    public void assertOpen() {
-        if (this.status != ProjectStatus.OPEN) {throw new InvalidProjectStatusException(this.status, ProjectStatus.OPEN);}
+    public void assertStatus(ProjectStatus expected) {
+        if (this.status != expected) {
+            throw new InvalidProjectStatusException(this.status, expected);
+        }
     }
 
     public void assertEditable() {
@@ -164,4 +168,23 @@ public class Project extends BaseTimeEntity {
         // 새 DTO 리스트 기준으로 다시 채우기
         dto.getRewardTiers().forEach(this::addRewardTier);
     }
+
+    public boolean closeProject() {
+        if (this.status != ProjectStatus.OPEN) {
+            return this.status == ProjectStatus.SUCCESS; // 이미 확정된 경우 등
+        }
+
+        boolean success = this.currentAmount >= this.targetAmount;
+
+        if (success) {
+            this.status = ProjectStatus.SUCCESS;
+            this.pledges.forEach(Pledge::confirmedFunding);
+        } else {
+            this.status = ProjectStatus.FAILED;
+            this.pledges.forEach(Pledge::canceledFunding);
+        }
+
+        return success;
+    }
+
 }
