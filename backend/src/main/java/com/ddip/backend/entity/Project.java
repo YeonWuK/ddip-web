@@ -178,10 +178,8 @@ public class Project extends BaseTimeEntity {
 
         if (success) {
             this.status = ProjectStatus.SUCCESS;
-            this.pledges.forEach(Pledge::confirmedFunding);
         } else {
             this.status = ProjectStatus.FAILED;
-            this.pledges.forEach(Pledge::canceledFunding);
         }
 
         return success;

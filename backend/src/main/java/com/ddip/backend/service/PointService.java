@@ -29,18 +29,12 @@ public class PointService {
     private void applyPointChange(User user, long delta, PointLedgerType type,
                                   PointLedgerSource source, Long referenceId, String description) {
 
-        if (delta == 0) {
-            log.info("포인트 변화량이 0입니다. ledger 기록 스킵. userId={}, type={}, source={}, ref={}",
-                    user.getId(), type, source, referenceId);
-            return;
-        }
-
-        // 실 잔액 변경
         if (delta > 0) {
             user.addPoint(delta);
         } else {
             long abs = Math.abs(delta);
             if (user.getPointBalance() < abs) {
+                log.info("보유 잔액이 부족합니다.");
                 throw new InsufficientPointException(user.getId(), abs, user.getPointBalance());
             }
             user.subtractPoint(abs);

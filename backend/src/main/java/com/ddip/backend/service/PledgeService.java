@@ -102,7 +102,7 @@ public class PledgeService {
         // 본인의 pledge 맞는지 검증
         pledge.assertOwnedBy(userId);
         // 이미 취소 됬거나 확정, 배송중 인경우 취소 불가.
-        pledge.assertNotCanceled();
+        pledge.assertCancelable();
 
         long amount = pledge.getAmount();
 
@@ -117,9 +117,13 @@ public class PledgeService {
     }
 
     public void refundAllFailedProjects(Long projectId) {
+        // 펀딩 실패 시 환불 대상은 "결제 완료(PAID)" 상태인 애들
         List<Pledge> pledges = pledgeRepository.findByProjectIdAndStatus(projectId, PledgeStatus.PAID);
+
         for (Pledge pledge : pledges) {
             refundPointForPledge(pledge.getUser().getId(), pledge.getAmount(), pledge.getId());
+            pledge.canceledFunding();
+            pledge.getProject().decreaseCurrentAmount(pledge.getAmount()); // 캐시도 롤백
         }
     }
 
