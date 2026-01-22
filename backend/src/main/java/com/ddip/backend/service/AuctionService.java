@@ -4,6 +4,7 @@ import com.ddip.backend.dto.auction.AuctionRequestDto;
 import com.ddip.backend.dto.auction.AuctionResponseDto;
 import com.ddip.backend.dto.enums.AuctionStatus;
 import com.ddip.backend.entity.Auction;
+import com.ddip.backend.entity.AuctionImage;
 import com.ddip.backend.entity.MyBids;
 import com.ddip.backend.entity.User;
 import com.ddip.backend.es.document.AuctionDocument;
@@ -13,14 +14,18 @@ import com.ddip.backend.dto.auction.AuctionEndedEventDto;
 import com.ddip.backend.exception.auction.AuctionNotFoundException;
 import com.ddip.backend.exception.auction.InvalidBidStepException;
 import com.ddip.backend.exception.user.UserNotFoundException;
+import com.ddip.backend.repository.AuctionImageRepository;
 import com.ddip.backend.repository.AuctionRepository;
 import com.ddip.backend.repository.MyBidsRepository;
 import com.ddip.backend.repository.UserRepository;
+import com.ddip.backend.utils.AwsS3Util;
+import com.ddip.backend.utils.S3UrlPrefixFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,16 +37,21 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AuctionService {
 
+    private final AwsS3Util awsS3Util;
+    private final S3UrlPrefixFactory s3UrlPrefixFactory;
+
     private final UserRepository userRepository;
-    private final AuctionRepository auctionRepository;
     private final MyBidsRepository myBidsRepository;
+    private final AuctionRepository auctionRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final AuctionImageRepository auctionImageRepository;
     private final AuctionElasticSearchRepository auctionEsRepository;
 
     /**
      * 경매 생성
      */
-    public AuctionResponseDto createAuction(Long userId, AuctionRequestDto dto) {
+    public AuctionResponseDto createAuction(List<MultipartFile> auctionFiles,
+                                            Long userId, AuctionRequestDto dto) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
@@ -49,6 +59,16 @@ public class AuctionService {
 
         Auction auction = Auction.from(user, dto);
         auctionRepository.save(auction);
+
+        String prefix = s3UrlPrefixFactory.auctionPrefix(auction.getId());
+
+        // 이미지 다중 저장
+        for (MultipartFile multipartFile : auctionFiles) {
+            String key = awsS3Util.uploadFile(multipartFile, prefix);
+            AuctionImage auctionImage = AuctionImage.from(auction, key);
+
+            auctionImageRepository.save(auctionImage);
+        }
 
         // Es 인덱스 생성
         AuctionDocument auctionDocument = AuctionDocument.from(auction);
@@ -92,6 +112,13 @@ public class AuctionService {
             throw new AuctionDeniedException(auctionId, userId);
         }
 
+        List<AuctionImage> auctionImages = auctionImageRepository.findImagesByAuctionId(auction.getId());
+
+        // S3에 있는 이미지 삭제
+        for (AuctionImage auctionImage : auctionImages) {
+            awsS3Util.deleteByKey(auctionImage.getS3Key());
+        }
+
         auctionRepository.delete(auction);
     }
 
@@ -126,7 +153,6 @@ public class AuctionService {
 
             }
 
-            // 경매 종료
             auction.updateAuctionStatus(AuctionStatus.ENDED);
 
             // 프론트에 STOMP 로 알림

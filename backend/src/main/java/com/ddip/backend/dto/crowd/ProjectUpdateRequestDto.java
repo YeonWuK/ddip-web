@@ -40,4 +40,6 @@ public class ProjectUpdateRequestDto {
 
     private List<RewardTierRequestDto> rewardTiers;
 
+    private List<Long> imageIds;
+
 }

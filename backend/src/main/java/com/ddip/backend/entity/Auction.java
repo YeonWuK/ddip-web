@@ -70,6 +70,10 @@ public class Auction extends BaseTimeEntity{
     @OneToMany(mappedBy = "auction", orphanRemoval = true, cascade = CascadeType.ALL)
     private List<MyBids> myBids = new ArrayList<>();
 
+    @Builder.Default
+    @OneToMany(mappedBy = "auction", orphanRemoval = true, cascade = CascadeType.ALL)
+    private List<AuctionImage> images = new ArrayList<>();
+
     public static Auction from(User user, AuctionRequestDto dto) {
         return Auction.builder()
                 .seller(user)

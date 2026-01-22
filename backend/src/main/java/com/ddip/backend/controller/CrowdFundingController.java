@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -27,11 +28,12 @@ public class CrowdFundingController {
      * @param projectRequestDto 프로젝트 생성 요청 DTO
      * @return 생성된 프로젝트 ID
      */
-    @PostMapping
+    @PostMapping(consumes = {"multipart/form-data"} )
     public ResponseEntity<?> createCrowdFunding(@AuthenticationPrincipal CustomUserDetails customUserDetails,
-                                                @Valid @RequestBody ProjectRequestDto projectRequestDto) {
+                                                @Valid @RequestPart(value = "data") ProjectRequestDto projectRequestDto,
+                                                @RequestPart(name = "file") List<MultipartFile> multipartFiles) {
         Long userId = customUserDetails.getUserId();
-        long projectId = crowdFundingService.createProject(projectRequestDto, userId);
+        long projectId = crowdFundingService.createProject(multipartFiles, projectRequestDto , userId);
         return ResponseEntity.ok(projectId);
     }
 
@@ -54,13 +56,14 @@ public class CrowdFundingController {
      *
      * (현재 비활성화 상태) - 리워드 수정 따로 Project 수정 따로 할지에 대한 논의
      */
-    @PatchMapping("/{projectId}")
+    @PatchMapping(value = "/{projectId}", consumes = {"multipart/form-data"})
     public ResponseEntity<?> updateCrowdFunding(
             @AuthenticationPrincipal CustomUserDetails customUserDetails, @PathVariable Long projectId,
-            @Valid @RequestBody ProjectUpdateRequestDto requestDto) {
+            @Valid @RequestPart(value = "data") ProjectUpdateRequestDto requestDto,
+            @RequestPart(name = "file") List<MultipartFile> multipartFiles) {
 
         Long userId = customUserDetails.getUserId();
-        crowdFundingService.updateProject(projectId, userId, requestDto);
+        crowdFundingService.updateProject(multipartFiles, projectId, userId, requestDto);
         return ResponseEntity.ok().build();
 
     }

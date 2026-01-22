@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
 
 @Getter
 @Builder
@@ -20,5 +21,4 @@ public class AuctionRequestDto {
     private int bidStep;
 
     private String endAt;
-
 }

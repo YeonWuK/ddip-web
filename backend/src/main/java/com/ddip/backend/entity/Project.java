@@ -79,6 +79,10 @@ public class Project extends BaseTimeEntity {
     @Builder.Default
     private List<Pledge> pledges = new ArrayList<>();
 
+    @Builder.Default
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProjectImage> images = new ArrayList<>();
+
     public static Project toEntity(ProjectRequestDto requestDto, User creator) {
         Project project = Project.builder()
                 //Not null
