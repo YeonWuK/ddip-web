@@ -41,25 +41,13 @@ public class Pledge extends BaseTimeEntity {
     @Column(length = 20, nullable = false)
     private PledgeStatus status;
 
-    public void cancel() {
-        this.status = PledgeStatus.CANCELED;
-    }
-
-    public static Pledge toEntity(User user, Project project, RewardTier rewardTier, int quantity) {
-
-        if (quantity <= 0) {
-            throw new InvalidQuantityException(quantity);
-        }
-
-        long unitPrice = rewardTier.getPrice();
-        long amount = unitPrice * (long) quantity;
-
+    public static Pledge toEntity(User user, Project project, RewardTier rewardTier, long requiredAmount) {
         return Pledge.builder()
                 .user(user)
                 .project(project)
                 .rewardTier(rewardTier)
-                .amount(amount)
-                .status(PledgeStatus.CONFIRMED)
+                .amount(requiredAmount)
+                .status(PledgeStatus.PENDING)
                 .build();
     }
 
@@ -67,10 +55,29 @@ public class Pledge extends BaseTimeEntity {
         if (!this.user.getId().equals(userId)) throw new PledgeAccessDeniedException(this.id ,userId);
     }
 
-    public void assertNotCanceled() {
+    public void assertCancelable() {
         if (this.status == PledgeStatus.CANCELED) {
             throw new IllegalStateException("이미 취소된 후원입니다.");
         }
+        // 결제 완료(PAID)까지만 취소 허용
+        if (this.status == PledgeStatus.CONFIRMED || this.status == PledgeStatus.SHIPPED) {
+            throw new IllegalStateException("이 결제는 이미 확정/배송 중이라 취소할 수 없습니다.");
+        }
     }
 
+    public void confirmedFunding(){
+        this.status = PledgeStatus.CONFIRMED;
+    }
+
+    public void canceledFunding(){
+        this.status = PledgeStatus.CANCELED;
+    }
+
+    public void shippedFunding(){
+        this.status = PledgeStatus.SHIPPED;
+    }
+
+    public void paidFunding(){
+        this.status = PledgeStatus.PAID;
+    }
 }

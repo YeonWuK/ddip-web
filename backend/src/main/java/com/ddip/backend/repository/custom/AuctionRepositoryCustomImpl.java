@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.ddip.backend.entity.QAuction.auction;
+import static com.ddip.backend.entity.QAuctionImage.auctionImage;
 import static com.ddip.backend.entity.QMyBids.myBids;
 import static com.ddip.backend.entity.QUser.user;
 
@@ -23,9 +24,10 @@ public class AuctionRepositoryCustomImpl implements AuctionRepositoryCustom {
     @Override
     public Optional<Auction> findDetailById(Long auctionId) {
         return Optional.ofNullable(jpaQueryFactory.selectFrom(auction)
+                .leftJoin(auction.myBids, myBids).fetchJoin()
+                .leftJoin(auction.images, auctionImage).fetchJoin()
                 .leftJoin(auction.seller, new QUser("seller")).fetchJoin()
                 .leftJoin(auction.winner, new QUser("winner")).fetchJoin()
-                .leftJoin(myBids.user, new QUser("bidder")).fetchJoin()
                 .where(auction.id.eq(auctionId))
                 .fetchOne());
     }
@@ -33,6 +35,8 @@ public class AuctionRepositoryCustomImpl implements AuctionRepositoryCustom {
     @Override
     public List<Auction> findAllByOrderByIdDesc() {
         return jpaQueryFactory.selectFrom(auction)
+                .leftJoin(auction.myBids, myBids).fetchJoin()
+                .leftJoin(auction.images, auctionImage).fetchJoin()
                 .leftJoin(auction.seller, new QUser("seller")).fetchJoin()
                 .leftJoin(auction.winner, new QUser("winner")).fetchJoin()
                 .orderBy(auction.id.desc())
