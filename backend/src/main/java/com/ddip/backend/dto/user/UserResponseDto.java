@@ -22,7 +22,7 @@ public class UserResponseDto {
     private String account;
     private String accountHolder;
     private Role role;
-    private long pointBalance;
+    private Long pointBalance;
     private BankType bankType;
     private boolean isActive;
 
