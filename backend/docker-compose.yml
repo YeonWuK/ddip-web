@@ -37,7 +37,7 @@ services:
       - app-network
 
   elasticsearch:
-    image: yeonwoo02/ddip-es-nori:8.6.0
+    image: yeonwoo02/ddip-es-nori:8.6.0   # 커스텀 ES+Nori 이미지
     container_name: elasticsearch
     environment:
       - discovery.type=single-node
