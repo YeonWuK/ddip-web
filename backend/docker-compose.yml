@@ -37,7 +37,7 @@ services:
       - app-network
 
   elasticsearch:
-    image: yeonwoo02/ddip-es-nori:8.6.0   # 커스텀 ES+Nori 이미지
+    image: yeonwoo02/ddip-es-nori:8.6.0
     container_name: elasticsearch
     environment:
       - discovery.type=single-node
@@ -85,14 +85,8 @@ services:
       - "8080:8080"
     env_file:
       - .env
-    environment:
-      DB_URL: jdbc:mysql://mysql:3306/ddip?serverTimezone=Asia/Seoul&useSSL=false&allowPublicKeyRetrieval=true
-      DB_USERNAME: root
-      DB_PASSWORD: root
-
-      SPRING_DATA_REDIS_HOST: redis
-      SPRING_DATA_REDIS_PORT: 6379
-
+    networks:
+      - app-network
 
 volumes:
   mysql-data:
