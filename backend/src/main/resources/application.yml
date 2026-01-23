@@ -100,3 +100,6 @@ solapi:
   api-key: ${SOLAPI_API_KEY}
   api-secret: ${SOLAPI_API_SECRET}
   from: ${SOLAPI_FROM}
+
+es:
+  port: ${ES_PORT}

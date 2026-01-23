@@ -20,11 +20,14 @@ public class ElasticSearchConfig extends ElasticsearchConfiguration {
     @Value("${spring.elasticsearch.uris}")
     private String uri;
 
+    @Value("${es.port}")
+    private String port;
+
     @NotNull
     @Override
     public ClientConfiguration clientConfiguration() {
         return ClientConfiguration.builder()
-                .connectedTo(uri)
+                .connectedTo(port)
                 .build();
     }
 
