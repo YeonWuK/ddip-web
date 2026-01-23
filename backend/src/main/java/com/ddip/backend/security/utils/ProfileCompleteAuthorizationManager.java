@@ -30,6 +30,10 @@ public class ProfileCompleteAuthorizationManager
 
         Authentication auth = authentication.get();
 
+        if (auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken) {
+            return new AuthorizationDecision(false);
+        }
+
         CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
 
         User user = userRepository.findByEmail(userDetails.getEmail())
