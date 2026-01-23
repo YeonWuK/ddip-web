@@ -16,12 +16,13 @@ public class UserResponseDto {
 
     private Long id;
     private String email;
-    private String name;
+    private String username;
     private String nickname;
     private String phoneNumber;
     private String account;
     private String accountHolder;
     private Role role;
+    private Long pointBalance;
     private BankType bankType;
     private boolean isActive;
 
@@ -29,14 +30,15 @@ public class UserResponseDto {
         return UserResponseDto.builder()
                 .id(user.getId())
                 .email(user.getEmail())
-                .name(user.getNickname())
+                .username(user.getUsername())
                 .nickname(user.getNickname())
                 .phoneNumber(user.getPhoneNumber())
                 .account(user.getAccount())
                 .accountHolder(user.getAccountHolder())
+                .pointBalance(user.getPointBalance())
                 .role(user.getRole())
                 .bankType(user.getBankType())
-                .isActive(user.getIsActive())
+                .isActive(user.isActive())
                 .build();
     }
 }

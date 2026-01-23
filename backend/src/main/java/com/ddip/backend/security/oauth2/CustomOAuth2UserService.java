@@ -11,11 +11,13 @@ import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 
 @Slf4j
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
@@ -29,12 +31,13 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         Oauth2UserInfo oauth2UserInfo = getOauth2UserInfo(registrationId, oAuth2UserAttributes);
 
-        User user = createUserFromOauth(oauth2UserInfo);
+        User newUser = createUserFromOauth(oauth2UserInfo);
 
-        if (!userRepository.existsByEmail(user.getEmail())){
-            userRepository.save(user);
-        }
-        
+        User user = userRepository.findByEmail(newUser.getEmail())
+                .orElseGet(() -> userRepository.save(newUser));
+
+        log.info("Created new user: {}", user.getId());
+
         return new CustomUserDetails(user, oAuth2UserAttributes);
     }
 

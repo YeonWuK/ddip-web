@@ -27,22 +27,6 @@ public class UserApiController {
     private final JwtUtils jwtUtils;
     private final TokenBlackListService tokenBlackListService;
 
-    /**
-     * 로그아웃
-     */
-    @PostMapping("/logout")
-    public ResponseEntity<?> logout(HttpServletRequest request) {
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String accessToken = authHeader.substring(7);
-            long expiration = jwtUtils.extractAllClaims(accessToken).getExpiration().getTime() - System.currentTimeMillis();
-
-            tokenBlackListService.addToBlackList(accessToken, expiration);
-        }
-
-        SecurityContextHolder.clearContext();
-        return ResponseEntity.ok().body("로그아웃 완료");
-    }
 
     /**
      * 회원가입
@@ -92,15 +76,54 @@ public class UserApiController {
     }
 
     /**
+     * 프로필 조회
+     */
+    @GetMapping("/profile")
+    public ResponseEntity<?> getProfile(@AuthenticationPrincipal CustomUserDetails customUserDetails) {
+
+        UserResponseDto dto = userService.getUserProfile(customUserDetails.getUserId());
+
+        return ResponseEntity.ok(dto);
+    }
+
+    /**
+     * 마이페이지 조회
+     */
+    @GetMapping("/my-page")
+    public ResponseEntity<?> getMyPage(@AuthenticationPrincipal CustomUserDetails customUserDetails) {
+
+        UserPageResponseDto dto = userService.getUserPage(customUserDetails.getUserId());
+
+        return ResponseEntity.ok(dto);
+    }
+
+    /**
      *  미완성 프로필 작성
      */
     @PatchMapping("/update-profile")
     public ResponseEntity<?> updateProfile(@AuthenticationPrincipal CustomUserDetails customUserDetails,
                                            @RequestBody ProfileRequestDto dto)  {
 
-        UserResponseDto userResponseDto = userService.putProfile(customUserDetails.getUserId(), dto);
+        UserResponseDto userResponseDto = userService.completeProfile(customUserDetails.getEmail(), dto);
 
         return ResponseEntity.ok(userResponseDto);
+    }
+
+    /**
+     * 로그아웃
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String accessToken = authHeader.substring(7);
+            long expiration = jwtUtils.extractAllClaims(accessToken).getExpiration().getTime() - System.currentTimeMillis();
+
+            tokenBlackListService.addToBlackList(accessToken, expiration);
+        }
+
+        SecurityContextHolder.clearContext();
+        return ResponseEntity.ok().body("로그아웃 완료");
     }
 
     /**
@@ -128,8 +151,8 @@ public class UserApiController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Blacklist refresh token expired");
         }
 
-        String username = jwtUtils.extractUserEmail(refreshToken);
-        String newAccessToken = jwtUtils.generateToken(username);
+        String email = jwtUtils.extractUserEmail(refreshToken);
+        String newAccessToken = jwtUtils.generateToken(email);
 
         return ResponseEntity.ok("{\"newAccessToken\": \"" + newAccessToken + "\"}");
     }

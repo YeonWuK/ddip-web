@@ -10,6 +10,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -32,10 +33,10 @@ public class ProjectRequestDto {
     private Long targetAmount;
 
     @NotNull
-    private LocalDateTime startAt;
+    private LocalDate startAt;
 
     @NotNull
-    private LocalDateTime endAt;
+    private LocalDate endAt;
 
     @Size(max = 100)
     private String categoryPath;
@@ -45,6 +46,14 @@ public class ProjectRequestDto {
 
     @Size(max = 200)
     private String summary;
+
+    @NotBlank
+    private String thumbnailImageUrl;
+
+//    // 본문 이미지들 (2~3개, 순서 중요)
+//    @NotNull
+//    @Size(max = 5)
+//    private List<@NotBlank String> contentImageUrls;
 
     @NotNull
     @Valid

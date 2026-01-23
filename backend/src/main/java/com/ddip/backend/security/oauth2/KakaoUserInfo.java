@@ -1,5 +1,6 @@
 package com.ddip.backend.security.oauth2;
 
+import com.ddip.backend.dto.enums.AuthProvider;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -19,9 +20,7 @@ public class KakaoUserInfo implements Oauth2UserInfo {
     }
 
     @Override
-    public String getProvider() {
-        return "kakao";
-    }
+    public String getProvider() {return AuthProvider.KAKAO.name();}
 
     @Override
     public String getEmail() {
