@@ -2,13 +2,17 @@ package com.ddip.backend.es.service;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import co.elastic.clients.elasticsearch.core.GetResponse;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import com.ddip.backend.dto.es.AuctionSearchResponse;
+import com.ddip.backend.es.document.AuctionDocument;
+import com.ddip.backend.es.repository.AuctionElasticSearchRepository;
 import com.ddip.backend.es.util.BuildSearchQueryUtil;
 import com.ddip.backend.exception.es.SearchResponseNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -20,6 +24,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -27,6 +32,7 @@ public class AuctionSearchService {
 
     private final ElasticsearchClient elasticsearchClient;
     private final BuildSearchQueryUtil buildSearchQueryUtil;
+    private final AuctionElasticSearchRepository auctionElasticSearchRepository;
 
     /**
      * 일반 검색
