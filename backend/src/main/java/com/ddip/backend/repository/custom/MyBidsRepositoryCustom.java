@@ -14,6 +14,4 @@ public interface MyBidsRepositoryCustom {
     void markLostExceptWinner(Long auctionId, Long winnerUserId);
 
     Optional<MyBids> findLeadingByAuctionId(Long auctionId);
-
-    Optional<MyBids> findTopByAuctionId(Long auctionId);
 }

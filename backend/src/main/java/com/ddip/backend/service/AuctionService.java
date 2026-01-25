@@ -5,7 +5,6 @@ import com.ddip.backend.dto.admin.auction.AdminAuctionSearchCondition;
 import com.ddip.backend.dto.auction.AuctionRequestDto;
 import com.ddip.backend.dto.auction.AuctionResponseDto;
 import com.ddip.backend.dto.enums.AuctionStatus;
-import com.ddip.backend.dto.enums.MyAuctionStatus;
 import com.ddip.backend.dto.enums.PointLedgerSource;
 import com.ddip.backend.dto.enums.PointLedgerType;
 import com.ddip.backend.entity.Auction;
@@ -14,8 +13,9 @@ import com.ddip.backend.entity.MyBids;
 import com.ddip.backend.entity.User;
 import com.ddip.backend.es.document.AuctionDocument;
 import com.ddip.backend.es.repository.AuctionElasticSearchRepository;
+import com.ddip.backend.event.AuctionEndEvent;
+import com.ddip.backend.event.AuctionEsEvent;
 import com.ddip.backend.exception.auction.AuctionDeniedException;
-import com.ddip.backend.dto.auction.AuctionEndedEventDto;
 import com.ddip.backend.exception.auction.AuctionNotFoundException;
 import com.ddip.backend.exception.auction.InvalidBidStepException;
 import com.ddip.backend.exception.user.UserNotFoundException;
@@ -26,9 +26,9 @@ import com.ddip.backend.repository.UserRepository;
 import com.ddip.backend.utils.AwsS3Util;
 import com.ddip.backend.utils.S3UrlPrefixFactory;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,6 +47,7 @@ public class AuctionService {
     private final AwsS3Util awsS3Util;
     private final PointService pointService;
     private final S3UrlPrefixFactory s3UrlPrefixFactory;
+    private final ApplicationEventPublisher publisher;
 
     private final UserRepository userRepository;
     private final MyBidsRepository myBidsRepository;
@@ -54,7 +55,6 @@ public class AuctionService {
     private final AuctionImageRepository auctionImageRepository;
     private final AuctionElasticSearchRepository auctionEsRepository;
 
-    private final SimpMessagingTemplate messagingTemplate;
 
     /**
      * 경매 생성
@@ -184,12 +184,9 @@ public class AuctionService {
 
             auction.updateAuctionStatus(AuctionStatus.ENDED);
 
-            AuctionDocument auctionDocument = AuctionDocument.from(auction, auction.getMainImagKey());
-            auctionEsRepository.save(auctionDocument);
-
-            // 프론트에 STOMP 로 알림
-            AuctionEndedEventDto dto = AuctionEndedEventDto.from(auction);
-            messagingTemplate.convertAndSend("/topic/auction/" + auction.getId(), dto);
+            // after commit
+            publisher.publishEvent(new AuctionEsEvent(auction.getId()));
+            publisher.publishEvent(new AuctionEndEvent(auction.getId()));
         }
     }
 
@@ -225,11 +222,9 @@ public class AuctionService {
 
         auction.updateAuctionStatus(AuctionStatus.ENDED);
 
-        AuctionDocument auctionDocument = AuctionDocument.from(auction, auction.getMainImagKey());
-        auctionEsRepository.save(auctionDocument);
-
-        AuctionEndedEventDto dto = AuctionEndedEventDto.from(auction);
-        messagingTemplate.convertAndSend("/topic/auction/" + auction.getId(), dto);
+        // after commit
+        publisher.publishEvent(new AuctionEsEvent(auction.getId()));
+        publisher.publishEvent(new AuctionEndEvent(auction.getId()));
     }
 
     /**
@@ -238,7 +233,6 @@ public class AuctionService {
     public void cancelAuctionByAdmin(Long auctionId) {
         Auction auction = auctionRepository.findById(auctionId)
                 .orElseThrow(() -> new AuctionNotFoundException(auctionId));
-
 
         if (auction.getAuctionStatus() != AuctionStatus.RUNNING) {
             return;
@@ -254,15 +248,15 @@ public class AuctionService {
                     PointLedgerType.REFUND, PointLedgerSource.AUCTION, auctionId,
                     "경매 강제 취소 환불.");
 
-            myBid.markOutBid();
+            myBid.markCanceledBid();
         }
 
         auction.updateWinner(null);
         auction.updateCurrentWinner(null);
         auction.updateAuctionStatus(AuctionStatus.CANCELED);
 
-        AuctionDocument auctionDocument = AuctionDocument.from(auction, auction.getMainImagKey());
-        auctionEsRepository.save(auctionDocument);
+        // after commit
+        publisher.publishEvent(new AuctionEsEvent(auction.getId()));
     }
 
     /**
