@@ -36,7 +36,6 @@ public interface AdminService {
 
     void cancelAuction(Long auctionId, String reason);
 
-
     // ===== 3. 크라우드펀딩 관리 =====
     Page<AdminProjectSummaryDto> getProjectList(AdminProjectSearchCondition condition, Pageable pageable);
 

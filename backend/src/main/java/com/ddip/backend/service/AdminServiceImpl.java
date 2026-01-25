@@ -128,43 +128,30 @@ public class AdminServiceImpl implements AdminService {
         return AdminAuctionDetailDto.of(auction, bidDtos);
     }
 
+    /**
+     *  경매 강제 낙찰
+     */
     @Override
     public void forceCloseAuction(Long auctionId, String reason) {
         Auction auction = auctionService.getAuctionById(auctionId);
 
-        // 모든 입찰 조회
-        List<Bids> bids = bidsService.getBidsByAuctionId(auctionId);
+        // 경매 강제 낙찰
+        auctionService.forceEndAuction(auctionId);
 
-        // 최고 입찰 찾기
-        Bids highestBid = bids.stream()
-                .max((b1, b2) -> Long.compare(b1.getPrice(), b2.getPrice()))
-                .orElse(null);
-
-        if (highestBid != null) {
-            // 1) 경매 상태를 낙찰 완료로 변경 & winner/currentWinner 설정
-            auctionService.closeWithWinner(auction, highestBid, reason);
-
-            // 2) 포인트 정산 처리 (낙찰자 포인트 차감, 판매자 포인트 적립 등)
-            pointService.settleAuction(auction, highestBid);
-        } else {
-            // 입찰이 하나도 없으면 그냥 종료
-            auctionService.closeWithoutWinner(auction, reason);
-        }
+        smsService.sendSms(auction.getTitle(), reason);
     }
 
+    /**
+     *  경매 강제 취소
+     */
     @Override
     public void cancelAuction(Long auctionId, String reason) {
         Auction auction = auctionService.getAuctionById(auctionId);
-        List<Bids> bids = bidsService.getBidsByAuctionId(auctionId);
 
-        // 1) 경매 상태 CANCELED 처리
-        auctionService.cancelAuction(auction, reason);
+        // 경매 강제 취소
+        auctionService.cancelAuctionByAdmin(auctionId);
 
-        // 2) 입찰자 포인트 환불
-        pointService.refundAuctionBids(auction, bids);
-
-        // 3) 필요 시 알림
-        // smsService.notifyAuctionCanceled(auction, bids, reason);
+        smsService.sendSms(auction.getTitle(), reason);
     }
 
     /**

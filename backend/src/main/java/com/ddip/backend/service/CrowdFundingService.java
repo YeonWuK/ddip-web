@@ -1,5 +1,6 @@
 package com.ddip.backend.service;
 
+import com.ddip.backend.dto.admin.crowdfunding.AdminProjectSearchCondition;
 import com.ddip.backend.dto.crowd.ProjectRequestDto;
 import com.ddip.backend.dto.crowd.ProjectResponseDto;
 import com.ddip.backend.dto.crowd.ProjectUpdateRequestDto;
@@ -22,6 +23,8 @@ import com.ddip.backend.utils.AwsS3Util;
 import com.ddip.backend.utils.S3UrlPrefixFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,6 +49,11 @@ public class CrowdFundingService {
 
     public Project getProjectEntity(Long projectId){
         return projectRepository.findById(projectId).orElseThrow(() -> new ProjectNotFoundException(projectId));
+    }
+
+    // 어드민용
+    public Project getProjectWithRewardTiersAndCreator(Long projectId) {
+        return projectRepository.findByIdWithRewardTiersAndCreator(projectId).orElseThrow(() -> new ProjectNotFoundException(projectId));
     }
 
     /**
@@ -200,5 +208,25 @@ public class CrowdFundingService {
         }
     }
 
+    public void rejectProjectByAdmin(Long projectId){
+        Project project = getProjectEntity(projectId);
+        project.rejectByAdmin();
+    }
+
+    public void forceStopByAdmin(Long projectId){
+        Project project = getProjectEntity(projectId);
+        project.stopProject();
+    }
+
+    public void forceCancelProjectByAdmin(Long projectId){
+        Project project = getProjectEntity(projectId);
+        project.cancel();
+        pledgeService.refundAllFailedProjects(project.getId());
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Project> searchProjectsForAdmin(AdminProjectSearchCondition condition, Pageable pageable) {
+        return projectRepository.searchProjectsForAdmin(condition, pageable);
+    }
 
 }

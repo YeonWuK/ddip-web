@@ -1,5 +1,5 @@
 package com.ddip.backend.dto.enums;
 
 public enum AuctionStatus {
-    RUNNING, ENDED, CANCELLED
+    RUNNING, ENDED, CANCELED
 }
