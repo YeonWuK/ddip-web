@@ -9,6 +9,7 @@ import com.ddip.backend.entity.MyBids;
 import com.ddip.backend.entity.User;
 import com.ddip.backend.es.document.AuctionDocument;
 import com.ddip.backend.es.repository.AuctionElasticSearchRepository;
+import com.ddip.backend.es.service.AuctionSearchService;
 import com.ddip.backend.exception.auction.AuctionDeniedException;
 import com.ddip.backend.dto.auction.AuctionEndedEventDto;
 import com.ddip.backend.exception.auction.AuctionNotFoundException;
@@ -37,6 +38,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AuctionService {
 
+    private final AuctionSearchService auctionSearchService;
+
     private final AwsS3Util awsS3Util;
     private final S3UrlPrefixFactory s3UrlPrefixFactory;
 
@@ -46,6 +49,7 @@ public class AuctionService {
     private final SimpMessagingTemplate messagingTemplate;
     private final AuctionImageRepository auctionImageRepository;
     private final AuctionElasticSearchRepository auctionEsRepository;
+
 
     /**
      * 경매 생성
@@ -75,6 +79,8 @@ public class AuctionService {
             AuctionImage auctionImage = AuctionImage.from(auction, key);
             auctionImageRepository.save(auctionImage);
         }
+
+        auction.updateMainImageKey(mainImageKey);
 
         // Es 인덱스 생성
         AuctionDocument auctionDocument = AuctionDocument.from(auction, mainImageKey);
@@ -126,6 +132,7 @@ public class AuctionService {
         }
 
         auctionRepository.delete(auction);
+        auctionEsRepository.deleteById(auctionId);
     }
 
 
@@ -156,10 +163,13 @@ public class AuctionService {
                 // 낙찰자 유저 제외 모든 유저 LOST 로 변경
                 myBidsRepository.markWon(auction.getId(), winner.getId());
                 myBidsRepository.markLostExceptWinner(auction.getId(), winner.getId());
-
             }
 
             auction.updateAuctionStatus(AuctionStatus.ENDED);
+
+            AuctionDocument auctionDocument = AuctionDocument.from(auction, auction.getMainImagKey());
+
+            auctionEsRepository.save(auctionDocument);
 
             // 프론트에 STOMP 로 알림
             AuctionEndedEventDto dto = AuctionEndedEventDto.from(auction);

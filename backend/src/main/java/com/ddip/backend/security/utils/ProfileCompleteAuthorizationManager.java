@@ -30,14 +30,23 @@ public class ProfileCompleteAuthorizationManager
 
         Authentication auth = authentication.get();
 
-        CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
+        if (auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken) {
+            return new AuthorizationDecision(false);
+        }
+
+        Object principal = auth.getPrincipal();
+
+        if (!(principal instanceof CustomUserDetails userDetails)) {
+            return new AuthorizationDecision(false);
+        }
 
         User user = userRepository.findByEmail(userDetails.getEmail())
-                .orElseThrow(() -> new UserNotFoundException(userDetails.getEmail()));
+                .orElseThrow(() -> new UserNotFoundException(userDetails.getUsername()));
 
         if (!user.isActive()) {
             throw new ProfileIncompleteDeniedException("프로필을 먼저 완료하세요.");
         }
+
 
         return new AuthorizationDecision(true);
     }

@@ -40,6 +40,9 @@ public class Auction extends BaseTimeEntity{
     @Column(name = "title", nullable = false)
     private String title;
 
+    @Column(name = "main_image_key")
+    private String mainImagKey;
+
     @Lob
     private String description;
 
@@ -106,4 +109,7 @@ public class Auction extends BaseTimeEntity{
         this.auctionStatus = status;
     }
 
+    public void updateMainImageKey(String Key) {
+        this.mainImagKey = Key;
+    }
 }
