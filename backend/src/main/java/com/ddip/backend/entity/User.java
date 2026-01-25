@@ -6,7 +6,6 @@ import com.ddip.backend.dto.enums.Role;
 import com.ddip.backend.dto.oauth2.SocialUserRequestDto;
 import com.ddip.backend.dto.user.ProfileRequestDto;
 import com.ddip.backend.dto.user.UserRequestDto;
-import com.ddip.backend.dto.user.UserResponseDto;
 import com.ddip.backend.dto.user.UserUpdateRequestDto;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

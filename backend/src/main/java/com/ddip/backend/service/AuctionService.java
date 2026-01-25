@@ -1,5 +1,6 @@
 package com.ddip.backend.service;
 
+import com.ddip.backend.dto.admin.auction.AdminAuctionSearchCondition;
 import com.ddip.backend.dto.auction.AuctionRequestDto;
 import com.ddip.backend.dto.auction.AuctionResponseDto;
 import com.ddip.backend.dto.enums.AuctionStatus;
@@ -17,6 +18,8 @@ import com.ddip.backend.repository.AuctionRepository;
 import com.ddip.backend.repository.MyBidsRepository;
 import com.ddip.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -158,4 +161,18 @@ public class AuctionService {
     private long percentCeil(long value, int percent) {
         return (value * percent + 99) / 100;
     }
+
+    public List<Auction> getAuctionsBySeller(Long sellerId) {
+        return auctionRepository.findAuctionsByUserId(sellerId);
+    }
+
+    public Auction getAuctionById(Long auctionId) {
+        return auctionRepository.findById(auctionId).orElseThrow(() -> new AuctionNotFoundException(auctionId));
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Auction> searchAuctionsForAdmin(AdminAuctionSearchCondition condition, Pageable pageable) {
+        return auctionRepository.searchAuctionsForAdmin(condition, pageable);
+    }
+
 }

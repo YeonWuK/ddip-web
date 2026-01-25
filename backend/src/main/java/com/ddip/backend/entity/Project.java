@@ -73,6 +73,9 @@ public class Project extends BaseTimeEntity {
     @Column(name = "summary", length = 200)
     private String summary;
 
+    @Column(name = "like_count", nullable = false)
+    private Long likeCount = 0L;
+
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<RewardTier> rewardTiers = new ArrayList<>();
@@ -183,6 +186,16 @@ public class Project extends BaseTimeEntity {
         }
 
         return success;
+    }
+
+    public void rejectByAdmin() {
+        log.info("해당 프로젝트는 어드민에 의해 거절 되었습니다.");
+        this.status = ProjectStatus.REJECTED;
+    }
+
+    public void stopProject(){
+        log.info("해당 프로젝트는 중지.");
+        this.status = ProjectStatus.STOP;
     }
 
 }

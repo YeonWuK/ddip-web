@@ -1,29 +1,27 @@
 package com.ddip.backend.service;
 
+import com.ddip.backend.dto.admin.crowdfunding.AdminProjectSearchCondition;
 import com.ddip.backend.dto.crowd.ProjectRequestDto;
 import com.ddip.backend.dto.crowd.ProjectResponseDto;
 import com.ddip.backend.dto.crowd.ProjectUpdateRequestDto;
-import com.ddip.backend.dto.crowd.RewardTierRequestDto;
 import com.ddip.backend.dto.enums.ProjectStatus;
-import com.ddip.backend.dto.enums.Role;
 import com.ddip.backend.entity.Project;
-import com.ddip.backend.entity.RewardTier;
 import com.ddip.backend.entity.User;
-import com.ddip.backend.exception.project.InvalidProjectStatusException;
-import com.ddip.backend.exception.project.ProjectAccessDeniedException;
 import com.ddip.backend.exception.project.ProjectNotFoundException;
 import com.ddip.backend.exception.reward.RewardTierRequiredException;
 import com.ddip.backend.exception.user.UserNotFoundException;
+import com.ddip.backend.repository.AdminHistoryRepository;
 import com.ddip.backend.repository.ProjectRepository;
 import com.ddip.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
@@ -35,9 +33,15 @@ public class CrowdFundingService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final PledgeService pledgeService;
+    private final AdminHistoryRepository adminHistoryRepository;
 
     public Project getProjectEntity(Long projectId){
         return projectRepository.findById(projectId).orElseThrow(() -> new ProjectNotFoundException(projectId));
+    }
+
+    // 어드민용
+    public Project getProjectWithRewardTiersAndCreator(Long projectId) {
+        return projectRepository.findByIdWithRewardTiersAndCreator(projectId).orElseThrow(() -> new ProjectNotFoundException(projectId));
     }
 
     /**
@@ -114,12 +118,6 @@ public class CrowdFundingService {
 
     public void openFunding(Long userId, Long projectId) {
 //        관리자만 Open 시킬 것인가에 대한 논의
-//        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
-//        Role role = user.getRole();
-//        if (role != Role.ADMIN) {
-//            log.info("관리자만 접근할 수 있습니다. projectId={}, userRole={}", projectId, role);
-//            return;
-//        }
 
         Project project = getProjectEntity(projectId);
 
@@ -151,6 +149,27 @@ public class CrowdFundingService {
                 pledgeService.refundAllFailedProjects(project.getId());
             }
         }
+    }
+
+    public void rejectProjectByAdmin(Long projectId){
+        Project project = getProjectEntity(projectId);
+        project.rejectByAdmin();
+    }
+
+    public void forceStopByAdmin(Long projectId){
+        Project project = getProjectEntity(projectId);
+        project.stopProject();
+    }
+
+    public void forceCancelProjectByAdmin(Long projectId){
+        Project project = getProjectEntity(projectId);
+        project.cancel();
+        pledgeService.refundAllFailedProjects(project.getId());
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Project> searchProjectsForAdmin(AdminProjectSearchCondition condition, Pageable pageable) {
+        return projectRepository.searchProjectsForAdmin(condition, pageable);
     }
 
 

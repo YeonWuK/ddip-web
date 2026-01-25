@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -30,6 +31,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -61,6 +63,11 @@ public class SecurityConfig {
                                 "/oauth2/**", "/login/oauth2/**", "/login/oauth2/code/**", "/api/users/login",
                                 "/oauth2/callback/**", "/api/users/refresh-token", "/api/users/register",
                                 "/api/users/find-password","/api/users/update-profile").permitAll()
+
+                        // admin 먼저 검증 절대 바꾸지 말것
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
+                        // 이후 일반 User 검증
                         .requestMatchers("/api/**").access(profileCompleteAuthorizationManager)
                         .anyRequest().authenticated()
                 )

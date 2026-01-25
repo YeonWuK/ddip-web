@@ -1,5 +1,6 @@
 package com.ddip.backend.service;
 
+import com.ddip.backend.dto.admin.user.AdminUserSearchCondition;
 import com.ddip.backend.dto.auction.AuctionSummaryDto;
 import com.ddip.backend.dto.bids.BidsResponseDto;
 import com.ddip.backend.dto.mybids.MyBidsSummaryDto;
@@ -12,6 +13,8 @@ import com.ddip.backend.repository.MyBidsRepository;
 import com.ddip.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -95,7 +98,6 @@ public class UserService {
         return new UserPageResponseDto(userResponseDto, auctionSummaries, bidsResponseDtos, myBidsSummaries);
     }
 
-
     /**
      * 유저 삭제
      */
@@ -105,7 +107,6 @@ public class UserService {
 
         userRepository.delete(user);
     }
-
 
     /**
      * 유저 정보 수정
@@ -118,7 +119,6 @@ public class UserService {
         return UserResponseDto.from(user);
     }
 
-
     /**
      * 유저 비밀번호 변경
      */
@@ -130,7 +130,6 @@ public class UserService {
         user.updatePassword(encoded);
     }
 
-
     /**
      * 유저 비밀번호 초기화
      */
@@ -141,7 +140,6 @@ public class UserService {
 
         return UserResponseDto.from(user);
     }
-
 
     /**
      * 유저 프로필 완성
@@ -155,4 +153,10 @@ public class UserService {
 
         return UserResponseDto.from(user);
     }
+
+    @Transactional(readOnly = true)
+    public Page<User> searchUsersForAdmin(AdminUserSearchCondition condition, Pageable pageable) {
+        return userRepository.searchUsersForAdmin(condition, pageable);
+    }
+
 }

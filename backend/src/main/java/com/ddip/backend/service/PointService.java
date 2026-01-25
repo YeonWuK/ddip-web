@@ -10,6 +10,8 @@ import com.ddip.backend.repository.PointLedgerRepository;
 import com.ddip.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -72,9 +74,14 @@ public class PointService {
     }
 
     @Transactional(readOnly = true)
-    public List<PointLedger> getHistory(Long userId) {
+    public List<PointLedger> getLedgersByUser(Long userId) {
         User user = getUser(userId);
         return pointLedgerRepository.findByUserOrderByIdDesc(user);
+    }
+
+    public Page<PointLedger> getLedgersByUser(Long userId, Pageable pageable) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+        return pointLedgerRepository.findByUserOrderByIdDesc(user, pageable);
     }
 
 }

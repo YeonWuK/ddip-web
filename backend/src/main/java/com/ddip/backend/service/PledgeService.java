@@ -127,6 +127,14 @@ public class PledgeService {
         }
     }
 
+    public List<Pledge> getPledgesByProject(Long projectId) {
+        return pledgeRepository.findByProjectId(projectId);
+    }
+
+    public List<Pledge> getPledgesByUser(Long userId) {
+        return pledgeRepository.findByUserId(userId);
+    }
+
     private void usePointForPledge(Long userId, long amount, Long pledgeId) {
         pointService.changePoint(userId, -amount, PointLedgerType.USE, PointLedgerSource.PLEDGE, pledgeId,
                 "Pledge 결제 (pledgeId=" + pledgeId + ")");

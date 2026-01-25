@@ -11,4 +11,5 @@ import java.util.List;
 public interface PledgeRepository extends JpaRepository<Pledge, Long> {
     List<Pledge> findByUserId(Long userId);
     List<Pledge> findByProjectIdAndStatus(Long projectId, PledgeStatus status);
+    List<Pledge> findByProjectId(Long projectId);
 }

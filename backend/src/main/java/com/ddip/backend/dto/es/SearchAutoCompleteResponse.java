@@ -16,4 +16,5 @@ public class SearchAutoCompleteResponse {
     // 다른 필드가 없어도 예외X
     @JsonProperty("title")
     private String title;
+
 }

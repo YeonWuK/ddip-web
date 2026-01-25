@@ -22,6 +22,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 import static org.aspectj.runtime.internal.Conversions.intValue;
 
 @Service
@@ -90,6 +92,15 @@ public class BidsService {
 
         return BidsResponseDto.from(bids);
     }
+
+    public List<Bids> getBidsByUser(Long userId) {
+        return bidsRepository.findAllByUserId(userId);
+    }
+
+    public List<Bids> getBidsByAuctionId(Long auctionId) {
+        return bidsRepository.findByAuctionIdOrderByCreateTimeAsc(auctionId);
+    }
+
 //    public void cancelBid(Long userId, Long auctionId) {
 //
 //        User user = userRepository.findById(userId)

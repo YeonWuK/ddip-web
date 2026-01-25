@@ -30,4 +30,5 @@ public class AuctionSearchResponse {
     private LocalDateTime startAt;
 
     private LocalDateTime endAt;
+
 }

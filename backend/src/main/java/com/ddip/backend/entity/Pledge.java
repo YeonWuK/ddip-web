@@ -2,7 +2,6 @@ package com.ddip.backend.entity;
 
 import com.ddip.backend.dto.enums.PledgeStatus;
 import com.ddip.backend.exception.pledge.PledgeAccessDeniedException;
-import com.ddip.backend.exception.reward.InvalidQuantityException;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

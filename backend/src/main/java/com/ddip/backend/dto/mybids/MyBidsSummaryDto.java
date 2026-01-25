@@ -31,4 +31,5 @@ public class MyBidsSummaryDto {
                 .myAuctionStatus(myBids.getMyAuctionState())
                 .build();
     }
+
 }

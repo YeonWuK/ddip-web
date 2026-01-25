@@ -27,7 +27,6 @@ public class AuctionSummaryDto {
 
     private AuctionStatus auctionStatus;
 
-
     private LocalDateTime startAt;
 
     private LocalDateTime endAt;
@@ -44,4 +43,5 @@ public class AuctionSummaryDto {
                 .endAt(auction.getEndAt())
                 .build();
     }
+
 }
