@@ -13,6 +13,8 @@ import com.ddip.backend.entity.Auction;
 import com.ddip.backend.entity.Bids;
 import com.ddip.backend.entity.MyBids;
 import com.ddip.backend.entity.User;
+import com.ddip.backend.es.document.AuctionDocument;
+import com.ddip.backend.es.repository.AuctionElasticSearchRepository;
 import com.ddip.backend.exception.auction.AuctionNotFoundException;
 import com.ddip.backend.exception.auction.EndedAuctionException;
 import com.ddip.backend.exception.auction.InvalidBidStepException;
@@ -26,6 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.aspectj.runtime.internal.Conversions.intValue;
@@ -40,6 +43,7 @@ public class BidsService {
     private final UserRepository userRepository;
     private final MyBidsRepository myBidsRepository;
     private final AuctionRepository auctionRepository;
+    private final AuctionElasticSearchRepository auctionElasticSearchRepository;
 
     private final PointService pointService;
 
@@ -113,6 +117,9 @@ public class BidsService {
         // 입찰 기록 저장
         Bids bids = bidsRepository.save(Bids.from(createBidsDto));
 
+        AuctionDocument auctionDocument = AuctionDocument.from(auction, auction.getMainImagKey());
+        auctionElasticSearchRepository.save(auctionDocument);
+
         return BidsResponseDto.from(bids);
     }
 
@@ -158,5 +165,19 @@ public class BidsService {
                 auction.updateCurrentPrice(auction.getCurrentPrice());
             }
         }
+
+        AuctionDocument auctionDocument = AuctionDocument.from(auction, auction.getMainImagKey());
+        auctionElasticSearchRepository.save(auctionDocument);
     }
+
+
+
+    public List<Bids> getBidsByUser(Long userId) {
+        return bidsRepository.findAllByUserId(userId);
+    }
+
+    public List<Bids> getBidsByAuctionId(Long auctionId) {
+        return bidsRepository.findByAuctionIdOrderByCreateTimeAsc(auctionId);
+    }
+
 }

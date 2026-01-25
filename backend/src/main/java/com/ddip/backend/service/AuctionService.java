@@ -1,9 +1,11 @@
 package com.ddip.backend.service;
 
+import com.ddip.backend.aop.DistributedLock;
 import com.ddip.backend.dto.admin.auction.AdminAuctionSearchCondition;
 import com.ddip.backend.dto.auction.AuctionRequestDto;
 import com.ddip.backend.dto.auction.AuctionResponseDto;
 import com.ddip.backend.dto.enums.AuctionStatus;
+import com.ddip.backend.dto.enums.MyAuctionStatus;
 import com.ddip.backend.dto.enums.PointLedgerSource;
 import com.ddip.backend.dto.enums.PointLedgerType;
 import com.ddip.backend.entity.Auction;
@@ -192,6 +194,101 @@ public class AuctionService {
     }
 
     /**
+     * admin 강제 낙찰
+     */
+    @DistributedLock(key = "auction:#{#auctionId}")
+    public void forceEndAuction(Long auctionId) {
+        Auction auction = auctionRepository.findById(auctionId)
+                .orElseThrow(() -> new AuctionNotFoundException(auctionId));
+
+        if (auction.getAuctionStatus() != AuctionStatus.RUNNING) {
+            return;
+        }
+
+        Optional<MyBids> users = myBidsRepository.findLeadingByAuctionId(auction.getId());
+
+        if (users.isPresent()) {
+            MyBids leading = users.get();
+            User winner = leading.getUser();
+
+            auction.updateWinner(winner);
+
+            myBidsRepository.markWon(auctionId, winner.getId());
+            myBidsRepository.markLostExceptWinner(auctionId, winner.getId());
+
+            pointService.changePoint(auction.getSeller().getId(), + auction.getCurrentPrice(),
+                    PointLedgerType.CHARGE, PointLedgerSource.AUCTION, auctionId,
+                    "운영자 강제 종료 정산.");
+        } else {
+            auction.updateWinner(null);
+        }
+
+        auction.updateAuctionStatus(AuctionStatus.ENDED);
+
+        AuctionDocument auctionDocument = AuctionDocument.from(auction, auction.getMainImagKey());
+        auctionEsRepository.save(auctionDocument);
+
+        AuctionEndedEventDto dto = AuctionEndedEventDto.from(auction);
+        messagingTemplate.convertAndSend("/topic/auction/" + auction.getId(), dto);
+    }
+
+    /**
+     * admin 경매 강제 취소
+     */
+    public void cancelAuctionByAdmin(Long auctionId) {
+        Auction auction = auctionRepository.findById(auctionId)
+                .orElseThrow(() -> new AuctionNotFoundException(auctionId));
+
+
+        if (auction.getAuctionStatus() != AuctionStatus.RUNNING) {
+            return;
+        }
+
+        Optional<MyBids> user = myBidsRepository.findLeadingByAuctionId(auction.getId());
+
+        if (user.isPresent()) {
+            MyBids myBid = user.get();
+            long refund = myBid.getLastBidPrice() == null ? 0 : myBid.getLastBidPrice();
+
+            pointService.changePoint(myBid.getUser().getId(), + refund,
+                    PointLedgerType.REFUND, PointLedgerSource.AUCTION, auctionId,
+                    "경매 강제 취소 환불.");
+
+            myBid.markOutBid();
+        }
+
+        auction.updateWinner(null);
+        auction.updateCurrentWinner(null);
+        auction.updateAuctionStatus(AuctionStatus.CANCELED);
+
+        AuctionDocument auctionDocument = AuctionDocument.from(auction, auction.getMainImagKey());
+        auctionEsRepository.save(auctionDocument);
+    }
+
+    /**
+     * 판매자 조회
+     */
+    public List<Auction> getAuctionsBySeller(Long sellerId) {
+        return auctionRepository.findAuctionsByUserId(sellerId);
+    }
+
+    /**
+     * Auction 반환
+     */
+    public Auction getAuctionById(Long auctionId) {
+        return auctionRepository.findById(auctionId).orElseThrow(() -> new AuctionNotFoundException(auctionId));
+    }
+
+    /**
+     * Auction 페이징
+     */
+    @Transactional(readOnly = true)
+    public Page<Auction> searchAuctionsForAdmin(AdminAuctionSearchCondition condition, Pageable pageable) {
+        return auctionRepository.searchAuctionsForAdmin(condition, pageable);
+    }
+
+
+    /**
      * 최저 입찰가 검증
      */
     private void validateBidStep(Long startPrice, int bidStep) {
@@ -217,18 +314,4 @@ public class AuctionService {
     private long percentCeil(long value, int percent) {
         return (value * percent + 99) / 100;
     }
-
-    public List<Auction> getAuctionsBySeller(Long sellerId) {
-        return auctionRepository.findAuctionsByUserId(sellerId);
-    }
-
-    public Auction getAuctionById(Long auctionId) {
-        return auctionRepository.findById(auctionId).orElseThrow(() -> new AuctionNotFoundException(auctionId));
-    }
-
-    @Transactional(readOnly = true)
-    public Page<Auction> searchAuctionsForAdmin(AdminAuctionSearchCondition condition, Pageable pageable) {
-        return auctionRepository.searchAuctionsForAdmin(condition, pageable);
-    }
-
 }
