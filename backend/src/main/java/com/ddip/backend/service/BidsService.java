@@ -6,15 +6,13 @@ import com.ddip.backend.dto.bids.BidsResponseDto;
 import com.ddip.backend.dto.bids.CreateBidsDto;
 import com.ddip.backend.dto.bids.CreateMyBidsDto;
 import com.ddip.backend.dto.enums.AuctionStatus;
-import com.ddip.backend.dto.enums.MyAuctionStatus;
 import com.ddip.backend.dto.enums.PointLedgerSource;
 import com.ddip.backend.dto.enums.PointLedgerType;
 import com.ddip.backend.entity.Auction;
 import com.ddip.backend.entity.Bids;
 import com.ddip.backend.entity.MyBids;
 import com.ddip.backend.entity.User;
-import com.ddip.backend.es.document.AuctionDocument;
-import com.ddip.backend.es.repository.AuctionElasticSearchRepository;
+import com.ddip.backend.event.AuctionEsEvent;
 import com.ddip.backend.exception.auction.AuctionNotFoundException;
 import com.ddip.backend.exception.auction.EndedAuctionException;
 import com.ddip.backend.exception.auction.InvalidBidStepException;
@@ -25,11 +23,11 @@ import com.ddip.backend.repository.MyBidsRepository;
 import com.ddip.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.aspectj.runtime.internal.Conversions.intValue;
 
@@ -43,9 +41,9 @@ public class BidsService {
     private final UserRepository userRepository;
     private final MyBidsRepository myBidsRepository;
     private final AuctionRepository auctionRepository;
-    private final AuctionElasticSearchRepository auctionElasticSearchRepository;
 
     private final PointService pointService;
+    private final ApplicationEventPublisher publisher;
 
     /**
      * 경매 참여
@@ -117,60 +115,11 @@ public class BidsService {
         // 입찰 기록 저장
         Bids bids = bidsRepository.save(Bids.from(createBidsDto));
 
-        AuctionDocument auctionDocument = AuctionDocument.from(auction, auction.getMainImagKey());
-        auctionElasticSearchRepository.save(auctionDocument);
+        // after commit
+        publisher.publishEvent(new AuctionEsEvent(auction.getId()));
 
         return BidsResponseDto.from(bids);
     }
-
-    /**
-     * 입찰 취소
-     */
-    @DistributedLock(key = "auction:#{#auctionId}")
-    public void cancelBid(Long userId, Long auctionId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
-
-        Auction auction = auctionRepository.findById(auctionId)
-                .orElseThrow(() -> new AuctionNotFoundException(auctionId));
-
-        if (auction.getAuctionStatus() != AuctionStatus.RUNNING) {
-            throw new EndedAuctionException(auction.getAuctionStatus());
-        }
-
-        MyBids myBids = myBidsRepository.findByUserIdAndAuctionId(user.getId(), auction.getId())
-                .orElseThrow(() -> new IllegalArgumentException("취소할 입찰이 없습니다."));
-
-        long refund = myBids.getLastBidPrice() == null ? 0 : myBids.getLastBidPrice();
-
-        if (refund > 0) {
-            pointService.changePoint(userId, +refund,
-                    PointLedgerType.REFUND, PointLedgerSource.AUCTION,
-                    auctionId, "입찰 취소 환불");
-        }
-
-        if (myBids.getMyAuctionState() == MyAuctionStatus.LEADING) {
-            Optional<MyBids> topMyBids = myBidsRepository.findTopByAuctionId(auction.getId());
-
-            if (topMyBids.isPresent()) {
-                MyBids myBidsTop = topMyBids.get();
-                User newWinner = myBidsTop.getUser();
-
-                auction.updateCurrentWinner(newWinner);
-                auction.updateCurrentPrice(myBidsTop.getLastBidPrice());
-
-                myBidsTop.markLeadBid();
-            } else {
-                auction.updateCurrentWinner(null);
-                auction.updateCurrentPrice(auction.getCurrentPrice());
-            }
-        }
-
-        AuctionDocument auctionDocument = AuctionDocument.from(auction, auction.getMainImagKey());
-        auctionElasticSearchRepository.save(auctionDocument);
-    }
-
-
 
     public List<Bids> getBidsByUser(Long userId) {
         return bidsRepository.findAllByUserId(userId);
