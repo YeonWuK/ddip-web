@@ -96,6 +96,7 @@ public class BidsService {
                     .orElseThrow(() -> new UserNotFoundException(currentWinner.getId()));
 
             long refund = old.getLastBidPrice();
+
             if (refund > 0) {
                 pointService.changePoint(currentWinner.getId(), +refund, PointLedgerType.REFUND,
                         PointLedgerSource.AUCTION, auctionId, "경매 선두 변경 환불");

@@ -80,6 +80,8 @@ public class AuctionService {
             auctionImageRepository.save(auctionImage);
         }
 
+        auction.updateMainImageKey(mainImageKey);
+
         // Es 인덱스 생성
         AuctionDocument auctionDocument = AuctionDocument.from(auction, mainImageKey);
         auctionEsRepository.save(auctionDocument);
@@ -138,6 +140,7 @@ public class AuctionService {
         }
 
         auctionRepository.delete(auction);
+        auctionEsRepository.deleteById(auctionId);
     }
 
 
@@ -175,6 +178,9 @@ public class AuctionService {
                     auction.getId(), "경매 종료 판매자 입금");
 
             auction.updateAuctionStatus(AuctionStatus.ENDED);
+
+            AuctionDocument auctionDocument = AuctionDocument.from(auction, auction.getMainImagKey());
+            auctionEsRepository.save(auctionDocument);
 
             // 프론트에 STOMP 로 알림
             AuctionEndedEventDto dto = AuctionEndedEventDto.from(auction);
