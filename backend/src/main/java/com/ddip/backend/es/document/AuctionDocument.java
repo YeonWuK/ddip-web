@@ -26,6 +26,9 @@ public class AuctionDocument {
     private String title;
 
     @Field(type = FieldType.Text)
+    private String imageKey;
+
+    @Field(type = FieldType.Text)
     private String description;
 
     @Field(type = FieldType.Text)
@@ -46,10 +49,11 @@ public class AuctionDocument {
     @Field(type = FieldType.Date, format = {DateFormat.date_hour_minute_second_millis, DateFormat.epoch_millis})
     private LocalDateTime endAt;
 
-    public static AuctionDocument from(Auction auction) {
+    public static AuctionDocument from(Auction auction, String imageKey) {
         return AuctionDocument.builder()
                 .id(auction.getId())
                 .title(auction.getTitle())
+                .imageKey(imageKey)
                 .description(auction.getDescription())
                 .seller(auction.getSeller().getUsername())
                 .startPrice(auction.getStartPrice())

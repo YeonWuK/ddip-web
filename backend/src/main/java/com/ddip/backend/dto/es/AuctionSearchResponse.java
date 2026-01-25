@@ -17,6 +17,8 @@ public class AuctionSearchResponse {
 
     private String title;
 
+    private String imageKey;
+
     private String seller;
 
     private String description;

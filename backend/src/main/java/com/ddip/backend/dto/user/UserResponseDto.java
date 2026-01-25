@@ -22,6 +22,7 @@ public class UserResponseDto {
     private String account;
     private String accountHolder;
     private Role role;
+    private Long pointBalance;
     private BankType bankType;
     private boolean isActive;
 
@@ -34,6 +35,7 @@ public class UserResponseDto {
                 .phoneNumber(user.getPhoneNumber())
                 .account(user.getAccount())
                 .accountHolder(user.getAccountHolder())
+                .pointBalance(user.getPointBalance())
                 .role(user.getRole())
                 .bankType(user.getBankType())
                 .isActive(user.isActive())

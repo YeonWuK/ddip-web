@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/auction/bid")
+@RequestMapping("/api/bid")
 public class BiddingController {
 
     private final BidsService bidsService;
@@ -28,12 +28,15 @@ public class BiddingController {
         return ResponseEntity.ok(bidsResponseDto);
     }
 
-//    /**
-//     * 입찰 결제 취소
-//     */
-//    @PostMapping("/cancel/{auctionId}")
-//    public ResponseEntity<?> cancelBidding(@AuthenticationPrincipal CustomUserDetails customUserDetails,
-//                                           @PathVariable Long auctionId) {
-//
-//    }
+    /**
+     * 입찰 결제 취소
+     */
+    @PostMapping("/{auctionId}/cancel")
+    public ResponseEntity<?> cancelBidding(@AuthenticationPrincipal CustomUserDetails customUserDetails,
+                                           @PathVariable Long auctionId) {
+
+        bidsService.cancelBid(customUserDetails.getUserId(), auctionId);
+
+        return ResponseEntity.ok().build();
+    }
 }

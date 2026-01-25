@@ -10,6 +10,10 @@ public interface MyBidsRepositoryCustom {
     List<MyBids> findMyBidsByUserId(Long userId);
 
     void markWon(Long auctionId, Long winnerUserId);
+
     void markLostExceptWinner(Long auctionId, Long winnerUserId);
+
     Optional<MyBids> findLeadingByAuctionId(Long auctionId);
+
+    Optional<MyBids> findTopByAuctionId(Long auctionId);
 }

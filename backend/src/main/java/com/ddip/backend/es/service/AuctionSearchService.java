@@ -23,7 +23,7 @@ import java.util.List;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class    AuctionSearchService {
+public class AuctionSearchService {
 
     private final ElasticsearchClient elasticsearchClient;
     private final BuildSearchQueryUtil buildSearchQueryUtil;
