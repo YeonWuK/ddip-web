@@ -5,5 +5,5 @@ import org.springframework.data.elasticsearch.repository.ElasticsearchRepository
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface AuctionElasticSearchRepository extends ElasticsearchRepository<AuctionDocument, Long> {
+public interface AuctionElasticsearchRepository extends ElasticsearchRepository<AuctionDocument, Long> {
 }
