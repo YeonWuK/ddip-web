@@ -77,48 +77,56 @@ public class BidsService {
         MyBids myBids = myBidsRepository.findByUserIdAndAuctionId(userId, auctionId)
                         .orElseGet(() -> MyBids.from(createMyBidsDto));
 
-        long prevPrice= myBids.getLastBidPrice() == null ? 0 : myBids.getLastBidPrice();
-        long newPrice = dto.getPrice();
-
-        long resultPrice = newPrice - prevPrice;
-
-        log.info("user: {}, prevPrice: {}, newPrice: {}, resultPrice: {}",
-                user.getUsername(), prevPrice, newPrice, resultPrice);
-
-        if (resultPrice > 0) {
-            pointService.changePoint(user.getId(), -resultPrice, PointLedgerType.USE,
-                    PointLedgerSource.AUCTION, auctionId, "경매 입찰");
-        }
-
         User currentWinner = auction.getCurrentWinner();
 
-        // 기존 선두가 있으면 OUTBID 처리 및 환불 처리
-        if (currentWinner != null && !currentWinner.getId().equals(userId)) {
-            MyBids old = myBidsRepository.findByUserIdAndAuctionId(currentWinner.getId(), auctionId)
-                    .orElseThrow(() -> new UserNotFoundException(currentWinner.getId()));
+        // 동일 유저면 입찰가 증분 차감
+        if (currentWinner != null && currentWinner.getId().equals(userId)) {
 
-            long refund = old.getLastBidPrice();
+            long prevHold = myBids.getLastBidPrice() == null ? 0L : myBids.getLastBidPrice();
+            long newPrice = dto.getPrice() - prevHold;
 
-            if (refund > 0) {
-                pointService.changePoint(currentWinner.getId(), +refund, PointLedgerType.REFUND,
-                        PointLedgerSource.AUCTION, auctionId, "경매 선두 변경 환불");
+            pointService.changePoint(userId, -newPrice,
+                    PointLedgerType.USE, PointLedgerSource.AUCTION, auctionId, "경매 재입찰");
+
+            myBids.updateLastBidPrice(dto.getPrice());
+
+            auction.updateCurrentPrice(dto.getPrice());
+
+        } else {
+
+            // 이전 입찰 유저 포인트 환불
+            if (currentWinner != null) {
+                MyBids old = myBidsRepository.findByUserIdAndAuctionId(currentWinner.getId(), auctionId)
+                        .orElseThrow(() -> new UserNotFoundException(currentWinner.getId()));
+
+                long refund = old.getLastBidPrice() == null ? 0L : old.getLastBidPrice();
+
+                if (refund > 0) {
+                    pointService.changePoint(currentWinner.getId(), +refund,
+                            PointLedgerType.REFUND, PointLedgerSource.AUCTION, auctionId, "경매 선두 변경 환불");
+                }
+
+                old.updateLastBidPrice(0L);
+                old.markOutBid();
             }
-            old.markOutBid();
+
+            // 새로운 입찰
+            pointService.changePoint(userId, -dto.getPrice(),
+                    PointLedgerType.USE, PointLedgerSource.AUCTION, auctionId, "경매 입찰");
+
+            myBids.updateLastBidPrice(dto.getPrice());
+            myBids.markLeadBid();
+
+            auction.updateCurrentWinner(user);
+            auction.updateCurrentPrice(dto.getPrice());
         }
 
-        // 해당 유저의 상태를 LEADING 으로 갱신
-        myBids.updateLastBidPrice(dto.getPrice());
-        myBids.markLeadBid();
-
-        auction.updateCurrentWinner(user);
-
-        // 입찰 기록 저장
-        Bids bids = bidsRepository.save(Bids.from(createBidsDto));
+        Bids saved = bidsRepository.save(Bids.from(createBidsDto));
 
         // after commit
-        publisher.publishEvent(new AuctionEsEvent(auction.getId()));
+        publisher.publishEvent(new AuctionEsEvent(auctionId));
 
-        return BidsResponseDto.from(bids);
+        return BidsResponseDto.from(saved);
     }
 
     public List<Bids> getBidsByUser(Long userId) {
