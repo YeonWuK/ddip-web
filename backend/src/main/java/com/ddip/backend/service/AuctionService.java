@@ -12,7 +12,7 @@ import com.ddip.backend.entity.AuctionImage;
 import com.ddip.backend.entity.MyBids;
 import com.ddip.backend.entity.User;
 import com.ddip.backend.es.document.AuctionDocument;
-import com.ddip.backend.es.repository.AuctionElasticSearchRepository;
+import com.ddip.backend.es.repository.AuctionElasticsearchRepository;
 import com.ddip.backend.event.AuctionEndEvent;
 import com.ddip.backend.event.AuctionEsEvent;
 import com.ddip.backend.exception.auction.AuctionDeniedException;
@@ -53,7 +53,7 @@ public class AuctionService {
     private final MyBidsRepository myBidsRepository;
     private final AuctionRepository auctionRepository;
     private final AuctionImageRepository auctionImageRepository;
-    private final AuctionElasticSearchRepository auctionEsRepository;
+    private final AuctionElasticsearchRepository auctionEsRepository;
 
 
     /**

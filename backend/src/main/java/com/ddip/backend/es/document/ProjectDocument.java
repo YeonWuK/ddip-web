@@ -1,11 +1,12 @@
 package com.ddip.backend.es.document;
 
+import com.ddip.backend.entity.Project;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import org.springframework.data.annotation.Id;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.*;
 
 import java.time.LocalDate;
@@ -28,7 +29,7 @@ public class ProjectDocument {
     private String title;
 
     @Field(type = FieldType.Text)
-    private String summary;
+    private String thumbnailUrl;
 
     @Field(type = FieldType.Long)
     private Long targetAmount;
@@ -36,7 +37,10 @@ public class ProjectDocument {
     @Field(type = FieldType.Long)
     private Long currentAmount;
 
-    @Field(type = FieldType.Text)
+    @Field(type = FieldType.Integer)
+    private Integer fundingRate;
+
+    @Field(type = FieldType.Keyword)
     private String status;
 
     @Field(type = FieldType.Date)
@@ -44,4 +48,23 @@ public class ProjectDocument {
 
     @Field(type = FieldType.Date)
     private LocalDate endAt;
+
+    @Field(type = FieldType.Long)
+    private Long remainingDays;
+
+    public static ProjectDocument from(Project project, String thumbnailUrl) {
+        return ProjectDocument.builder()
+                .id(project.getId())
+                .title(project.getTitle())
+                .thumbnailUrl(thumbnailUrl)
+                .thumbnailUrl(project.getThumbnailUrl())
+                .targetAmount(project.getTargetAmount())
+                .currentAmount(project.getCurrentAmount())
+                .status(String.valueOf(project.getStatus()))
+                .startAt(project.getStartAt())
+//                .remainingDays(project.getRemainingDays)
+                .endAt(project.getEndAt())
+                .build();
+
+    }
 }

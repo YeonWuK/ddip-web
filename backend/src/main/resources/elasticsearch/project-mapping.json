@@ -13,32 +13,31 @@
         }
       }
     },
-    "description": {
-      "type": "text",
-      "analyzer": "custom-nori-analyzer"
-    },
-    "imageKey": {
+    "thumbnailUrl": {
       "type": "text"
     },
-    "seller": {
-      "type": "text"
-    },
-    "startPrice": {
+    "targetAmount": {
       "type": "long"
     },
-    "currentPrice": {
+    "currentAmount": {
       "type": "long"
+    },
+    "fundingRate": {
+      "type": "integer"
     },
     "status": {
-      "type": "text"
+      "type": "keyword"
     },
     "startAt": {
       "type": "date",
-      "format": "yyyy-MM-dd'T'HH:mm:ss.SSS||epoch_millis"
+      "format": "yyyy-MM-dd||epoch_millis"
     },
     "endAt": {
       "type": "date",
-      "format": "yyyy-MM-dd'T'HH:mm:ss.SSS||epoch_millis"
+      "format": "yyyy-MM-dd||epoch_millis"
+    },
+    "remainingDays": {
+      "type": "long"
     }
   }
 }
