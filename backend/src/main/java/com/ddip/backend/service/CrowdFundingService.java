@@ -4,21 +4,16 @@ import com.ddip.backend.dto.admin.crowdfunding.AdminProjectSearchCondition;
 import com.ddip.backend.dto.crowd.ProjectRequestDto;
 import com.ddip.backend.dto.crowd.ProjectResponseDto;
 import com.ddip.backend.dto.crowd.ProjectUpdateRequestDto;
-import com.ddip.backend.dto.crowd.RewardTierRequestDto;
 import com.ddip.backend.dto.enums.ProjectStatus;
-import com.ddip.backend.dto.enums.Role;
 import com.ddip.backend.entity.Project;
 import com.ddip.backend.entity.ProjectImage;
-import com.ddip.backend.entity.RewardTier;
 import com.ddip.backend.entity.User;
+import com.ddip.backend.es.document.ProjectDocument;
 import com.ddip.backend.es.repository.ProjectElasticsearchRepository;
 import com.ddip.backend.event.ProjectEsEvent;
-import com.ddip.backend.exception.project.InvalidProjectStatusException;
-import com.ddip.backend.exception.project.ProjectAccessDeniedException;
 import com.ddip.backend.exception.project.ProjectNotFoundException;
 import com.ddip.backend.exception.reward.RewardTierRequiredException;
 import com.ddip.backend.exception.user.UserNotFoundException;
-import com.ddip.backend.handler.AfterCommitEventHandler;
 import com.ddip.backend.repository.ProjectImageRepository;
 import com.ddip.backend.repository.ProjectRepository;
 import com.ddip.backend.repository.UserRepository;
@@ -75,18 +70,29 @@ public class CrowdFundingService {
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
         Project project = Project.toEntity(requestDto, user);
+        projectRepository.save(project);
 
         String prefix = s3UrlPrefixFactory.projectPrefix(project.getId());
 
+        String thumbnailUrl = null;
+
         for (MultipartFile multipartFile : multipartFiles) {
             String key = awsS3Util.uploadFile(multipartFile, prefix);
-            ProjectImage projectImage = ProjectImage.from(project, key);
 
+            if (thumbnailUrl == null) {
+                thumbnailUrl = key;
+            }
+
+            ProjectImage projectImage = ProjectImage.from(project, key);
             projectImageRepository.save(projectImage);
         }
 
-        projectRepository.save(project);
-        publisher.publishEvent(new ProjectEsEvent(project.getId()));
+        project.updateThumbnailUrl(thumbnailUrl);
+
+        // Es 인덱스 생성
+        ProjectDocument projectDocument = ProjectDocument.from(project, thumbnailUrl);
+        projectElasticsearchRepository.save(projectDocument);
+
         log.info("성공적으로 프로젝트가 생성되었습니다 projectId = {}", project.getId());
         return project.getId();
     }

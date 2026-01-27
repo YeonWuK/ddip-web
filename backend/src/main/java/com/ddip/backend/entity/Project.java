@@ -125,6 +125,10 @@ public class Project extends BaseTimeEntity {
         this.rewardTiers.add(tier);
     }
 
+    public void updateThumbnailUrl(String thumbnailUrl) {
+        this.thumbnailUrl = thumbnailUrl;
+    }
+
     public void increaseCurrentAmount(long amount) {
         this.currentAmount += amount;
     }
