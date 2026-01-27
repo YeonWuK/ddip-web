@@ -24,13 +24,9 @@ public class ProjectSearchResponse {
 
     private Long currentAmount;
 
-    private Integer fundingRate;
-
     private String status;
 
     private LocalDate startAt;
 
     private LocalDate endAt;
-
-    private Long remainingDays;
 }

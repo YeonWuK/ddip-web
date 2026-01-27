@@ -22,9 +22,6 @@
     "currentAmount": {
       "type": "long"
     },
-    "fundingRate": {
-      "type": "integer"
-    },
     "status": {
       "type": "keyword"
     },
@@ -35,9 +32,6 @@
     "endAt": {
       "type": "date",
       "format": "yyyy-MM-dd||epoch_millis"
-    },
-    "remainingDays": {
-      "type": "long"
     }
   }
 }
