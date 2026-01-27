@@ -34,8 +34,14 @@ public class ProjectResponseDto {
     private CreatorDto creator;
     private List<RewardTierResponseDto> rewardTiers;
     private List<ProjectImageResponseDto> images = new ArrayList<>();
+    private int achievementRate;
 
     public static ProjectResponseDto from(Project project){
+        int rate = 0;
+        if (project.getTargetAmount() > 0) {
+            rate = (int) ((project.getCurrentAmount() * 100) / project.getTargetAmount());
+        }
+
         return ProjectResponseDto.builder()
                 .id(project.getId())
                 .title(project.getTitle())
@@ -52,13 +58,8 @@ public class ProjectResponseDto {
                 .rewardTiers(
                         project.getRewardTiers().stream()
                                 .map(RewardTierResponseDto::from)
-                                .toList()
-                )
-                .images(
-                        project.getImages().stream()
-                                .map(ProjectImageResponseDto::from)
-                                .collect(Collectors.toList())
-                )
+                                .toList())
+                .achievementRate(rate)
                 .build();
     }
 
