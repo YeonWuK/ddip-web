@@ -1,7 +1,7 @@
 package com.ddip.backend.security.auth;
 
-import com.ddip.backend.dto.error.security.ProfileIncompleteDeniedException;
-import com.ddip.backend.dto.error.security.TokenExpiredException;
+import com.ddip.backend.exception.security.BlackListedTokenException;
+import com.ddip.backend.exception.security.TokenExpiredException;
 import com.ddip.backend.service.TokenBlackListService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -9,7 +9,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
@@ -40,25 +42,30 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         String token = header.substring(7);
 
         if (tokenBlackListService.isBlackListed(token)) {
-            filterChain.doFilter(request, response);
-            return;
+            throw new BlackListedTokenException("Token is blacklisted");
         }
 
-        String username = jwtUtils.extractUserEmail(token);
+        String email = jwtUtils.extractUserEmail(token);
 
-        if (username == null) {
+        log.info("user: {} ", email);
+
+        if (email == null) {
             log.info("Invalid token, Incorrect username");
             filterChain.doFilter(request, response);
             return;
         }
 
-        if (SecurityContextHolder.getContext().getAuthentication() != null) {
-            log.info("SecurityContext already has auth, skip");
+
+        Authentication existing = SecurityContextHolder.getContext().getAuthentication();
+
+        if (existing != null && existing.isAuthenticated()
+                && !(existing instanceof AnonymousAuthenticationToken)) {
+            log.info("SecurityContext already has authenticated user, skip");
             filterChain.doFilter(request, response);
             return;
         }
 
-        CustomUserDetails userDetails = (CustomUserDetails) userDetailsService.loadUserByUsername(username);
+        CustomUserDetails userDetails = (CustomUserDetails) userDetailsService.loadUserByUsername(email);
 
         if (!jwtUtils.isValidToken(token, userDetails.getEmail())) {
             throw new TokenExpiredException("invalid token or Expired");
@@ -66,10 +73,6 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
         log.info("Successfully validate token");
         setAuthentication(userDetails, request);
-
-        if (!userDetails.getIsActive()) {
-            throw new ProfileIncompleteDeniedException("Invalid profile");
-        }
 
         filterChain.doFilter(request, response);
     }
@@ -79,5 +82,18 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                 new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         SecurityContextHolder.getContext().setAuthentication(authentication);
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            return true;
+        }
+
+        String path = request.getServletPath();
+        return path.equals("/api/users/login")
+                || path.equals("/api/users/register")
+                || path.equals("/api/users/update-password")
+                || path.equals("/api/users/refresh-token");
     }
 }

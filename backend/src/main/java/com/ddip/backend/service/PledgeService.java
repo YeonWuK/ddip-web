@@ -1,73 +1,153 @@
-//package com.ddip.backend.service;
-//
-//import com.ddip.backend.dto.crowd.PledgeCreateRequestDto;
-//import com.ddip.backend.dto.crowd.PledgeResponseDto;
-//import com.ddip.backend.dto.enums.ProjectStatus;
-//import com.ddip.backend.entity.Project;
-//import com.ddip.backend.entity.RewardTier;
-//import com.ddip.backend.entity.User;
-//import com.ddip.backend.repository.PledgeRepository;
-//import com.ddip.backend.repository.ProjectRepository;
-//import com.ddip.backend.repository.RewardTierRepository;
-//import com.ddip.backend.repository.UserRepository;
-//import lombok.RequiredArgsConstructor;
-//import lombok.extern.slf4j.Slf4j;
-//import org.springframework.stereotype.Service;
-//import org.springframework.transaction.annotation.Transactional;
-//
-//import java.time.LocalDateTime;
-//
-//@Slf4j
-//@Service
-//@Transactional
-//@RequiredArgsConstructor
-//public class PledgeService {
-//
-//    private final PledgeRepository pledgeRepository;
-//    private final UserRepository userRepository;
-//    private final ProjectRepository projectRepository;
-//    private final RewardTierRepository rewardTierRepository;
-//
-//    public PledgeResponseDto createPledge(Long userId, Long projectId, PledgeCreateRequestDto requestDto) {
-//        User user = userRepository.findById(userId)
-//                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
-//
-//        Project project = projectRepository.findById(projectId)
-//                .orElseThrow(() -> new IllegalArgumentException("Project not found: " + projectId));
-//
-//        if (project.getStatus() != ProjectStatus.OPEN) {
-//            throw new IllegalStateException("현재 펀딩이 열려있지 않습니다.");
-//        }
-//
-//        LocalDateTime now = LocalDateTime.now();
-//        if (project.getStartAt() != null && now.isBefore(project.getStartAt())) {
-//            throw new IllegalStateException("펀딩 시작 전입니다.");
-//        }
-//        if (project.getEndAt() != null && now.isAfter(project.getEndAt())) {
-//            throw new IllegalStateException("펀딩이 종료되었습니다.");
-//        }
-//
-//        if (requestDto.getRewardTierId() != null) {
-//            RewardTier rewardTier = rewardTierRepository.findByIdForUpdate(requestDto.getRewardTierId())
-//                    .orElseThrow(() -> new IllegalArgumentException("RewardTier not found: " + requestDto.getRewardTierId()));
-//
-//            // 이 티어가 해당 프로젝트 소속인지 검증
-//            if (!rewardTier.getProject().getId().equals(project.getId())) {
-//                throw new IllegalArgumentException("해당 프로젝트의 리워드가 아닙니다.");
-//            }
-//
-//            // 수량 체크 + 판매수량 증가
-//            rewardTier.increaseSoldQuantity();
-//            // 금액은 서버가 티어 가격으로 결정
-//            amount = rewardTier.getPrice();
-//        } else {
-//            // 리워드 없이 후원하는 경우(원하지 않으면 여기서 예외로 막으면 됨)
-//            if (requestDto.getAmount() == null || requestDto.getAmount() < 1) {
-//                throw new IllegalArgumentException("후원 금액은 1 이상이어야 합니다.");
-//            }
-//            amount = requestDto.getAmount();
-//        }
-//
-//    }
-//
-//}
+package com.ddip.backend.service;
+
+import com.ddip.backend.dto.crowd.PledgeCreateRequestDto;
+import com.ddip.backend.dto.crowd.PledgeResponseDto;
+import com.ddip.backend.dto.enums.PledgeStatus;
+import com.ddip.backend.dto.enums.PointLedgerSource;
+import com.ddip.backend.dto.enums.PointLedgerType;
+import com.ddip.backend.dto.enums.ProjectStatus;
+import com.ddip.backend.entity.Pledge;
+import com.ddip.backend.entity.Project;
+import com.ddip.backend.entity.RewardTier;
+import com.ddip.backend.entity.User;
+import com.ddip.backend.event.ProjectEsEvent;
+import com.ddip.backend.exception.pledge.PledgeAccessDeniedException;
+import com.ddip.backend.exception.pledge.PledgeNotFoundException;
+import com.ddip.backend.exception.project.InvalidProjectStatusException;
+import com.ddip.backend.exception.project.ProjectNotFoundException;
+import com.ddip.backend.exception.reward.InvalidQuantityException;
+import com.ddip.backend.exception.reward.RewardMismatchException;
+import com.ddip.backend.exception.reward.RewardNotFoundException;
+import com.ddip.backend.exception.user.UserNotFoundException;
+import com.ddip.backend.repository.PledgeRepository;
+import com.ddip.backend.repository.ProjectRepository;
+import com.ddip.backend.repository.RewardTierRepository;
+import com.ddip.backend.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+@Slf4j
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class PledgeService {
+
+    private final ApplicationEventPublisher publisher;
+
+    private final PledgeRepository pledgeRepository;
+    private final UserRepository userRepository;
+    private final ProjectRepository projectRepository;
+    private final RewardTierRepository rewardTierRepository;
+    private final PointService pointService;
+
+    public PledgeResponseDto createPledge(Long userId, Long projectId, PledgeCreateRequestDto requestDto) {
+        // 1) 사용자 확인
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+
+        // 2) 프로젝트 확인
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ProjectNotFoundException(projectId));
+
+        // 프로젝트 상태 검증: 진행중일 때만 후원 가능 등
+        project.assertStatus(ProjectStatus.OPEN);
+
+        // 3) 리워드 티어 확인
+        RewardTier rewardTier = rewardTierRepository.findById(requestDto.getRewardTierId())
+                .orElseThrow(() -> new RewardNotFoundException(requestDto.getRewardTierId()));
+
+        // 4) 리워드 티어가 해당 프로젝트 소속인지 검증
+        rewardTier.assertBelongsTo(project);
+
+        // 5) 수량 검증
+        int quantity = requestDto.getQuantity();
+        if (quantity <= 0) {
+            throw new InvalidQuantityException(quantity);
+        }
+
+        // 6) 실제 필요한 포인트 금액 계산
+        long requiredAmount = rewardTier.getPrice() * (long) quantity;
+
+        // 7) 잔액 충분한지 도메인 레벨에서 한 번 더 확인
+        user.assertEnoughPoint(requiredAmount);
+
+        // 8) Pledge 생성
+        Pledge pledge = Pledge.toEntity(user, project, rewardTier, requiredAmount);
+        Pledge saved = pledgeRepository.save(pledge);
+
+        // 9) 포인트 사용 및 상태 전이
+        usePointForPledge(userId, saved.getAmount(), saved.getId()); // saved.getAmount() == requiredAmount
+        pledge.paidFunding(); // PENDING -> PAID
+
+        // 10) 캐시 필드/재고 반영
+        project.increaseCurrentAmount(saved.getAmount());
+        rewardTier.increaseSoldQuantity(quantity);
+
+        publisher.publishEvent(new ProjectEsEvent(project.getId()));
+
+        log.info("성공적으로 구매 되었습니다. userId={}, pledgeId={}", userId, saved.getId());
+        return PledgeResponseDto.from(saved);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PledgeResponseDto> getAllPledge(Long userId) {
+        return pledgeRepository.findByUserId(userId).stream()
+                .map(PledgeResponseDto::from)
+                .toList();
+    }
+
+    public void cancelPledge(Long userId, Long pledgeId) {
+        Pledge pledge = pledgeRepository.findById(pledgeId)
+                .orElseThrow(() -> new PledgeNotFoundException(pledgeId));
+
+        // 본인의 pledge 맞는지 검증
+        pledge.assertOwnedBy(userId);
+        // 이미 취소 됬거나 확정, 배송중 인경우 취소 불가.
+        pledge.assertCancelable();
+
+        long amount = pledge.getAmount();
+
+        // 포인트 환불
+        refundPointForPledge(userId, amount, pledgeId);
+
+        // 상태/금액 롤백
+        pledge.canceledFunding();
+        pledge.getProject().decreaseCurrentAmount(amount);
+
+        log.info("성공적으로 후원이 취소되었습니다. userId={}, pledgeId={}, refundAmount={}", userId, pledgeId, amount);
+    }
+
+    public void refundAllFailedProjects(Long projectId) {
+        // 펀딩 실패 시 환불 대상은 "결제 완료(PAID)" 상태인 애들
+        List<Pledge> pledges = pledgeRepository.findByProjectIdAndStatus(projectId, PledgeStatus.PAID);
+
+        for (Pledge pledge : pledges) {
+            refundPointForPledge(pledge.getUser().getId(), pledge.getAmount(), pledge.getId());
+            pledge.canceledFunding();
+            pledge.getProject().decreaseCurrentAmount(pledge.getAmount()); // 캐시도 롤백
+        }
+    }
+
+    public List<Pledge> getPledgesByProject(Long projectId) {
+        return pledgeRepository.findByProjectId(projectId);
+    }
+
+    public List<Pledge> getPledgesByUser(Long userId) {
+        return pledgeRepository.findByUserId(userId);
+    }
+
+    private void usePointForPledge(Long userId, long amount, Long pledgeId) {
+        pointService.changePoint(userId, -amount, PointLedgerType.USE, PointLedgerSource.PLEDGE, pledgeId,
+                "Pledge 결제 (pledgeId=" + pledgeId + ")");
+    }
+
+    private void refundPointForPledge(Long userId, long amount, Long pledgeId) {
+        pointService.changePoint(userId, amount, PointLedgerType.REFUND, PointLedgerSource.PLEDGE, pledgeId,
+                "Pledge 환불 (pledgeId=" + pledgeId + ")");
+    }
+}

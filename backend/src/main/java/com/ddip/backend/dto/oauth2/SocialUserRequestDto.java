@@ -1,5 +1,6 @@
 package com.ddip.backend.dto.oauth2;
 
+import com.ddip.backend.dto.enums.AuthProvider;
 import com.ddip.backend.dto.enums.Role;
 import com.ddip.backend.security.oauth2.Oauth2UserInfo;
 import lombok.AllArgsConstructor;
@@ -22,9 +23,9 @@ public class SocialUserRequestDto {
         return SocialUserRequestDto.builder()
                 .email(oauth2UserInfo.getEmail())
                 .nickname(oauth2UserInfo.getName())
-                .provider(oauth2UserInfo.getProvider())
+                .providerId(oauth2UserInfo.getProviderId())
+                .provider(oauth2UserInfo.getProvider().toUpperCase())
                 .role(Role.USER)
                 .build();
     }
-
 }

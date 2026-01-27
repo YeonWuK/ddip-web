@@ -28,16 +28,19 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         this.authenticationManager = authenticationManager;
         this.jwtUtils = jwtUtils;
         this.tokenBlackListService = tokenBlackList;
+
         setFilterProcessesUrl("/api/users/login");
     }
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
+        log.info("[LOGIN FILTER] method={}, uri={}, contentLength={}, contentType={}",
+                request.getMethod(), request.getRequestURI(), request.getContentLength(), request.getContentType());
         try{
             // 로그인 시 DB 에서 사용자 조회 후 인증객체 반환
             LoginUserRequest loginUserRequest = new ObjectMapper().readValue(request.getInputStream(), LoginUserRequest.class);
             UsernamePasswordAuthenticationToken authenticationToken =
-                    new UsernamePasswordAuthenticationToken(loginUserRequest.getUsername(), loginUserRequest.getPassword());
+                    new UsernamePasswordAuthenticationToken(loginUserRequest.getEmail(), loginUserRequest.getPassword());
             return authenticationManager.authenticate(authenticationToken);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -46,7 +49,8 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
     @Override
     public void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResults) throws IOException {
-        String accessToken = jwtUtils.generateToken(authResults.getName());
+        CustomUserDetails userDetails = (CustomUserDetails) authResults.getPrincipal();
+        String accessToken = jwtUtils.generateToken(userDetails.getEmail());
 
         response.addHeader("Authorization", "Bearer " + accessToken);
 
@@ -56,11 +60,11 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         }
 
         // refreshToken 생성 및 쿠키에 추가
-        String refreshToken = jwtUtils.generateRefreshToken(authResults.getName());
+        String refreshToken = jwtUtils.generateRefreshToken(userDetails.getEmail());
         Cookie refreshTokenCookie = new Cookie("refresh_token", refreshToken);
         refreshTokenCookie.setPath("/");
-        refreshTokenCookie.setHttpOnly(true);
-        refreshTokenCookie.setSecure(true);
+        refreshTokenCookie.setHttpOnly(false);
+        refreshTokenCookie.setSecure(false);
         refreshTokenCookie.setMaxAge(Math.toIntExact(jwtUtils.getRefreshExpiration()));
         response.addCookie(refreshTokenCookie);
 

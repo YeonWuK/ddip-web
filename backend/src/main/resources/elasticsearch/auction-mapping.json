@@ -1,0 +1,44 @@
+{
+  "properties": {
+    "id": {
+      "type": "long"
+    },
+    "title": {
+      "type": "text",
+      "analyzer": "custom-nori-analyzer",
+      "fields": {
+        "ngram": {
+          "type": "text",
+          "analyzer": "custom-ngram-analyzer"
+        }
+      }
+    },
+    "description": {
+      "type": "text",
+      "analyzer": "custom-nori-analyzer"
+    },
+    "imageKey": {
+      "type": "text"
+    },
+    "seller": {
+      "type": "text"
+    },
+    "startPrice": {
+      "type": "long"
+    },
+    "currentPrice": {
+      "type": "long"
+    },
+    "status": {
+      "type": "text"
+    },
+    "startAt": {
+      "type": "date",
+      "format": "yyyy-MM-dd'T'HH:mm:ss.SSS||epoch_millis"
+    },
+    "endAt": {
+      "type": "date",
+      "format": "yyyy-MM-dd'T'HH:mm:ss.SSS||epoch_millis"
+    }
+  }
+}

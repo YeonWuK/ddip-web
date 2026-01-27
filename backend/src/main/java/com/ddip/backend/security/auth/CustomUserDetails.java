@@ -34,18 +34,14 @@ public class CustomUserDetails implements UserDetails, OAuth2User {
         return List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
     }
 
-    public boolean getIsActive() {
-        return user.getIsActive();
-    }
-
     @Override
     public String getPassword() {
-        return null;
+        return user.getPassword();
     }
 
     @Override
     public String getUsername() {
-        return user.getUsername();
+        return user.getEmail();
     }
 
     @Override
@@ -60,8 +56,6 @@ public class CustomUserDetails implements UserDetails, OAuth2User {
     @Override
     public boolean isEnabled() {return true;}
 
-    public String getEmail() { return user.getEmail(); }
-
     @Override
     public String getName() {
         return user.getUsername();
@@ -69,5 +63,13 @@ public class CustomUserDetails implements UserDetails, OAuth2User {
 
     public Long getUserId(){
         return user.getId();
+    }
+
+    public String getNickname() {
+        return user.getNickname();
+    }
+
+    public String getEmail() {
+        return user.getEmail();
     }
 }

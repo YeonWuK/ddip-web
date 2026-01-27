@@ -18,14 +18,20 @@ public class SmsService {
     @Value("${solapi.from}")
     private String from;
 
-    public void sendSms(UserResponseDto dto, String password) {
+    /**
+     * 기본 SMS 전송 메서드
+     */
+    public void sendSms(String phoneNumber, String text) {
 
-        MessageDto messageDto = MessageDto.from(dto, password);
+        if (phoneNumber == null || phoneNumber.isBlank()) {
+            throw new IllegalArgumentException("전화번호가 유효하지 않습니다.");
+        }
 
         Message message = new Message();
         message.setFrom(from);
-        message.setTo(dto.getPhoneNumber());
-        message.setText(messageDto.getMessage());
+        message.setTo(phoneNumber);
+        message.setText(text);
+
         try {
             messageService.send(message);
         } catch (SolapiMessageNotReceivedException e) {
@@ -34,4 +40,14 @@ public class SmsService {
             throw new IllegalStateException("SMS 발송 중 예외: " + e.getMessage(), e);
         }
     }
+
+    /**
+     * UserResponseDto 기반 SMS (기존 기능 유지)
+     */
+    public void sendSms(UserResponseDto dto, String password) {
+
+        String text = MessageDto.from(dto, password).getMessage();
+        sendSms(dto.getPhoneNumber(), text);
+    }
+
 }

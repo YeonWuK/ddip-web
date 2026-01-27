@@ -1,0 +1,37 @@
+{
+  "properties": {
+    "id": {
+      "type": "long"
+    },
+    "title": {
+      "type": "text",
+      "analyzer": "custom-nori-analyzer",
+      "fields": {
+        "ngram": {
+          "type": "text",
+          "analyzer": "custom-ngram-analyzer"
+        }
+      }
+    },
+    "thumbnailUrl": {
+      "type": "text"
+    },
+    "targetAmount": {
+      "type": "long"
+    },
+    "currentAmount": {
+      "type": "long"
+    },
+    "status": {
+      "type": "keyword"
+    },
+    "startAt": {
+      "type": "date",
+      "format": "yyyy-MM-dd||epoch_millis"
+    },
+    "endAt": {
+      "type": "date",
+      "format": "yyyy-MM-dd||epoch_millis"
+    }
+  }
+}

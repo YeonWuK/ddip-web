@@ -2,12 +2,14 @@ package com.ddip.backend.dto.crowd;
 
 
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -25,8 +27,8 @@ public class ProjectUpdateRequestDto {
     @Min(1)
     private Long targetAmount;
 
-    private LocalDateTime startAt;
-    private LocalDateTime endAt;
+    private LocalDate startAt;
+    private LocalDate endAt;
 
     @Size(max = 100)
     private String categoryPath;
@@ -38,4 +40,7 @@ public class ProjectUpdateRequestDto {
     private String summary;
 
     private List<RewardTierRequestDto> rewardTiers;
+
+    private List<Long> imageIds;
+
 }

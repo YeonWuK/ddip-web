@@ -1,4 +1,9 @@
 spring:
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
   security:
     oauth2:
       client:
@@ -53,7 +58,6 @@ spring:
     password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
-
   jpa:
     hibernate:
       ddl-auto: update
@@ -67,6 +71,26 @@ spring:
       host: ${SPRING_DATA_REDIS_HOST:localhost}
       port: ${SPRING_DATA_REDIS_PORT:6379}
 
+    elasticsearch:
+      repositories:
+        enabled: true
+
+  elasticsearch:
+    uris: ${ES_URIS}
+    username: ${ES_USERNAME}
+
+  cloud:
+    aws:
+      credentials:
+        access-key: ${AWS_ACCESS_KEY}
+        secret-key: ${AWS_SECRET_KEY}
+      region:
+        static: ap-northeast-2
+      s3:
+        bucket: ddip-image
+      stack:
+        auto: false
+
 jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION}
@@ -76,3 +100,6 @@ solapi:
   api-key: ${SOLAPI_API_KEY}
   api-secret: ${SOLAPI_API_SECRET}
   from: ${SOLAPI_FROM}
+
+es:
+  port: ${ES_PORT}
