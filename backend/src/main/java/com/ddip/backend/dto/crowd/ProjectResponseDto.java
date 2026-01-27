@@ -23,6 +23,7 @@ public class ProjectResponseDto {
     private Long id;
     private String title;
     private String description;
+    private String thumbnailUrl;
     private Long targetAmount;
     private Long currentAmount;
     private ProjectStatus status;
@@ -40,6 +41,7 @@ public class ProjectResponseDto {
                 .id(project.getId())
                 .title(project.getTitle())
                 .description(project.getDescription())
+                .thumbnailUrl(project.getThumbnailUrl())
                 .targetAmount(project.getTargetAmount())
                 .currentAmount(project.getCurrentAmount())
                 .status(project.getStatus())

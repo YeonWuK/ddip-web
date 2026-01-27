@@ -4,15 +4,13 @@ import com.ddip.backend.dto.admin.crowdfunding.AdminProjectSearchCondition;
 import com.ddip.backend.dto.crowd.ProjectRequestDto;
 import com.ddip.backend.dto.crowd.ProjectResponseDto;
 import com.ddip.backend.dto.crowd.ProjectUpdateRequestDto;
-import com.ddip.backend.dto.crowd.RewardTierRequestDto;
 import com.ddip.backend.dto.enums.ProjectStatus;
-import com.ddip.backend.dto.enums.Role;
 import com.ddip.backend.entity.Project;
 import com.ddip.backend.entity.ProjectImage;
-import com.ddip.backend.entity.RewardTier;
 import com.ddip.backend.entity.User;
-import com.ddip.backend.exception.project.InvalidProjectStatusException;
-import com.ddip.backend.exception.project.ProjectAccessDeniedException;
+import com.ddip.backend.es.document.ProjectDocument;
+import com.ddip.backend.es.repository.ProjectElasticsearchRepository;
+import com.ddip.backend.event.ProjectEsEvent;
 import com.ddip.backend.exception.project.ProjectNotFoundException;
 import com.ddip.backend.exception.reward.RewardTierRequiredException;
 import com.ddip.backend.exception.user.UserNotFoundException;
@@ -23,6 +21,7 @@ import com.ddip.backend.utils.AwsS3Util;
 import com.ddip.backend.utils.S3UrlPrefixFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -41,7 +40,9 @@ public class CrowdFundingService {
 
     private final AwsS3Util awsS3Util;
     private final S3UrlPrefixFactory s3UrlPrefixFactory;
+    private final ApplicationEventPublisher publisher;
 
+    private final ProjectElasticsearchRepository projectElasticsearchRepository;
     private final ProjectImageRepository projectImageRepository;
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
@@ -69,17 +70,29 @@ public class CrowdFundingService {
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
         Project project = Project.toEntity(requestDto, user);
+        projectRepository.save(project);
 
         String prefix = s3UrlPrefixFactory.projectPrefix(project.getId());
 
+        String thumbnailUrl = null;
+
         for (MultipartFile multipartFile : multipartFiles) {
             String key = awsS3Util.uploadFile(multipartFile, prefix);
-            ProjectImage projectImage = ProjectImage.from(project, key);
 
+            if (thumbnailUrl == null) {
+                thumbnailUrl = key;
+            }
+
+            ProjectImage projectImage = ProjectImage.from(project, key);
             projectImageRepository.save(projectImage);
         }
 
-        projectRepository.save(project);
+        project.updateThumbnailUrl(thumbnailUrl);
+
+        // Es 인덱스 생성
+        ProjectDocument projectDocument = ProjectDocument.from(project, thumbnailUrl);
+        projectElasticsearchRepository.save(projectDocument);
+
         log.info("성공적으로 프로젝트가 생성되었습니다 projectId = {}", project.getId());
         return project.getId();
     }
@@ -112,6 +125,7 @@ public class CrowdFundingService {
         }
 
         project.cancel();
+        projectElasticsearchRepository.deleteById(project.getId());
         log.info("성공적으로 삭제 되었습니다. projectId={}", projectId);
     }
 
@@ -165,6 +179,7 @@ public class CrowdFundingService {
 
         // 기본 필드 부분 수정
         project.updateFrom(requestDto);
+        publisher.publishEvent(new ProjectEsEvent(project.getId()));
     }
 
     public void openFunding(Long userId, Long projectId) {
@@ -188,6 +203,7 @@ public class CrowdFundingService {
         }
 
         project.openFunding();
+        publisher.publishEvent(new ProjectEsEvent(project.getId()));
         log.info("성공적으로 open funding 상태가 되었습니다. projectId={}", projectId);
     }
 
@@ -205,23 +221,27 @@ public class CrowdFundingService {
                 // 펀딩 실패 → 환불
                 pledgeService.refundAllFailedProjects(project.getId());
             }
+            publisher.publishEvent(new ProjectEsEvent(project.getId()));
         }
     }
 
     public void rejectProjectByAdmin(Long projectId){
         Project project = getProjectEntity(projectId);
         project.rejectByAdmin();
+        publisher.publishEvent(new ProjectEsEvent(project.getId()));
     }
 
     public void forceStopByAdmin(Long projectId){
         Project project = getProjectEntity(projectId);
         project.stopProject();
+        publisher.publishEvent(new ProjectEsEvent(project.getId()));
     }
 
     public void forceCancelProjectByAdmin(Long projectId){
         Project project = getProjectEntity(projectId);
         project.cancel();
         pledgeService.refundAllFailedProjects(project.getId());
+        publisher.publishEvent(new ProjectEsEvent(project.getId()));
     }
 
     @Transactional(readOnly = true)
