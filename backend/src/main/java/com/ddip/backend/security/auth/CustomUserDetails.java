@@ -56,8 +56,6 @@ public class CustomUserDetails implements UserDetails, OAuth2User {
     @Override
     public boolean isEnabled() {return true;}
 
-    public String getEmail() { return user.getEmail(); }
-
     @Override
     public String getName() {
         return user.getUsername();
@@ -65,5 +63,13 @@ public class CustomUserDetails implements UserDetails, OAuth2User {
 
     public Long getUserId(){
         return user.getId();
+    }
+
+    public String getNickname() {
+        return user.getNickname();
+    }
+
+    public String getEmail() {
+        return user.getEmail();
     }
 }

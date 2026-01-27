@@ -6,6 +6,8 @@ import com.ddip.backend.security.auth.JwtUtils;
 import com.ddip.backend.service.SmsService;
 import com.ddip.backend.service.TokenBlackListService;
 import com.ddip.backend.service.UserService;
+import com.ddip.backend.validation.CustomValidators;
+import com.ddip.backend.validation.ValidationSequence;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +15,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
@@ -26,14 +30,22 @@ public class UserApiController {
     private final SmsService smsService;
     private final JwtUtils jwtUtils;
     private final TokenBlackListService tokenBlackListService;
+    private final CustomValidators customValidators;
 
 
     /**
      * 회원가입
      */
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody UserRequestDto userRequest) {
-        UserResponseDto userResponse = userService.createUser(userRequest);
+    public ResponseEntity<?> registerUser(@Validated(ValidationSequence.class) @RequestBody UserRequestDto dto,
+                                          BindingResult bindingResult) {
+
+        if (bindingResult.hasErrors()) {
+            return ResponseEntity.badRequest().body(bindingResult);
+        }
+        customValidators.registerValidate(dto, bindingResult);
+
+        UserResponseDto userResponse = userService.createUser(dto);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(userResponse);
     }
@@ -43,10 +55,15 @@ public class UserApiController {
      */
     @PatchMapping("/update")
     public ResponseEntity<?> updateUser(@AuthenticationPrincipal CustomUserDetails customUserDetails,
-                                        @RequestBody UserUpdateRequestDto userUpdateReq) {
+                                        @Validated(ValidationSequence.class) @RequestBody UserUpdateRequestDto userUpdateReq,
+                                        BindingResult bindingResult) {
+
+        if (bindingResult.hasErrors()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(bindingResult);
+        }
+        customValidators.updateValidate(userUpdateReq, bindingResult);
 
         UserResponseDto dto = userService.updateUser(customUserDetails.getUserId(), userUpdateReq);
-
         return ResponseEntity.ok(dto);
     }
 
@@ -102,7 +119,14 @@ public class UserApiController {
      */
     @PatchMapping("/update-profile")
     public ResponseEntity<?> updateProfile(@AuthenticationPrincipal CustomUserDetails customUserDetails,
-                                           @RequestBody ProfileRequestDto dto)  {
+                                           @Validated(ValidationSequence.class) @RequestBody ProfileRequestDto dto,
+                                           BindingResult bindingResult)  {
+
+        if (bindingResult.hasErrors()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(bindingResult);
+        }
+
+        customValidators.profileUpdateValidate(dto, bindingResult);
 
         UserResponseDto userResponseDto = userService.completeProfile(customUserDetails.getEmail(), dto);
 
