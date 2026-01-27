@@ -160,12 +160,19 @@ public class CrowdFundingService {
             throw new IllegalArgumentException("종료일은 시작일 이후여야 합니다.");
         }
 
+        String thumbnailUrl = null;
+
         // S3에 새 이미지 파일 업로드
         if (multipartFiles != null && !multipartFiles.isEmpty()) {
             String prefix = s3UrlPrefixFactory.projectPrefix(project.getId());
 
             for (MultipartFile multipartFile : multipartFiles) {
                 String key = awsS3Util.uploadFile(multipartFile, prefix);
+
+                if (thumbnailUrl == null) {
+                    thumbnailUrl = key;
+                }
+
                 projectImageRepository.save(ProjectImage.from(project, key));
             }
         }
@@ -179,6 +186,8 @@ public class CrowdFundingService {
 
         // 기본 필드 부분 수정
         project.updateFrom(requestDto);
+        project.updateThumbnailUrl(thumbnailUrl);
+
         publisher.publishEvent(new ProjectEsEvent(project.getId()));
     }
 
