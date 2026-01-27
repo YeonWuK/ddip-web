@@ -10,6 +10,7 @@ import com.ddip.backend.entity.Pledge;
 import com.ddip.backend.entity.Project;
 import com.ddip.backend.entity.RewardTier;
 import com.ddip.backend.entity.User;
+import com.ddip.backend.event.ProjectEsEvent;
 import com.ddip.backend.exception.pledge.PledgeAccessDeniedException;
 import com.ddip.backend.exception.pledge.PledgeNotFoundException;
 import com.ddip.backend.exception.project.InvalidProjectStatusException;
@@ -24,6 +25,7 @@ import com.ddip.backend.repository.RewardTierRepository;
 import com.ddip.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +36,8 @@ import java.util.List;
 @Transactional
 @RequiredArgsConstructor
 public class PledgeService {
+
+    private final ApplicationEventPublisher publisher;
 
     private final PledgeRepository pledgeRepository;
     private final UserRepository userRepository;
@@ -83,6 +87,8 @@ public class PledgeService {
         // 10) 캐시 필드/재고 반영
         project.increaseCurrentAmount(saved.getAmount());
         rewardTier.increaseSoldQuantity(quantity);
+
+        publisher.publishEvent(new ProjectEsEvent(project.getId()));
 
         log.info("성공적으로 구매 되었습니다. userId={}, pledgeId={}", userId, saved.getId());
         return PledgeResponseDto.from(saved);

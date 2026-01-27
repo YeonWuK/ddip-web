@@ -37,9 +37,6 @@ public class ProjectDocument {
     @Field(type = FieldType.Long)
     private Long currentAmount;
 
-    @Field(type = FieldType.Integer)
-    private Integer fundingRate;
-
     @Field(type = FieldType.Keyword)
     private String status;
 
@@ -57,14 +54,11 @@ public class ProjectDocument {
                 .id(project.getId())
                 .title(project.getTitle())
                 .thumbnailUrl(thumbnailUrl)
-                .thumbnailUrl(project.getThumbnailUrl())
                 .targetAmount(project.getTargetAmount())
                 .currentAmount(project.getCurrentAmount())
                 .status(String.valueOf(project.getStatus()))
                 .startAt(project.getStartAt())
-//                .remainingDays(project.getRemainingDays)
                 .endAt(project.getEndAt())
                 .build();
-
     }
 }
