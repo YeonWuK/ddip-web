@@ -48,89 +48,31 @@ public class CrowdFundingService {
     private final UserRepository userRepository;
     private final PledgeService pledgeService;
 
-    public Project getProjectEntity(Long projectId){
-        return projectRepository.findById(projectId).orElseThrow(() -> new ProjectNotFoundException(projectId));
+    @Transactional(readOnly = true)
+    public Project getProjectEntity(Long projectId) {
+        return projectRepository.findById(projectId)
+                .orElseThrow(() -> new ProjectNotFoundException(projectId));
     }
 
     // 어드민용
+    @Transactional(readOnly = true)
     public Project getProjectWithRewardTiersAndCreator(Long projectId) {
-        return projectRepository.findByIdWithRewardTiersAndCreator(projectId).orElseThrow(() -> new ProjectNotFoundException(projectId));
+        return projectRepository.findByIdWithRewardTiersAndCreator(projectId)
+                .orElseThrow(() -> new ProjectNotFoundException(projectId));
     }
 
     /**
-     *  Crowdfunding 프로젝트 생성
-     */
-    public long createProject(List<MultipartFile> multipartFiles, ProjectRequestDto requestDto, Long userId) {
-
-        if (requestDto.getRewardTiers() == null || requestDto.getRewardTiers().isEmpty()) {
-            throw new RewardTierRequiredException();
-        }
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
-
-        Project project = Project.toEntity(requestDto, user);
-        projectRepository.save(project);
-
-        String prefix = s3UrlPrefixFactory.projectPrefix(project.getId());
-
-        String thumbnailUrl = null;
-
-        for (MultipartFile multipartFile : multipartFiles) {
-            String key = awsS3Util.uploadFile(multipartFile, prefix);
-
-            if (thumbnailUrl == null) {
-                thumbnailUrl = key;
-            }
-
-            ProjectImage projectImage = ProjectImage.from(project, key);
-            projectImageRepository.save(projectImage);
-        }
-
-        project.updateThumbnailUrl(thumbnailUrl);
-
-        // Es 인덱스 생성
-        ProjectDocument projectDocument = ProjectDocument.from(project, thumbnailUrl);
-        projectElasticsearchRepository.save(projectDocument);
-
-        log.info("성공적으로 프로젝트가 생성되었습니다 projectId = {}", project.getId());
-        return project.getId();
-    }
-
-    /**
-     *  Crowdfunding 프로젝트 가져오기
+     * Crowdfunding 프로젝트 단건 조회 (RewardTier 포함)
      */
     @Transactional(readOnly = true)
-    public ProjectResponseDto getProjects(Long projectId) {
+    public ProjectResponseDto getProject(Long projectId) {
         Project project = projectRepository.findByIdWithCreatorAndRewardTier(projectId)
                 .orElseThrow(() -> new ProjectNotFoundException(projectId));
-
         return ProjectResponseDto.from(project);
     }
 
     /**
-     *  Crowdfunding 프로젝트 삭제
-     */
-    public void deleteProject(Long projectId, Long userId) {
-        Project project = getProjectEntity(projectId);
-
-        // 본인 프로젝트만 삭제 가능
-        project.assertOwnedBy(userId);
-
-        List<ProjectImage> projectImages = projectImageRepository.findImagesByProjectId(project.getId());
-
-        // S3에 있는 프로젝트 이미지 삭제
-        for (ProjectImage projectImage : projectImages) {
-            awsS3Util.deleteByKey(projectImage.getS3Key());
-        }
-
-        project.cancel();
-        projectElasticsearchRepository.deleteById(project.getId());
-        log.info("성공적으로 삭제 되었습니다. projectId={}", projectId);
-    }
-
-    /**
-     *  Crowdfunding 전체 프로젝트 가져오기
+     * Crowdfunding 전체 프로젝트 조회
      */
     @Transactional(readOnly = true)
     public List<ProjectResponseDto> getAllProjects() {
@@ -139,123 +81,239 @@ public class CrowdFundingService {
                 .toList();
     }
 
-    public void updateProject(List<MultipartFile> multipartFiles, Long projectId,
-                              Long userId, ProjectUpdateRequestDto requestDto) {
-
-        Project project = getProjectEntity(projectId);
-
-        List<ProjectImage> projectImages =
-                projectImageRepository.findImageIdsByProjectIdAndIds(project.getId(),requestDto.getImageIds());
-
-        // 본인 프로젝트만 수정 가능
-        project.assertOwnedBy(userId);
-
-        // DRAFT 상태일 때만 구조 수정 허용
-        project.assertEditable();
-
-        // 날짜 검증(둘 다 들어왔을 때만)
-        if (requestDto.getStartAt() != null && requestDto.getEndAt() != null
-                && !requestDto.getEndAt().isAfter(requestDto.getStartAt())) {
-            log.info("날짜를 다시 확인하세요. projectId={}", projectId);
-            throw new IllegalArgumentException("종료일은 시작일 이후여야 합니다.");
-        }
-
-        String thumbnailUrl = null;
-
-        // S3에 새 이미지 파일 업로드
-        if (multipartFiles != null && !multipartFiles.isEmpty()) {
-            String prefix = s3UrlPrefixFactory.projectPrefix(project.getId());
-
-            for (MultipartFile multipartFile : multipartFiles) {
-                String key = awsS3Util.uploadFile(multipartFile, prefix);
-
-                if (thumbnailUrl == null) {
-                    thumbnailUrl = key;
-                }
-
-                projectImageRepository.save(ProjectImage.from(project, key));
-            }
-        }
-
-        projectImageRepository.deleteAll(projectImages);
-
-        // S3에 기존 이미지 삭제
-        for (ProjectImage projectImage : projectImages) {
-            awsS3Util.deleteByKey(projectImage.getS3Key());
-        }
-
-        // 기본 필드 부분 수정
-        project.updateFrom(requestDto);
-        project.updateThumbnailUrl(thumbnailUrl);
-
-        publisher.publishEvent(new ProjectEsEvent(project.getId()));
+    @Transactional(readOnly = true)
+    public Page<Project> searchProjectsForAdmin(AdminProjectSearchCondition condition, Pageable pageable) {
+        return projectRepository.searchProjectsForAdmin(condition, pageable);
     }
 
-    public void openFunding(Long userId, Long projectId) {
-//        관리자만 Open 시킬 것인가에 대한 논의
-//        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
-//        Role role = user.getRole();
-//        if (role != Role.ADMIN) {
-//            log.info("관리자만 접근할 수 있습니다. projectId={}, userRole={}", projectId, role);
-//            return;
-//        }
+    /**
+     * Crowdfunding 프로젝트 생성
+     */
+    public long createProject(List<MultipartFile> multipartFiles, ProjectRequestDto requestDto, Long userId) {
 
+        validateRewardTiers(requestDto);
+
+        User user = getUserOrThrow(userId);
+        Project project = createAndSaveProject(requestDto, user);
+
+        String thumbnailUrl = uploadProjectImagesAndSaveEntities(project, multipartFiles);
+        if (thumbnailUrl != null) {
+            project.updateThumbnailUrl(thumbnailUrl);
+        }
+
+        // ES 인덱싱 (초기 생성은 바로 저장)
+        indexProjectToElasticsearch(project, thumbnailUrl);
+
+        log.info("프로젝트 생성 완료 projectId={}", project.getId());
+        return project.getId();
+    }
+
+    /**
+     * Crowdfunding 프로젝트 수정
+     */
+    public void updateProject(List<MultipartFile> multipartFiles, Long projectId, Long userId, ProjectUpdateRequestDto requestDto) {
+
+        Project project = getProjectEntity(projectId);
+        // 기본 검증 (소유자, 상태, 날짜)
+        validateProjectUpdatable(project, userId, requestDto);
+
+        // 삭제 대상 이미지 조회
+        // 새 이미지 업로드, 새 이미지 없는 경우 그냥 Return.
+        List<ProjectImage> deleteTargets = resolveDeleteTargets(projectId, requestDto.getImageIds());
+
+        String newThumbnailUrl = uploadNewImagesForUpdate(projectId, project, multipartFiles);
+
+        // 기존 이미지 삭제 (DB → S3)
+        deleteProjectImages(deleteTargets);
+
+        // 필드 업데이트
+        project.updateFrom(requestDto);
+
+        // 썸네일 업데이트
+        updateThumbnailForUpdate(project, newThumbnailUrl, deleteTargets);
+
+        // ES 동기화
+        publisher.publishEvent(new ProjectEsEvent(projectId));
+    }
+
+    /**
+     * Crowdfunding 프로젝트 삭제
+     */
+    public void deleteProject(Long projectId, Long userId) {
         Project project = getProjectEntity(projectId);
 
         project.assertOwnedBy(userId);
 
-        // 상태 전이 검증 — DRAFT 만 허용
-        project.assertStatus(ProjectStatus.DRAFT);
+        List<ProjectImage> images = projectImageRepository.findImagesByProjectId(projectId);
 
-        if (project.getRewardTiers().isEmpty()) {
-            throw new RewardTierRequiredException(projectId);
+        for (ProjectImage image : images) {
+            awsS3Util.deleteByKey(image.getS3Key());
         }
 
-        project.openFunding();
-        publisher.publishEvent(new ProjectEsEvent(project.getId()));
-        log.info("성공적으로 open funding 상태가 되었습니다. projectId={}", projectId);
+        projectElasticsearchRepository.deleteById(projectId);
+        projectRepository.delete(project); // orphanRemoval에 의해 images도 같이 삭제
+
+        log.info("프로젝트 삭제 완료 projectId={}", projectId);
     }
 
     @Scheduled(cron = "59 59 23 * * *")
-    public void closeExpireProjects(){
-
+    public void closeExpireProjects() {
         LocalDate today = LocalDate.now();
+        List<Project> expired = projectRepository.findByStatusAndEndAtLessThanEqual(ProjectStatus.OPEN, today);
 
-        List<Project> expiredProjects = projectRepository.findByStatusAndEndAtLessThanEqual(ProjectStatus.OPEN, today);
-
-        for (Project project : expiredProjects) {
+        for (Project project : expired) {
             boolean success = project.closeProject();
-
             if (!success) {
-                // 펀딩 실패 → 환불
                 pledgeService.refundAllFailedProjects(project.getId());
             }
             publisher.publishEvent(new ProjectEsEvent(project.getId()));
         }
     }
 
-    public void rejectProjectByAdmin(Long projectId){
+    public void rejectProjectByAdmin(Long projectId) {
         Project project = getProjectEntity(projectId);
         project.rejectByAdmin();
-        publisher.publishEvent(new ProjectEsEvent(project.getId()));
+        publisher.publishEvent(new ProjectEsEvent(projectId));
     }
 
-    public void forceStopByAdmin(Long projectId){
+    public void forceStopByAdmin(Long projectId) {
         Project project = getProjectEntity(projectId);
         project.stopProject();
-        publisher.publishEvent(new ProjectEsEvent(project.getId()));
+        publisher.publishEvent(new ProjectEsEvent(projectId));
     }
 
-    public void forceCancelProjectByAdmin(Long projectId){
+    public void forceCancelProjectByAdmin(Long projectId) {
         Project project = getProjectEntity(projectId);
         project.cancel();
-        pledgeService.refundAllFailedProjects(project.getId());
-        publisher.publishEvent(new ProjectEsEvent(project.getId()));
+        pledgeService.refundAllFailedProjects(projectId);
+        publisher.publishEvent(new ProjectEsEvent(projectId));
     }
 
-    @Transactional(readOnly = true)
-    public Page<Project> searchProjectsForAdmin(AdminProjectSearchCondition condition, Pageable pageable) {
-        return projectRepository.searchProjectsForAdmin(condition, pageable);
+    private void validateRewardTiers(ProjectRequestDto requestDto) {
+        if (requestDto.getRewardTiers() == null || requestDto.getRewardTiers().isEmpty()) {
+            throw new RewardTierRequiredException();
+        }
     }
 
+    private User getUserOrThrow(Long userId) {
+        return userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+    }
+
+    private Project createAndSaveProject(ProjectRequestDto requestDto, User user) {
+        Project project = Project.toEntity(requestDto, user);
+        return projectRepository.save(project);
+    }
+
+    /**
+     * S3 업로드 + ProjectImage 저장 + 썸네일 key 반환
+     */
+    private String uploadProjectImagesAndSaveEntities(Project project, List<MultipartFile> multipartFiles) {
+        if (multipartFiles == null || multipartFiles.isEmpty()) {
+            return null;
+        }
+
+        String prefix = s3UrlPrefixFactory.projectPrefix(project.getId());
+        String thumbnailUrl = null;
+
+        for (MultipartFile file : multipartFiles) {
+            String key = awsS3Util.uploadFile(file, prefix);
+            if (thumbnailUrl == null) {
+                thumbnailUrl = key;
+            }
+            projectImageRepository.save(ProjectImage.from(project, key));
+        }
+        return thumbnailUrl;
+    }
+
+    private void indexProjectToElasticsearch(Project project, String thumbnailUrl) {
+        ProjectDocument document = ProjectDocument.from(project, thumbnailUrl);
+        projectElasticsearchRepository.save(document);
+    }
+
+    /**
+     * 프로젝트 수정 시 기본 검증 (소유자, 상태, 날짜)
+     */
+    private void validateProjectUpdatable(Project project, Long userId, ProjectUpdateRequestDto requestDto) {
+
+        // 본인 프로젝트만 수정 가능
+        project.assertOwnedBy(userId);
+        // DRAFT 상태에서만 수정 가능
+        project.assertEditable();
+        // 날짜 검증 (둘 다 존재할 때만)
+        if (requestDto.getStartAt() != null && requestDto.getEndAt() != null &&
+                !requestDto.getEndAt().isAfter(requestDto.getStartAt())) {
+            throw new IllegalArgumentException("종료일은 시작일 이후여야 합니다.");
+        }
+    }
+
+    /**
+     * 수정 시 삭제 대상 이미지 조회 (null / empty 방어)
+     */
+    private List<ProjectImage> resolveDeleteTargets(Long projectId, List<Long> imageIds) {
+        if (imageIds == null || imageIds.isEmpty()) {
+            return List.of();
+        }
+        return projectImageRepository.findImageIdsByProjectIdAndIds(projectId, imageIds);
+    }
+
+    /**
+     * 수정 시 새 이미지 업로드 처리 (없으면 null 반환)
+     */
+    private String uploadNewImagesForUpdate(Long projectId, Project project, List<MultipartFile> multipartFiles) {
+
+        if (multipartFiles == null || multipartFiles.isEmpty()) {
+            return null;
+        }
+
+        String prefix = s3UrlPrefixFactory.projectPrefix(projectId);
+        String thumbnailUrl = null;
+
+        for (MultipartFile file : multipartFiles) {
+            String key = awsS3Util.uploadFile(file, prefix);
+            if (thumbnailUrl == null) {
+                thumbnailUrl = key;
+            }
+            projectImageRepository.save(ProjectImage.from(project, key));
+        }
+        return thumbnailUrl;
+    }
+
+    /**
+     * 수정 시 기존 이미지 삭제 (DB → S3)
+     */
+    private void deleteProjectImages(List<ProjectImage> deleteTargets) {
+        if (deleteTargets == null || deleteTargets.isEmpty()) {
+            return;
+        }
+        projectImageRepository.deleteAll(deleteTargets);
+        for (ProjectImage image : deleteTargets) {
+            awsS3Util.deleteByKey(image.getS3Key());
+        }
+    }
+
+    /**
+     * 수정 시 썸네일 업데이트 로직
+     * - 새 이미지가 있으면 그중 첫 번째를 썸네일로
+     * - 새 이미지는 없지만 기존 썸네일이 삭제 대상에 포함된 경우 null로 초기화
+     */
+    private void updateThumbnailForUpdate(Project project, String newThumbnailUrl, List<ProjectImage> deletedImages) {
+
+        String currentThumbnail = project.getThumbnailUrl();
+
+        if (newThumbnailUrl != null) {
+            project.updateThumbnailUrl(newThumbnailUrl);
+            return;
+        }
+
+        if (currentThumbnail == null || deletedImages == null || deletedImages.isEmpty()) {
+            return;
+        }
+
+        boolean thumbnailDeleted = deletedImages.stream()
+                .anyMatch(img -> currentThumbnail.equals(img.getS3Key()));
+
+        if (thumbnailDeleted) {
+            project.updateThumbnailUrl(null);
+        }
+    }
 }

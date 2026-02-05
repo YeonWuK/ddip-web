@@ -1,6 +1,6 @@
 package com.ddip.backend.exception.security;
 
-import com.ddip.backend.exception.common.ErrorCode;
+import com.ddip.backend.exception.ErrorCode;
 
 import lombok.Getter;
 import org.springframework.security.access.AccessDeniedException;

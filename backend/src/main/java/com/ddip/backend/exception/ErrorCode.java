@@ -1,4 +1,4 @@
-package com.ddip.backend.exception.common;
+package com.ddip.backend.exception;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
