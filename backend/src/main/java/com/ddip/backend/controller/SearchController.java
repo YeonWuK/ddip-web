@@ -72,7 +72,7 @@ public class SearchController {
     /**
      * 공동구매 상세 검색
      */
-    @GetMapping("/auction/filter")
+    @GetMapping("/project/filter")
     public ResponseEntity<Page<ProjectSearchResponse>> auctionSearchFilter(
             @RequestParam(required = false) String title,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDate endAt,
