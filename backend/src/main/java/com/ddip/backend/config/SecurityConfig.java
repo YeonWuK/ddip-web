@@ -59,10 +59,14 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
                         .requestMatchers("/error",
                                 "/oauth2/**", "/login/oauth2/**", "/login/oauth2/code/**", "/api/users/login",
                                 "/oauth2/callback/**", "/api/users/refresh-token", "/api/users/register",
-                                "/api/users/find-password","/api/users/update-profile").permitAll()
+                                "/api/users/find-password","/api/users/update-profile","/api/search/**").permitAll()
+
+                        .requestMatchers(HttpMethod.GET, "/api/auction", "/api/auction/{auctionId}",
+                                "/api/crowd","/api/crowd/{projectId}").permitAll()
 
                         // admin 먼저 검증 절대 바꾸지 말것
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
