@@ -45,7 +45,7 @@ public class CrowdFundingController {
      */
     @GetMapping("/{projectId}")
     public ResponseEntity<ProjectResponseDto> getCrowdFunding(@PathVariable Long projectId ){
-        ProjectResponseDto response = crowdFundingService.getProjects(projectId);
+        ProjectResponseDto response = crowdFundingService.getProject(projectId);
         return ResponseEntity.ok(response);
     }
 
@@ -93,13 +93,6 @@ public class CrowdFundingController {
     public ResponseEntity<List<ProjectResponseDto>> getAllCrowdFunding(){
         List<ProjectResponseDto> allProjects = crowdFundingService.getAllProjects();
         return ResponseEntity.ok(allProjects);
-    }
-
-    @PatchMapping("/{projectId}/open")
-    public ResponseEntity<?> fundingOpen(@AuthenticationPrincipal CustomUserDetails customUserDetails,
-                                         @PathVariable Long projectId){
-        crowdFundingService.openFunding(customUserDetails.getUserId(), projectId);
-        return ResponseEntity.ok().build();
     }
 
 }
