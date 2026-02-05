@@ -11,7 +11,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -49,11 +48,6 @@ public class ProjectRequestDto {
 
     @NotBlank
     private String thumbnailImageUrl;
-
-//    // 본문 이미지들 (2~3개, 순서 중요)
-//    @NotNull
-//    @Size(max = 5)
-//    private List<@NotBlank String> contentImageUrls;
 
     @NotNull
     @Valid

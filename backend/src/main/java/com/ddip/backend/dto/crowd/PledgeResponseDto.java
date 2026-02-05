@@ -29,7 +29,7 @@ public class PledgeResponseDto {
                 .projectId(pledge.getProject().getId())
                 .userId(pledge.getUser().getId())
                 .rewardTierId(pledge.getRewardTier() == null ? null : pledge.getRewardTier().getId())
-                .amount(pledge.getAmount())
+                .amount(pledge.getPaidAmount())
                 .status(pledge.getStatus())
                 .createdAt(pledge.getCreateTime())
                 .build();

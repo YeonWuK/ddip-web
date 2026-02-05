@@ -49,7 +49,7 @@ public class AdminPledgeSummaryDto {
                 .rewardTierId(pledge.getRewardTier().getId())
                 .rewardTierTitle(pledge.getRewardTier().getTitle())
 
-                .amount(pledge.getAmount())
+                .amount(pledge.getPaidAmount())
                 .status(pledge.getStatus().name())
 
                 .createdAt(pledge.getCreateTime())

@@ -33,11 +33,11 @@ public class Pledge extends BaseTimeEntity {
     @JoinColumn(name = "reward_tier_id")
     private RewardTier rewardTier;
 
-    @Column(name = "amount", nullable = false)
-    private Long amount;
+    @Column(name = "paid_amount", nullable = false)
+    private Long paidAmount;
 
-    @Column(name = "quantity", nullable = false)
-    private Long quantity;
+    @Column(name = "buy_quantity", nullable = false)
+    private Long purchasedQuantity;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20, nullable = false)
@@ -48,7 +48,8 @@ public class Pledge extends BaseTimeEntity {
                 .user(user)
                 .project(project)
                 .rewardTier(rewardTier)
-                .amount(requiredAmount)
+                .paidAmount(requiredAmount)
+                .purchasedQuantity(quantity)
                 .status(PledgeStatus.PENDING)
                 .build();
     }

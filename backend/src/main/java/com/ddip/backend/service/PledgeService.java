@@ -92,7 +92,7 @@ public class PledgeService {
         // 이미 취소 / 확정 / 배송 중 등 취소 불가능 상태인지 검증
         pledge.assertCancelable();
 
-        long amount = pledge.getAmount();
+        long amount = pledge.getPaidAmount();
 
         // 포인트 환불 및 상태/금액 롤백
         cancelAndRefund(pledge);
@@ -133,7 +133,7 @@ public class PledgeService {
      * 공통: 포인트 환불 + Pledge 상태 변경 + 프로젝트 모금액 롤백
      */
     private void cancelAndRefund(Pledge pledge) {
-        long amount = pledge.getAmount();
+        long amount = pledge.getPaidAmount();
         Long userId = pledge.getUser().getId();
         Long pledgeId = pledge.getId();
 
@@ -197,13 +197,13 @@ public class PledgeService {
      */
     private void processPayment(Long userId, Pledge saved, int quantity) {
         // 포인트 차감
-        usePointForPledge(userId, saved.getAmount(), saved.getId());
+        usePointForPledge(userId, saved.getPaidAmount(), saved.getId());
 
         // 후원 상태 PENDING -> PAID
         saved.paidFunding();
 
         // 프로젝트 현재 모금액 증가
-        saved.getProject().increaseCurrentAmount(saved.getAmount());
+        saved.getProject().increaseCurrentAmount(saved.getPaidAmount());
 
         // 리워드 티어 판매 수량 증가
         saved.getRewardTier().increaseSoldQuantity(quantity);
