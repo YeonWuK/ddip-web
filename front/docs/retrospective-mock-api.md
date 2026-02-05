@@ -518,8 +518,16 @@ Mock API로 프론트엔드를 먼저 구축한 것은 **"빠른 프로토타이
 
 **프로젝트**: DDIP (크라우드펀딩 & 경매 플랫폼)  
 **기술 스택**: Next.js 16, React 19, TypeScript, Tailwind CSS, shadcn/ui  
-**개발 기간**: Mock API 단계 완료  
-**다음 단계**: 백엔드 API 연동 및 웹소켓 실시간 통신
+**개발 기간**: Mock API 단계 완료 → **백엔드 API 연동 완료 (2026년 2월)**
+
+---
+
+### 📌 현재 상태 (2026년 2월)
+
+- **API**: `src/services/api.ts`는 **백엔드 API 연동**으로 전환됨 (fetch, Bearer 토큰, S3 이미지).
+- Mock Store(localStorage) 기반 코드는 제거되었고, `/api/crowd`, `/api/auction`, `/api/users`, `/api/addresses` 등 실제 엔드포인트를 사용함.
+- 인증·프로젝트·경매·배송지·마이페이지는 모두 백엔드와 연동된 상태임.
+- 웹소켓 실시간 입찰은 환경 변수로 비활성화 가능하며, 백엔드 준비 시 활성화 예정.
 
 ---
 

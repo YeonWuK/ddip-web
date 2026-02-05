@@ -44,10 +44,17 @@ front/
 │   │   └── create/             # 경매 생성 페이지
 │   │       └── page.tsx
 │   │
-│   └── auth/                   # 인증 관련
-│       └── oauth/
-│           └── callback/
-│               └── page.tsx    # OAuth 콜백 처리
+│   ├── oauth/                   # OAuth 콜백 (백엔드 리다이렉트 대상)
+│   │   └── callback/
+│   │       └── page.tsx        # OAuth 콜백 (access_token 등 쿼리 처리)
+│   │
+│   └── auth/                    # 인증 관련
+│       ├── oauth/
+│       │   └── callback/
+│       │       └── page.tsx    # OAuth 콜백 (대안 경로)
+│       └── profile/
+│           └── complete/
+│               └── page.tsx     # OAuth 후 프로필 완성 (이름/닉네임/전화)
 │
 ├── src/                         # 소스 코드
 │   ├── components/             # 재사용 가능한 컴포넌트
@@ -98,8 +105,9 @@ front/
 │   │   └── wishlist.ts         # 위시리스트 관리 (localStorage)
 │   │
 │   ├── services/               # API 서비스
-│   │   └── api.ts              # Mock API (프로젝트, 경매, 인증, 후원, 입찰)
-│   │                           # 페이지네이션 지원 (page, limit)
+│   │   └── api.ts              # 백엔드 API 연동 (fetch, tokenStorage)
+│   │                           # projectApi, auctionApi, userApi, authApi, addressApi
+│   │                           # 페이지네이션(page, limit), S3 이미지 URL 변환
 │   │
 │   ├── stores/                  # 전역 상태 관리 (Zustand)
 │   │   └── filterStore.ts      # 필터/정렬 상태 관리 (localStorage persist)
@@ -114,12 +122,14 @@ front/
 ├── public/                      # 정적 파일
 │
 ├── docs/                        # 프로젝트 문서
-│   ├── BACKEND_MIGRATION_CHECKLIST.md # 백엔드 연동 체크리스트
+│   ├── BACKEND_MIGRATION_CHECKLIST.md # 백엔드 연동 전/후 체크리스트
+│   ├── FEATURE_SUMMARY.md             # 기능 및 API 엔드포인트 정리
 │   ├── GEMINI_FEEDBACK_ANALYSIS.md    # Gemini 피드백 분석
 │   ├── INTERVIEW_POINTS.md            # 면접 포인트 정리
 │   ├── MVP_STATUS.md                  # MVP 완료 상태
+│   ├── OAUTH_API_SPEC.md              # OAuth API 명세
 │   ├── PROJECT_STRUCTURE.md           # 프로젝트 구조 문서 (이 파일)
-│   └── retrospective-mock-api.md      # Mock API 회고
+│   └── retrospective-mock-api.md      # Mock API 회고 및 백엔드 전환
 │
 ├── components.json              # shadcn/ui 설정
 ├── next.config.ts               # Next.js 설정 (이미지 도메인 등)
@@ -159,14 +169,16 @@ front/
 - **타입**: `src/types/api.ts`
   - `ProjectResponse`, `RewardTierResponse`, `SupportRequest`, `SupportResponse`
 
-- **API**: `src/services/api.ts`
+- **API**: `src/services/api.ts` (백엔드: `/api/crowd`, `/api/crowd/pledges` 등)
   - `projectApi.getProjects({ page, limit, status })`: 프로젝트 목록 조회 (페이지네이션, 필터링)
   - `projectApi.getProject(id)`: 프로젝트 상세 조회
   - `projectApi.createProject()`: 프로젝트 생성
-  - `projectApi.updateProject()`: 프로젝트 수정
-  - `projectApi.supportProject()`: 프로젝트 후원
-  - `projectApi.getMySupports()`: 내 후원 내역
-  - `projectApi.checkAllProjectsStatus()`: 모든 프로젝트 상태 일괄 체크
+  - `projectApi.updateProject()`: 프로젝트 수정 (백엔드 비활성화 시 에러)
+  - `projectApi.deleteProject(id)`: 프로젝트 삭제
+  - `projectApi.createPledge(projectId, data)`: 리워드 구매(후원)
+  - `projectApi.getMyPledges()`: 내 후원 내역
+  - `projectApi.checkAndUpdateProjectStatus(projectId)`: 프로젝트 최신 상태 조회 (getProject 래핑)
+  - `projectApi.checkAllProjectsStatus()`: 전체 상태 갱신 트리거 (no-op, 백엔드 자동 반영)
 
 - **페이지**:
   - `app/page.tsx`: 메인 페이지 (큐레이션: 인기 프로젝트, 마감 임박)
@@ -186,15 +198,18 @@ front/
 - **타입**: `src/types/api.ts`
   - `AuctionResponse`, `BidResponse`
 
-- **API**: `src/services/api.ts`
+- **API**: `src/services/api.ts` (백엔드: `/api/auction`, `/api/auction/{id}/bids` 등)
   - `auctionApi.getAuctions({ page, limit, status })`: 경매 목록 조회 (페이지네이션, 필터링)
   - `auctionApi.getAuction(id)`: 경매 상세 조회
-  - `auctionApi.createAuction()`: 경매 생성
-  - `auctionApi.updateAuction()`: 경매 수정
-  - `auctionApi.placeBid()`: 입찰하기
-  - `auctionApi.getBidsByAuction()`: 경매별 입찰 내역
+  - `auctionApi.createAuction(files, data)`: 경매 생성 (multipart/form-data, S3 이미지)
+  - `auctionApi.updateAuction(id, data)`: 경매 수정
+  - `auctionApi.deleteAuction(id)`: 경매 삭제
+  - `auctionApi.placeBid(auctionId, bidData)`: 입찰하기
+  - `auctionApi.getBidsByAuction(auctionId)`: 경매별 입찰 내역
   - `auctionApi.getMyBids()`: 내 입찰 내역
-  - `auctionApi.checkAllAuctionsStatus()`: 모든 경매 상태 일괄 체크
+  - `auctionApi.searchAuctions(query, params)`: 경매 검색
+  - `auctionApi.checkAndUpdateAuctionStatus(auctionId)`: 경매 최신 상태 조회 (getAuction 래핑)
+  - `auctionApi.checkAllAuctionsStatus()`: 전체 상태 갱신 트리거 (no-op, 목록 재조회 시 반영)
 
 - **페이지**:
   - `app/page.tsx`: 메인 페이지 (큐레이션: 인기 경매, 마감 임박)
@@ -324,24 +339,16 @@ front/
 ---
 
 ### 11. **데이터 관리** (`services/api.ts`)
-- **Mock API**: localStorage 기반 데이터 저장
-- **저장소**:
-  - `projectStore`: 프로젝트 데이터 (Map)
-  - `auctionStore`: 경매 데이터 (Map)
-  - `supportStore`: 후원 내역 (Map)
-  - `bidStore`: 입찰 내역 (Map)
-  - `imageStore`: 이미지 캐시 (Map, in-memory)
-  - localStorage에 자동 동기화
+- **백엔드 API 연동**: `fetch` + `API_BASE_URL` (환경 변수: `NEXT_PUBLIC_API_BASE_URL`)
+- **인증**: `tokenStorage.getAccessToken()`으로 Bearer 토큰 자동 첨부, `credentials: 'include'` (쿠키)
+- **이미지**: S3 키 → 풀 URL 변환 (`toS3ImageUrl`, `NEXT_PUBLIC_S3_IMAGE_BASE_URL`)
 
 - **API 그룹**:
-  - `projectApi`: 프로젝트 관련 API (페이지네이션, 필터링 지원)
-  - `auctionApi`: 경매 관련 API (페이지네이션, 필터링 지원)
-  - `authApi`: 인증 관련 API
-  - `userApi`: 사용자 관련 API
-
-- **Mock 데이터 생성**:
-  - `generateMockProjects(count)`: 대량 프로젝트 생성 (테스트용)
-  - 초기화 시 100개 프로젝트 자동 생성
+  - `projectApi`: 프로젝트/후원 (`/api/crowd`, `/api/crowd/pledges`)
+  - `auctionApi`: 경매/입찰 (`/api/auction`, `/api/auction/{id}/bids`, `/api/auction/my-bids`, `/api/auction/search`)
+  - `userApi`: 마이페이지/프로필 (`/api/users/my-page`, `/api/users/{id}/profile`, `PUT /api/users/me`)
+  - `authApi`: 로그인/회원가입/로그아웃/OAuth (`/api/users/login`, `/api/users/register`, `/api/users/profile`, `PATCH /api/users/update-profile`)
+  - `addressApi`: 배송지 (`/api/addresses`, `/api/addresses/default` 등)
 
 ---
 
@@ -363,7 +370,7 @@ front/
 - **모듈**: ESNext
 
 ### `next.config.ts`
-- **이미지 도메인**: `picsum.photos` 허용
+- **이미지 도메인**: `picsum.photos`, S3 버킷 등 허용 (필요 시 설정)
 
 ---
 
@@ -434,10 +441,13 @@ WishlistMonitor (전역) → useWishlistAuctionMonitor → 1분마다 찜한 경
 ## 📝 참고 문서
 
 - `WEBSOCKET_SETUP.md`: 웹소켓 설정 가이드
-- `BACKEND_MIGRATION_CHECKLIST.md`: 백엔드 연동 체크리스트
-- `MVP_STATUS.md`: MVP 완료 상태
-- `INTERVIEW_POINTS.md`: 면접 포인트 정리
-- `GEMINI_FEEDBACK_ANALYSIS.md`: Gemini 피드백 분석
+- `docs/FEATURE_SUMMARY.md`: 기능 및 API 엔드포인트 정리
+- `docs/OAUTH_API_SPEC.md`: OAuth API 명세
+- `docs/BACKEND_MIGRATION_CHECKLIST.md`: 백엔드 연동 전/후 체크리스트
+- `docs/MVP_STATUS.md`: MVP 완료 상태
+- `docs/INTERVIEW_POINTS.md`: 면접 포인트 정리
+- `docs/GEMINI_FEEDBACK_ANALYSIS.md`: Gemini 피드백 분석
+- `docs/retrospective-mock-api.md`: Mock API 회고 및 백엔드 전환
 
 ---
 
@@ -452,7 +462,7 @@ WishlistMonitor (전역) → useWishlistAuctionMonitor → 1분마다 찜한 경
 | 경매 상세 | `app/auction/[id]/page.tsx` |
 | 마이페이지 | `app/profile/page.tsx` |
 | 검색 | `app/search/page.tsx` |
-| Mock API | `src/services/api.ts` |
+| API 서비스 | `src/services/api.ts` |
 | 인증 Context | `src/contexts/auth-context.tsx` |
 | 필터 Store | `src/stores/filterStore.ts` |
 | 위시리스트 | `src/lib/wishlist.ts` |
@@ -470,13 +480,13 @@ WishlistMonitor (전역) → useWishlistAuctionMonitor → 1분마다 찜한 경
 - **전역 상태**: Zustand (`filterStore`)
 - **인증 상태**: React Context (`AuthContext`)
 - **로컬 상태**: React `useState`
-- **서버 상태**: Mock API (localStorage)
+- **서버 상태**: 백엔드 API (`src/services/api.ts`)
 
 ### 데이터 저장
-- **인증 토큰**: localStorage (`tokenStorage`)
+- **인증 토큰/사용자**: localStorage (`tokenStorage`)
 - **위시리스트**: localStorage (`wishlist`)
 - **필터 상태**: localStorage (Zustand persist)
-- **프로젝트/경매 데이터**: localStorage (Mock API)
+- **프로젝트/경매/후원/입찰**: 백엔드 서버 (API 연동)
 
 ### 컴포넌트 구조
 - **페이지**: Next.js App Router (`app/`)
@@ -487,6 +497,7 @@ WishlistMonitor (전역) → useWishlistAuctionMonitor → 1분마다 찜한 경
 
 ---
 
-**마지막 업데이트**: 2026년 1월
-**프로젝트명**: DDIP (크라우드펀딩 & 경매 플랫폼)
-**버전**: 0.1.0
+**마지막 업데이트**: 2026년 2월  
+**프로젝트명**: DDIP (크라우드펀딩 & 경매 플랫폼)  
+**버전**: 0.1.0  
+**API**: 백엔드 연동 완료 (fetch, Bearer 토큰, S3 이미지)

@@ -108,7 +108,7 @@
 
 ### 1. 경매 목록 조회
 - **페이지**: `/auctions`
-- **API**: `GET /api/auctions`
+- **API**: `GET /api/auction`
 - **기능**:
   - 전체 경매 목록 조회
   - 상태별 필터링 (SCHEDULED, RUNNING, ENDED, CANCELED)
@@ -117,7 +117,7 @@
 
 ### 2. 경매 상세 조회
 - **페이지**: `/auction/[id]`
-- **API**: `GET /api/auctions/{id}`
+- **API**: `GET /api/auction/{id}`
 - **기능**:
   - 경매 상세 정보 표시
   - 판매자 정보
@@ -127,12 +127,12 @@
 
 ### 3. 경매 생성
 - **페이지**: `/auction/create`
-- **API**: `POST /api/auctions`
+- **API**: `POST /api/auction` (multipart/form-data: `file` 목록, `data` JSON)
 - **기능**:
   - 경매 제목, 설명 입력
   - 시작가, 입찰 단위 설정
-  - 종료 시간 설정 (미래 시간 필수)
-  - 썸네일 이미지 업로드
+  - 종료 시간 설정 (미래 시간 필수, 백엔드 서버 시간 기준)
+  - 이미지 다중 업로드 (S3 연동)
   - 카테고리, 태그, 요약 입력 (선택)
 
 **타입 정의**:
@@ -141,15 +141,15 @@
 
 ### 4. 경매 수정
 - **페이지**: `/auction/[id]/edit`
-- **API**: `PUT /api/auctions/{id}`
+- **API**: `PUT /api/auction/{id}`
 - **기능**: 경매 정보 수정
 
 ### 5. 경매 삭제
-- **API**: `DELETE /api/auctions/{id}`
+- **API**: `DELETE /api/auction/{id}`
 - **기능**: 본인 경매만 삭제 가능
 
 ### 6. 입찰하기
-- **API**: `POST /api/auctions/{auctionId}/bids`
+- **API**: `POST /api/auction/{auctionId}/bids`
 - **기능**:
   - 입찰 가격 입력 (최소 100원)
   - 입찰 성공 시 경매 정보 업데이트
@@ -161,7 +161,7 @@
 - `BidResponse`: 입찰 응답 (입찰 ID, 경매 정보, 입찰가, 최고 입찰자 여부)
 
 ### 7. 입찰 내역 조회
-- **API**: `GET /api/auctions/{auctionId}/bids`
+- **API**: `GET /api/auction/{auctionId}/bids`
 - **기능**:
   - 특정 경매의 입찰 내역 조회
   - 입찰자 정보, 입찰가, 입찰 시간 표시
@@ -170,7 +170,7 @@
 - `BidSummary`: 입찰 요약 (입찰자, 입찰가, 입찰 시간)
 
 ### 8. 내 입찰 내역 조회
-- **API**: `GET /api/auctions/my-bids`
+- **API**: `GET /api/auction/my-bids`
 - **기능**:
   - 사용자가 참여한 경매 목록 조회
   - 내 입찰 상태 확인 (최고 입찰자, 상위 입찰됨, 종료 후 낙찰/미낙찰)
@@ -295,11 +295,12 @@
 
 ### 인증 관련
 ```
-POST   /api/auth/login          - 로그인
-POST   /api/auth/register       - 회원가입
-POST   /api/auth/logout         - 로그아웃
-GET    /api/auth/me             - 현재 사용자 정보 조회
-GET    /api/auth/oauth/{provider} - OAuth 로그인 시작
+POST   /api/users/login         - 로그인
+POST   /api/users/register      - 회원가입
+POST   /api/users/logout        - 로그아웃
+GET    /api/users/profile       - 현재 사용자 정보 조회
+PATCH  /api/users/update-profile - 프로필 수정 (OAuth 후 이름/닉네임/전화)
+GET    /oauth2/authorization/{provider} - OAuth 로그인 시작 (백엔드 리다이렉트)
 ```
 
 ### 프로젝트 관련
@@ -326,15 +327,15 @@ PUT    /api/addresses/{addressId}/default - 기본 배송지 설정
 
 ### 경매 관련
 ```
-GET    /api/auctions            - 경매 목록 조회
-GET    /api/auctions/{id}      - 경매 상세 조회
-POST   /api/auctions            - 경매 생성
-PUT    /api/auctions/{id}      - 경매 수정
-DELETE /api/auctions/{id}      - 경매 삭제
-POST   /api/auctions/{auctionId}/bids - 입찰하기
-GET    /api/auctions/{auctionId}/bids - 입찰 내역 조회
-GET    /api/auctions/my-bids   - 내 입찰 내역 조회
-GET    /api/auctions/search    - 경매 검색
+GET    /api/auction                     - 경매 목록 조회 (page, limit, status)
+GET    /api/auction/{id}                - 경매 상세 조회
+POST   /api/auction                     - 경매 생성 (multipart/form-data: file, data JSON)
+PUT    /api/auction/{id}                - 경매 수정
+DELETE /api/auction/{id}                - 경매 삭제
+POST   /api/auction/{auctionId}/bids    - 입찰하기
+GET    /api/auction/{auctionId}/bids   - 입찰 내역 조회
+GET    /api/auction/my-bids             - 내 입찰 내역 조회
+GET    /api/auction/search              - 경매 검색 (query, status, limit)
 ```
 
 ### 사용자 관련

@@ -65,21 +65,18 @@
 
 ## 🔄 백엔드 연동 시 해야 할 작업
 
-### 1. API 연동 (필수) ⭐⭐⭐⭐⭐
+### 1. API 연동 (필수) ⭐⭐⭐⭐⭐ ✅ 완료
 
 #### Mock API → 실제 API 전환
-- [ ] API 엔드포인트 변경
-  - `src/services/api.ts`의 Mock 함수들을 실제 API 호출로 변경
-  - axios 또는 fetch로 HTTP 요청 구현
-- [ ] 환경 변수 설정
-  - `.env.local`에 API URL 설정
-  - 개발/프로덕션 환경 분리
-- [ ] 인증 토큰 처리
-  - Access Token 자동 첨부
-  - Refresh Token 자동 갱신
-  - 토큰 만료 시 자동 로그아웃
+- [x] API 엔드포인트 변경
+  - `src/services/api.ts`에서 fetch로 백엔드 API 호출 (`/api/crowd`, `/api/auction`, `/api/users`, `/api/addresses` 등)
+- [x] 환경 변수 설정
+  - `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_S3_IMAGE_BASE_URL` 사용
+- [x] 인증 토큰 처리
+  - Bearer 토큰 자동 첨부 (`tokenStorage.getAccessToken()`)
+  - `credentials: 'include'` (쿠키)
 
-**예상 시간:** 1-2일
+**현재 상태:** 백엔드 API 연동 완료. 추가 연동 시 엔드포인트/응답 매핑만 보완하면 됨.
 
 ---
 
@@ -247,9 +244,9 @@
 
 ### 우선순위 높음 (반드시 완료)
 1. ✅ 페이지 구조 개선 (메인/전체보기 분리)
-2. ✅ Skeleton Screen
-3. ✅ 스크롤 위치 보존
-4. ✅ 마감 임박 긴급성 섹션
+2. ✅ 무한 스크롤 (projects, auctions)
+3. ✅ 마감 임박 긴급성 섹션 (메인 페이지)
+4. ✅ API 연동 완료 (fetch, 토큰, S3 이미지)
 
 ### 우선순위 중간 (가능하면 완료)
 5. ✅ 최근 본 항목
@@ -318,5 +315,5 @@
 
 ---
 
-**마지막 업데이트**: 2026년 현재
-**백엔드 연동 예정일**: TBD
+**마지막 업데이트**: 2026년 2월  
+**백엔드 연동**: 완료 (API 연동 적용됨). Phase 2/3 항목은 선택적으로 진행 가능.
