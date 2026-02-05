@@ -40,7 +40,7 @@ public class PledgeController {
     @GetMapping
     public ResponseEntity<List<PledgeResponseDto>> getMyPledges(@AuthenticationPrincipal CustomUserDetails userDetails) {
         Long userId = userDetails.getUserId();
-        List<PledgeResponseDto> response = pledgeService.getAllPledge(userId);
+        List<PledgeResponseDto> response = pledgeService.getAllPledges(userId);
         return ResponseEntity.ok(response);
     }
 

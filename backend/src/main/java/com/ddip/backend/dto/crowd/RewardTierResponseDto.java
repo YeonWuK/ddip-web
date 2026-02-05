@@ -16,8 +16,8 @@ public class RewardTierResponseDto {
     private String title;
     private String description;
     private Long price;
-    private Integer limitQuantity;
-    private Integer soldQuantity;
+    private Long limitQuantity;
+    private Long soldQuantity;
     private boolean soldOut;
 
     public static RewardTierResponseDto from(RewardTier tier) {

@@ -36,11 +36,14 @@ public class Pledge extends BaseTimeEntity {
     @Column(name = "amount", nullable = false)
     private Long amount;
 
+    @Column(name = "quantity", nullable = false)
+    private Long quantity;
+
     @Enumerated(EnumType.STRING)
     @Column(length = 20, nullable = false)
     private PledgeStatus status;
 
-    public static Pledge toEntity(User user, Project project, RewardTier rewardTier, long requiredAmount) {
+    public static Pledge toEntity(User user, Project project, RewardTier rewardTier, long requiredAmount, long quantity) {
         return Pledge.builder()
                 .user(user)
                 .project(project)

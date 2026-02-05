@@ -68,12 +68,6 @@ public class PointService {
     }
 
     @Transactional(readOnly = true)
-    public long getBalance(Long userId) {
-        User user = getUser(userId);
-        return user.getPointBalance();
-    }
-
-    @Transactional(readOnly = true)
     public List<PointLedger> getLedgersByUser(Long userId) {
         User user = getUser(userId);
         return pointLedgerRepository.findByUserOrderByIdDesc(user);

@@ -1,4 +1,4 @@
-package com.ddip.backend.exception.common;
+package com.ddip.backend.exception;
 
 import com.ddip.backend.exception.security.CustomAccessDeniedException;
 import com.ddip.backend.exception.security.CustomAuthenticationException;

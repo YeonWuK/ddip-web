@@ -1,7 +1,7 @@
 package com.ddip.backend.exception.auction;
 
-import com.ddip.backend.exception.common.BusinessException;
-import com.ddip.backend.exception.common.ErrorCode;
+import com.ddip.backend.exception.BusinessException;
+import com.ddip.backend.exception.ErrorCode;
 
 public class AuctionDeniedException extends BusinessException {
     public AuctionDeniedException(Long auctionId, Long userId) {
