@@ -134,9 +134,10 @@ public class AuctionService {
             awsS3Util.deleteByKey(auctionImage.getS3Key());
         }
 
-        Long currentWinnerId = auction.getCurrentWinner().getId();
+        User currentWinner = auction.getCurrentWinner();
 
-        if (currentWinnerId != null) {
+        if (currentWinner != null) {
+            Long currentWinnerId = currentWinner.getId();
             pointService.changePoint(currentWinnerId, +auction.getCurrentPrice(),
                     PointLedgerType.REFUND, PointLedgerSource.AUCTION,
                     auction.getId(), "경매 삭제 입찰자 환불");
