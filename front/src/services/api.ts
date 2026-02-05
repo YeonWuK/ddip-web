@@ -1057,7 +1057,7 @@ export const auctionApi = {
   },
 };
 
-// API 함수들 - 사용자 관련
+// API 함수들 - 사용자 관련.
 export const userApi = {
   /**
    * 마이페이지 데이터 조회 (내 경매, 입찰 내역 등)
