@@ -124,7 +124,7 @@ public class BidsService {
         Bids saved = bidsRepository.save(Bids.from(createBidsDto));
 
         // after commit
-        publisher.publishEvent(new AuctionEsEvent(auctionId));
+        publisher.publishEvent(new AuctionEsEvent(auction.getId()));
 
         return BidsResponseDto.from(saved);
     }

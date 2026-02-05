@@ -33,7 +33,6 @@ public class AfterCommitEventHandler {
 
     private final SimpMessagingTemplate messagingTemplate;
 
-    @Transactional(readOnly = true)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void auctionDocumentHandler(AuctionEsEvent event) {
         Auction auction = auctionRepository.findById(event.auctionId())
@@ -46,7 +45,6 @@ public class AfterCommitEventHandler {
         auctionElasticSearchRepository.save(auctionDocument);
     }
 
-    @Transactional(readOnly = true)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void projectDocumentHandler(ProjectEsEvent event) {
         Project project = projectRepository.findById(event.projectId())
@@ -59,7 +57,6 @@ public class AfterCommitEventHandler {
         projectElasticsearchRepository.save(projectDocument);
     }
 
-    @Transactional(readOnly = true)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void auctionEventHandler(AuctionEndEvent event) {
         Auction auction = auctionRepository.findById(event.auctionId())
