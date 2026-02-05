@@ -33,8 +33,8 @@ export default function HomePage() {
         
         // 인기 프로젝트: 후원자 수 기준 정렬
         const sortedByPopularity = [...allProjects].sort((a, b) => {
-          const backersA = a.rewardTiers.reduce((sum, tier) => sum + tier.soldQuantity, 0)
-          const backersB = b.rewardTiers.reduce((sum, tier) => sum + tier.soldQuantity, 0)
+          const backersA = (a.rewardTiers ?? []).reduce((sum, tier) => sum + tier.soldQuantity, 0)
+          const backersB = (b.rewardTiers ?? []).reduce((sum, tier) => sum + tier.soldQuantity, 0)
           return backersB - backersA
         })
         setPopularProjects(sortedByPopularity.slice(0, 8))
@@ -95,8 +95,8 @@ export default function HomePage() {
         
         // 인기 프로젝트 정렬
         const sortedByPopularity = [...allProjects].sort((a, b) => {
-          const backersA = a.rewardTiers.reduce((sum, tier) => sum + tier.soldQuantity, 0)
-          const backersB = b.rewardTiers.reduce((sum, tier) => sum + tier.soldQuantity, 0)
+          const backersA = (a.rewardTiers ?? []).reduce((sum, tier) => sum + tier.soldQuantity, 0)
+          const backersB = (b.rewardTiers ?? []).reduce((sum, tier) => sum + tier.soldQuantity, 0)
           return backersB - backersA
         })
         setPopularProjects(sortedByPopularity.slice(0, 8))
@@ -146,7 +146,7 @@ export default function HomePage() {
     const daysLeft = isNaN(endTime.getTime()) 
       ? 0 
       : Math.ceil((endTime.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-    const backers = project.rewardTiers.reduce((sum, tier) => sum + tier.soldQuantity, 0)
+    const backers = (project.rewardTiers ?? []).reduce((sum, tier) => sum + tier.soldQuantity, 0)
 
     return {
       id: String(project.id),
@@ -168,7 +168,7 @@ export default function HomePage() {
     const daysLeft = isNaN(endTime.getTime()) 
       ? 0 
       : Math.ceil((endTime.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-    const backers = project.rewardTiers.reduce((sum, tier) => sum + tier.soldQuantity, 0)
+    const backers = (project.rewardTiers ?? []).reduce((sum, tier) => sum + tier.soldQuantity, 0)
 
     return {
       id: String(project.id),

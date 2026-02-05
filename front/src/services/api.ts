@@ -533,11 +533,15 @@ export const projectApi = {
   },
 
   checkAndUpdateProjectStatus: async (projectId: number): Promise<ProjectResponse | null> => {
-    return null;
+    try {
+      return await projectApi.getProject(projectId);
+    } catch {
+      return null;
+    }
   },
 
   checkAllProjectsStatus: async (): Promise<void> => {
-    // 백엔드에서 자동 처리
+    // 백엔드에서 상태 자동 반영; 목록/상세 조회 시 최신 상태 반환
   },
 
   /**
@@ -558,11 +562,10 @@ export const projectApi = {
         return sum + (project.currentAmount || 0);
       }, 0);
       
-      // 참여자 수: 모든 프로젝트의 rewardTiers의 soldQuantity 합계
+      // 참여자 수: 모든 프로젝트의 rewardTiers의 soldQuantity 합계 (rewardTiers 없을 수 있음 방어)
       const totalParticipants = allProjects.reduce((sum, project) => {
-        const participants = project.rewardTiers.reduce((tierSum, tier) => {
-          return tierSum + (tier.soldQuantity || 0);
-        }, 0);
+        const tiers = project.rewardTiers ?? [];
+        const participants = tiers.reduce((tierSum, tier) => tierSum + (tier.soldQuantity || 0), 0);
         return sum + participants;
       }, 0);
       
@@ -1025,6 +1028,26 @@ export const auctionApi = {
     } catch (error) {
       throw error;
     }
+  },
+
+  /**
+   * 경매 상태 갱신 (서버에서 최신 경매 정보 조회 후 반환)
+   * GET /api/auction/{id}로 최신 상태를 가져와 UI와 동기화할 때 사용
+   */
+  checkAndUpdateAuctionStatus: async (auctionId: number): Promise<AuctionResponse | null> => {
+    try {
+      return await auctionApi.getAuction(auctionId);
+    } catch {
+      return null;
+    }
+  },
+
+  /**
+   * 전체 경매 상태 갱신 (백엔드에서 상태 관리 시 클라이언트는 목록 재조회로 반영)
+   * 실제 갱신은 호출 후 getAuctions() 등으로 목록을 다시 불러올 때 이루어짐
+   */
+  checkAllAuctionsStatus: async (): Promise<void> => {
+    // 백엔드에서 상태 자동 반영; 목록/상세 조회 시 최신 상태 반환
   },
 };
 
