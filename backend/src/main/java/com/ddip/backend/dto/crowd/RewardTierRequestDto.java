@@ -27,6 +27,6 @@ public class RewardTierRequestDto {
 
     // null이면 무제한
     @Min(1)
-    private Integer limitQuantity;
+    private Long limitQuantity;
 
 }

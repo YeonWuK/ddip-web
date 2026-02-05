@@ -22,8 +22,8 @@ public class AdminRewardTierSummaryDto {
 
     private Long price;
 
-    private Integer limitQuantity;   // null이면 무제한
-    private Integer soldQuantity;    // 이미 팔린 수량
+    private Long limitQuantity;   // null이면 무제한
+    private Long soldQuantity;    // 이미 팔린 수량
 
     private LocalDateTime createdAt;
 

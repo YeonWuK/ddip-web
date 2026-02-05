@@ -37,10 +37,10 @@ public class RewardTier extends BaseTimeEntity{
     private Long price;
 
     @Column(name = "limit_quantity")
-    private Integer limitQuantity; // null이면 무제한
+    private Long limitQuantity;
 
     @Column(name = "sold_quantity", nullable = false)
-    private Integer soldQuantity = 0; // 캐시
+    private Long soldQuantity;
 
     @Builder.Default
     @OneToMany(mappedBy = "rewardTier")
@@ -59,6 +59,11 @@ public class RewardTier extends BaseTimeEntity{
         if (!this.project.getId().equals(project.getId())) {
             throw new RewardMismatchException(this.id, project.getId());
         }
+    }
+
+    public void decreaseSoldQuantity(Long quantity) {
+        if (quantity <= 0) {throw new InvalidQuantityException(quantity);}
+        this.soldQuantity -= quantity;
     }
 
 }
