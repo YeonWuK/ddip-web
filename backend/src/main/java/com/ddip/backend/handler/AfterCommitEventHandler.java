@@ -11,6 +11,7 @@ import com.ddip.backend.event.AuctionEndEvent;
 import com.ddip.backend.event.AuctionEsEvent;
 import com.ddip.backend.event.ProjectEsEvent;
 import com.ddip.backend.exception.auction.AuctionNotFoundException;
+import com.ddip.backend.exception.project.ProjectNotFoundException;
 import com.ddip.backend.repository.AuctionRepository;
 import com.ddip.backend.repository.ProjectRepository;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +34,6 @@ public class AfterCommitEventHandler {
 
     private final SimpMessagingTemplate messagingTemplate;
 
-    @Transactional(readOnly = true)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void auctionDocumentHandler(AuctionEsEvent event) {
         Auction auction = auctionRepository.findById(event.auctionId())
@@ -46,11 +46,10 @@ public class AfterCommitEventHandler {
         auctionElasticSearchRepository.save(auctionDocument);
     }
 
-    @Transactional(readOnly = true)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void projectDocumentHandler(ProjectEsEvent event) {
         Project project = projectRepository.findById(event.projectId())
-                .orElseThrow(() -> new AuctionNotFoundException(event.projectId()));
+                .orElseThrow(() -> new ProjectNotFoundException(event.projectId()));
 
         ProjectDocument projectDocument = ProjectDocument.from(project, project.getThumbnailUrl());
 
@@ -59,7 +58,6 @@ public class AfterCommitEventHandler {
         projectElasticsearchRepository.save(projectDocument);
     }
 
-    @Transactional(readOnly = true)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void auctionEventHandler(AuctionEndEvent event) {
         Auction auction = auctionRepository.findById(event.auctionId())
