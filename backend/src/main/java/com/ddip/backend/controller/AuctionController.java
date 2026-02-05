@@ -1,5 +1,6 @@
 package com.ddip.backend.controller;
 
+import com.ddip.backend.dto.auction.AuctionDetailResponseDto;
 import com.ddip.backend.dto.auction.AuctionRequestDto;
 import com.ddip.backend.dto.auction.AuctionResponseDto;
 import com.ddip.backend.security.auth.CustomUserDetails;
@@ -48,8 +49,8 @@ public class AuctionController {
      * 경매 상세 조회
      */
     @GetMapping("/{auctionId}")
-    public ResponseEntity<AuctionResponseDto> getAuction(@PathVariable Long auctionId) {
-        AuctionResponseDto auction = auctionService.getAuction(auctionId);
+    public ResponseEntity<AuctionDetailResponseDto> getAuction(@PathVariable Long auctionId) {
+        AuctionDetailResponseDto auction = auctionService.getAuction(auctionId);
 
         return ResponseEntity.ok(auction);
     }
