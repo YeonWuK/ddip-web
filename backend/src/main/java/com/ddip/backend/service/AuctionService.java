@@ -2,15 +2,13 @@ package com.ddip.backend.service;
 
 import com.ddip.backend.aop.DistributedLock;
 import com.ddip.backend.dto.admin.auction.AdminAuctionSearchCondition;
+import com.ddip.backend.dto.auction.AuctionDetailResponseDto;
 import com.ddip.backend.dto.auction.AuctionRequestDto;
 import com.ddip.backend.dto.auction.AuctionResponseDto;
 import com.ddip.backend.dto.enums.AuctionStatus;
 import com.ddip.backend.dto.enums.PointLedgerSource;
 import com.ddip.backend.dto.enums.PointLedgerType;
-import com.ddip.backend.entity.Auction;
-import com.ddip.backend.entity.AuctionImage;
-import com.ddip.backend.entity.MyBids;
-import com.ddip.backend.entity.User;
+import com.ddip.backend.entity.*;
 import com.ddip.backend.es.document.AuctionDocument;
 import com.ddip.backend.es.repository.AuctionElasticsearchRepository;
 import com.ddip.backend.event.AuctionEndEvent;
@@ -19,10 +17,7 @@ import com.ddip.backend.exception.auction.AuctionDeniedException;
 import com.ddip.backend.exception.auction.AuctionNotFoundException;
 import com.ddip.backend.exception.auction.InvalidBidStepException;
 import com.ddip.backend.exception.user.UserNotFoundException;
-import com.ddip.backend.repository.AuctionImageRepository;
-import com.ddip.backend.repository.AuctionRepository;
-import com.ddip.backend.repository.MyBidsRepository;
-import com.ddip.backend.repository.UserRepository;
+import com.ddip.backend.repository.*;
 import com.ddip.backend.utils.AwsS3Util;
 import com.ddip.backend.utils.S3UrlPrefixFactory;
 import lombok.RequiredArgsConstructor;
@@ -50,6 +45,7 @@ public class AuctionService {
     private final ApplicationEventPublisher publisher;
 
     private final UserRepository userRepository;
+    private final BidsRepository bidsRepository;
     private final MyBidsRepository myBidsRepository;
     private final AuctionRepository auctionRepository;
     private final AuctionImageRepository auctionImageRepository;
@@ -98,11 +94,13 @@ public class AuctionService {
      * 경매 상세 조회
      */
     @Transactional(readOnly = true)
-    public AuctionResponseDto getAuction(Long auctionId) {
+    public AuctionDetailResponseDto getAuction(Long auctionId) {
         Auction auction = auctionRepository.findDetailById(auctionId)
                 .orElseThrow(() -> new AuctionNotFoundException(auctionId));
 
-        return AuctionResponseDto.from(auction);
+        List<Bids> bids = bidsRepository.findBidsByAuctionId(auction.getId());
+
+        return AuctionDetailResponseDto.from(auction, bids);
     }
 
     /**

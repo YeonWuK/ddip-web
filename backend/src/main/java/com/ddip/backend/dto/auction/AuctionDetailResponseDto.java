@@ -20,15 +20,13 @@ import java.util.stream.Collectors;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AuctionResponseDto {
+public class AuctionDetailResponseDto {
 
     private Long auctionId;
 
     private String title;
 
     private String description;
-
-    private String mainImageKey;
 
     private UserResponseDto seller;
 
@@ -48,12 +46,13 @@ public class AuctionResponseDto {
 
     private String endAt;
 
-    public static AuctionResponseDto from(Auction auction) {
-        return AuctionResponseDto.builder()
+    private List<BidsSummaryDto> bids = new ArrayList<>();
+
+    public static AuctionDetailResponseDto from(Auction auction, List<Bids> bids) {
+        return AuctionDetailResponseDto.builder()
                 .auctionId(auction.getId())
                 .title(auction.getTitle())
                 .description(auction.getDescription())
-                .mainImageKey(auction.getMainImagKey())
                 .seller(UserResponseDto.from(auction.getSeller()))
                 .winner(auction.getWinner() == null ? null : UserResponseDto.from(auction.getWinner()))
                 .startPrice(auction.getStartPrice())
@@ -65,6 +64,9 @@ public class AuctionResponseDto {
                         .collect(Collectors.toList()))
                 .startAt(auction.getStartAt())
                 .endAt(String.valueOf(auction.getEndAt()))
+                .bids(bids.stream()
+                        .map(BidsSummaryDto::from)
+                        .collect(Collectors.toList()))
                 .build();
     }
 

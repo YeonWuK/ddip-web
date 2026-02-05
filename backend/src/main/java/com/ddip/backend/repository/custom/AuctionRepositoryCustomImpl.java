@@ -31,7 +31,6 @@ public class AuctionRepositoryCustomImpl implements AuctionRepositoryCustom {
     @Override
     public Optional<Auction> findDetailById(Long auctionId) {
         return Optional.ofNullable(jpaQueryFactory.selectFrom(auction)
-                .leftJoin(auction.myBids, myBids).fetchJoin()
                 .leftJoin(auction.images, auctionImage).fetchJoin()
                 .leftJoin(auction.seller, new QUser("seller")).fetchJoin()
                 .leftJoin(auction.winner, new QUser("winner")).fetchJoin()
@@ -42,7 +41,6 @@ public class AuctionRepositoryCustomImpl implements AuctionRepositoryCustom {
     @Override
     public List<Auction> findAllByOrderByIdDesc() {
         return jpaQueryFactory.selectFrom(auction)
-                .leftJoin(auction.myBids, myBids).fetchJoin()
                 .leftJoin(auction.images, auctionImage).fetchJoin()
                 .leftJoin(auction.seller, new QUser("seller")).fetchJoin()
                 .leftJoin(auction.winner, new QUser("winner")).fetchJoin()
