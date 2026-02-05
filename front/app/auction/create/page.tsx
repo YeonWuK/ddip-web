@@ -105,15 +105,23 @@ export default function CreateAuctionPage() {
         return
       }
 
-      // 사용자가 선택한 시간(한국 시간)을 UTC ISO로 보냄 → 백엔드가 UTC로 저장·반환하면 상세에서 한국 시간으로 표시됨
-      const endAtUtcIso = endDateTimeObj.toISOString()
+      // 백엔드 LocalDateTime.parse()는 Z를 받지 못함 → 타임존 없이 "2026-02-05T20:30:00" 형식으로 전송
+      const formatLocalDateTime = (date: Date) => {
+        const y = date.getFullYear()
+        const m = String(date.getMonth() + 1).padStart(2, "0")
+        const d = String(date.getDate()).padStart(2, "0")
+        const hh = String(date.getHours()).padStart(2, "0")
+        const mm = String(date.getMinutes()).padStart(2, "0")
+        return `${y}-${m}-${d}T${hh}:${mm}:00`
+      }
+      const endAtFormatted = formatLocalDateTime(endDateTimeObj)
 
       const auctionData: AuctionCreateRequest = {
         title: data.title,
         description: data.description,
         startPrice: data.startPrice,
         bidStep: data.bidStep,
-        endAt: endAtUtcIso,
+        endAt: endAtFormatted,
       }
 
       const createdAuction = await auctionApi.createAuction(imageFiles, auctionData)

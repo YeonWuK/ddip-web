@@ -94,14 +94,22 @@ async function apiRequest<T>(
     throw new Error(`${errorMessage} (${response.status})`);
   }
 
-  // DELETE 요청 등은 응답 본문이 없을 수 있음
+  // DELETE 요청 등은 응답 본문이 없거나 plain text일 수 있음 (예: "Deleted auction Successfully3")
   if (response.status === 204 || response.headers.get('content-length') === '0') {
     return {} as T;
   }
 
-  // 응답 본문 파싱
-  const responseData = await response.json();
-  return responseData as T;
+  const text = await response.text();
+  if (!text || text.trim() === '') {
+    return {} as T;
+  }
+  try {
+    const responseData = JSON.parse(text);
+    return responseData as T;
+  } catch {
+    // 백엔드가 JSON이 아닌 문자열만 반환한 경우 (200 OK면 성공으로 간주)
+    return {} as T;
+  }
 }
 
 
@@ -786,7 +794,7 @@ export const auctionApi = {
         description: data.description,
         startPrice: data.startPrice,
         bidStep: data.bidStep,
-        endAt: data.endAt,
+        endAt: data.endAt || '',
       };
       formData.append('data', new Blob([JSON.stringify(dataPart)], { type: 'application/json' }));
 

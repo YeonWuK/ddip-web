@@ -310,7 +310,7 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
     try {
       await auctionApi.deleteAuction(auction.id)
       toast.success("경매가 삭제되었습니다")
-      router.push("/auctions")
+      router.push("/")
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "경매 삭제에 실패했습니다")
     }
