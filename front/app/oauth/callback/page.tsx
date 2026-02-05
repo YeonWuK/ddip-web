@@ -63,21 +63,18 @@ function OAuthCallbackContent() {
             toast.success("로그인 성공!")
             router.push("/")
           }
-        } catch (userError) {
-          console.error("사용자 정보 조회 실패:", userError)
-          // 토큰은 저장되었지만 사용자 정보 조회 실패 시에도 AuthContext 업데이트 시도
+        } catch {
           try {
             await refreshUser()
-          } catch (refreshError) {
-            console.error("사용자 정보 갱신 실패:", refreshError)
+          } catch {
+            // 갱신 실패 시 무시
           }
           toast.info("추가 정보를 입력해주세요")
           router.push("/auth/profile/complete")
         }
 
         router.refresh()
-      } catch (err) {
-        console.error("OAuth 콜백 처리 실패:", err)
+      } catch {
         // 에러 발생 시에도 프로필 완성 페이지로 이동
         toast.info("추가 정보를 입력해주세요")
         router.push("/auth/profile/complete")

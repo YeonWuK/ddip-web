@@ -41,13 +41,12 @@ export function useWishlistAuctionMonitor() {
             
             // 현재 상태 저장
             previousStatusesRef.current.set(item.id, auction.status)
-          } catch (error) {
+          } catch {
             // 경매를 찾을 수 없거나 오류가 발생하면 무시
-            console.error(`경매 ${item.id} 체크 실패:`, error)
           }
         }
-      } catch (error) {
-        console.error("찜한 경매 체크 실패:", error)
+      } catch {
+        // 체크 실패 시 무시
       }
 
       // 다음 체크 주기 설정 (1분마다)

@@ -95,8 +95,7 @@ export default function EditAuctionPage({ params }: { params: Promise<{ id: stri
           startAt: startDateStr,
           endAt: endDateStr,
         })
-      } catch (error) {
-        console.error("경매 로드 실패:", error)
+      } catch {
         toast.error("경매를 불러오는데 실패했습니다")
         router.push("/")
       } finally {
@@ -204,7 +203,6 @@ export default function EditAuctionPage({ params }: { params: Promise<{ id: stri
       toast.success("경매가 수정되었습니다!")
       router.push(`/auction/${auctionId}`)
     } catch (error) {
-      console.error("경매 수정 에러:", error)
       toast.error(error instanceof Error ? error.message : "경매 수정에 실패했습니다")
     } finally {
       setIsSubmitting(false)

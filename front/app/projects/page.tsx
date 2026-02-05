@@ -35,15 +35,10 @@ export default function ProjectsPage() {
           limit: PAGE_SIZE, 
           status: projectStatus === 'ALL' ? undefined : projectStatus 
         })
-        
-        console.log(`[ProjectsPage] 로드된 데이터: ${data.length}개, 페이지: 1, 상태: ${projectStatus}`)
         setProjects(data)
-        // API에서 필터링된 데이터를 가져오므로, 실제 응답 길이로 판단
         const hasMoreData = data.length === PAGE_SIZE
-        console.log(`[ProjectsPage] hasMore 설정: ${hasMoreData} (데이터 ${data.length}개, PAGE_SIZE ${PAGE_SIZE}개)`)
         setHasMore(hasMoreData)
-      } catch (error) {
-        console.error("데이터 로드 실패:", error)
+      } catch {
       } finally {
         setLoading(false)
       }
@@ -66,8 +61,8 @@ export default function ProjectsPage() {
           })
           setProjects(data)
         }
-      } catch (error) {
-        console.error("상태 체크 실패:", error)
+      } catch {
+        // 상태 체크 실패 시 무시
       }
     }
 
@@ -77,42 +72,24 @@ export default function ProjectsPage() {
 
   // 더 많은 데이터 로드
   const loadMore = useCallback(async () => {
-    if (loadingMore || !hasMore) {
-      console.log(`[ProjectsPage] loadMore 스킵: loadingMore=${loadingMore}, hasMore=${hasMore}`)
-      return
-    }
+    if (loadingMore || !hasMore) return
 
     try {
       setLoadingMore(true)
       const nextPage = pageRef.current + 1
-      
-      console.log(`[ProjectsPage] 다음 페이지 로드 시작: 페이지 ${nextPage}, 상태: ${projectStatus}`)
       const data = await projectApi.getProjects({ 
         page: nextPage, 
         limit: PAGE_SIZE,
         status: projectStatus === 'ALL' ? undefined : projectStatus
       })
-      
-      console.log(`[ProjectsPage] 페이지 ${nextPage} 로드 완료: ${data.length}개`)
-      
       if (data.length === 0) {
-        console.log(`[ProjectsPage] 더 이상 데이터 없음 - hasMore를 false로 설정`)
         setHasMore(false)
       } else {
-        setProjects(prev => {
-          const updated = [...prev, ...data]
-          console.log(`[ProjectsPage] 총 프로젝트 수: ${updated.length}개 (이전: ${prev.length}개 + 새로: ${data.length}개)`)
-          return updated
-        })
-        // API에서 필터링된 데이터를 가져오므로, 실제 응답 길이로 판단
-        const hasMoreData = data.length === PAGE_SIZE
-        console.log(`[ProjectsPage] hasMore 설정: ${hasMoreData} (데이터 ${data.length}개, PAGE_SIZE ${PAGE_SIZE}개)`)
-        setHasMore(hasMoreData)
+        setProjects(prev => [...prev, ...data])
+        setHasMore(data.length === PAGE_SIZE)
         pageRef.current = nextPage
-        console.log(`[ProjectsPage] 다음 페이지: ${nextPage + 1}, hasMore: ${hasMoreData}`)
       }
-    } catch (error) {
-      console.error("추가 데이터 로드 실패:", error)
+    } catch {
       setHasMore(false)
     } finally {
       setLoadingMore(false)
@@ -123,13 +100,7 @@ export default function ProjectsPage() {
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        const isIntersecting = entries[0].isIntersecting
-        console.log(`[ProjectsPage] Observer: intersecting=${isIntersecting}, hasMore=${hasMore}, loadingMore=${loadingMore}, projects.length=${projects.length}`)
-        
-        if (isIntersecting && hasMore && !loadingMore) {
-          console.log(`[ProjectsPage] 트리거 감지! loadMore 호출`)
-          loadMore()
-        }
+        if (entries[0].isIntersecting && hasMore && !loadingMore) loadMore()
       },
       { 
         threshold: 0.1,
@@ -141,22 +112,14 @@ export default function ProjectsPage() {
     const setupObserver = () => {
       const currentTarget = observerTarget.current
       if (currentTarget) {
-        console.log(`[ProjectsPage] Observer 등록됨 (hasMore: ${hasMore})`)
         observer.observe(currentTarget)
         return true
       }
       return false
     }
 
-    // 즉시 시도
     if (!setupObserver()) {
-      // 타겟이 아직 렌더링되지 않았을 수 있으므로 짧은 지연 후 재시도
-      console.warn(`[ProjectsPage] Observer 타겟이 없음 - 재시도 중...`)
-      const timeoutId = setTimeout(() => {
-        if (!setupObserver()) {
-          console.warn(`[ProjectsPage] Observer 타겟을 찾을 수 없음`)
-        }
-      }, 200)
+      const timeoutId = setTimeout(() => setupObserver(), 200)
       
       return () => {
         clearTimeout(timeoutId)

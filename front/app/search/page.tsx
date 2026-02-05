@@ -56,8 +56,7 @@ function SearchContent() {
       ])
       setProjects(projectsData)
       setAuctions(auctionsData)
-    } catch (error) {
-      console.error("검색 실패:", error)
+    } catch {
     } finally {
       setLoading(false)
     }

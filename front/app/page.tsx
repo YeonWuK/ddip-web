@@ -28,11 +28,7 @@ export default function HomePage() {
         // 백엔드에서 상태 관리를 하므로 클라이언트에서 상태 체크 불필요
         const [allProjects, allAuctions] = await Promise.all([
           projectApi.getProjects({ limit: 50 }),
-          auctionApi.getAuctions({ limit: 50 }).catch((error) => {
-            // 백엔드 API가 아직 구현되지 않은 경우 빈 배열 반환
-            console.warn('경매 목록 조회 실패 (백엔드 API 미구현 가능성):', error);
-            return [] as AuctionSummary[];
-          }),
+          auctionApi.getAuctions({ limit: 50 }).catch(() => [] as AuctionSummary[]),
         ])
         
         // 인기 프로젝트: 후원자 수 기준 정렬
@@ -73,8 +69,7 @@ export default function HomePage() {
           return endTimeA - endTimeB
         })
         setUrgentAuctions(urgentAuc.slice(0, 8))
-      } catch (error) {
-        console.error("데이터 로드 실패:", error)
+      } catch {
         // 에러가 발생해도 빈 배열로 설정하여 UI가 깨지지 않도록 함
         setPopularProjects([])
         setPopularAuctions([])
@@ -95,11 +90,7 @@ export default function HomePage() {
         // 데이터 새로고침 (백엔드에서 최신 상태 반영)
         const [allProjects, allAuctions] = await Promise.all([
           projectApi.getProjects({ limit: 50 }),
-          auctionApi.getAuctions({ limit: 50 }).catch((error) => {
-            // 백엔드 API가 아직 구현되지 않은 경우 빈 배열 반환
-            console.warn('경매 목록 조회 실패 (백엔드 API 미구현 가능성):', error);
-            return [] as AuctionSummary[];
-          }),
+          auctionApi.getAuctions({ limit: 50 }).catch(() => [] as AuctionSummary[]),
         ])
         
         // 인기 프로젝트 정렬
@@ -138,8 +129,7 @@ export default function HomePage() {
           return endTimeA - endTimeB
         })
         setUrgentAuctions(urgentAuc.slice(0, 8))
-      } catch (error) {
-        console.error("데이터 새로고침 실패:", error)
+      } catch {
         // 에러가 발생해도 기존 데이터 유지
       }
     }

@@ -44,8 +44,7 @@ export default function CompleteProfilePage() {
             await refreshUser();
             // refreshUser 후 잠시 대기하여 상태 업데이트 대기
             await new Promise((resolve) => setTimeout(resolve, 100));
-          } catch (err) {
-            console.error("사용자 정보 갱신 실패:", err);
+          } catch {
           }
         }
 
@@ -66,8 +65,7 @@ export default function CompleteProfilePage() {
               router.push("/");
               return;
             }
-          } catch (err) {
-            console.error("사용자 정보 조회 실패:", err);
+          } catch {
             // 사용자 정보 조회 실패해도 프로필 입력은 가능하도록 함
           }
         } else if (user) {
@@ -88,8 +86,7 @@ export default function CompleteProfilePage() {
           router.push("/login");
           return;
         }
-      } catch (err) {
-        console.error("프로필 확인 실패:", err);
+      } catch {
         // 에러가 발생해도 프로필 입력은 가능하도록 함
       } finally {
         setIsChecking(false);

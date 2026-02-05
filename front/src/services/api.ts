@@ -83,14 +83,6 @@ async function apiRequest<T>(
     } catch {
       errorMessage = errorText || errorMessage;
     }
-    
-    // 에러 로깅
-    console.error(`API 요청 실패 [${response.status}]:`, {
-      endpoint,
-      status: response.status,
-      errorMessage,
-    });
-    
     throw new Error(`${errorMessage} (${response.status})`);
   }
 
@@ -230,7 +222,6 @@ export const projectApi = {
 
       return filteredProjects;
     } catch (error) {
-      console.error('프로젝트 목록 조회 실패:', error);
       throw error;
     }
   },
@@ -245,9 +236,6 @@ export const projectApi = {
       const backendResponse = await apiRequest<any>(`/api/crowd/${id}`, {
         method: 'GET',
       });
-
-      // 디버깅: 백엔드 응답 구조 확인
-      console.log('백엔드 프로젝트 응답:', JSON.stringify(backendResponse, null, 2));
 
       // 백엔드 응답을 프론트엔드 타입으로 변환
       // 백엔드 필드명이 다를 수 있으므로 안전하게 변환
@@ -279,8 +267,7 @@ export const projectApi = {
             profileImageUrl: null,
             phone: null,
           };
-        } catch (error) {
-          console.warn('생성자 정보 조회 실패:', error);
+        } catch {
           creator = {
             id: backendResponse.creatorId,
             email: null,
@@ -340,7 +327,6 @@ export const projectApi = {
 
       return project;
     } catch (error) {
-      console.error('프로젝트 조회 실패:', error);
       throw error;
     }
   },
@@ -382,22 +368,16 @@ export const projectApi = {
         // imageUrls: data.imageUrls || null,
       };
 
-      console.log('프로젝트 생성 요청:', requestData);
-
-      // 프로젝트 생성 요청
       const projectId = await apiRequest<number>('/api/crowd', {
         method: 'POST',
         body: JSON.stringify(requestData),
       });
-
-      console.log('프로젝트 생성 성공, ID:', projectId);
 
       // 생성된 프로젝트 ID로 상세 정보 조회
       const createdProject = await projectApi.getProject(projectId);
       
       return createdProject;
     } catch (error) {
-      console.error('프로젝트 생성 실패:', error);
       throw error;
     }
   },
@@ -423,9 +403,7 @@ export const projectApi = {
       await apiRequest(`/api/crowd/${id}`, {
         method: 'DELETE',
       });
-      console.log('프로젝트 삭제 성공:', id);
     } catch (error) {
-      console.error('프로젝트 삭제 실패:', error);
       throw error;
     }
   },
@@ -499,7 +477,6 @@ export const projectApi = {
 
       return pledge;
     } catch (error) {
-      console.error('리워드 구매 실패:', error);
       throw error;
     }
   },
@@ -533,7 +510,6 @@ export const projectApi = {
         status: pledge.status || null,
       }));
     } catch (error) {
-      console.error('리워드 조회 실패:', error);
       throw error;
     }
   },
@@ -548,7 +524,6 @@ export const projectApi = {
         method: 'PATCH',
       });
     } catch (error) {
-      console.error('리워드 취소 실패:', error);
       throw error;
     }
   },
@@ -601,9 +576,7 @@ export const projectApi = {
         totalParticipants,
         activeProjects,
       };
-    } catch (error) {
-      console.error('통계 조회 실패:', error);
-      // 에러 발생 시 기본값 반환
+    } catch {
       return {
         totalAmount: 0,
         totalParticipants: 0,
@@ -665,7 +638,6 @@ export const auctionApi = {
         };
       });
     } catch (error) {
-      console.error('경매 목록 조회 실패:', error);
       throw error;
     }
   },
@@ -776,7 +748,6 @@ export const auctionApi = {
         updatedAt: backendResponse.updatedAt || backendResponse.updated_at || '',
       };
     } catch (error) {
-      console.error('경매 상세 조회 실패:', error);
       throw error;
     }
   },
@@ -869,7 +840,6 @@ export const auctionApi = {
         updatedAt: backendResponse.updatedAt ?? backendResponse.updated_at ?? '',
       };
     } catch (error) {
-      console.error('경매 생성 실패:', error);
       throw error;
     }
   },
@@ -902,7 +872,6 @@ export const auctionApi = {
       // 수정된 경매 정보 조회
       return await auctionApi.getAuction(id);
     } catch (error) {
-      console.error('경매 수정 실패:', error);
       throw error;
     }
   },
@@ -916,9 +885,7 @@ export const auctionApi = {
       await apiRequest(`/api/auction/${id}`, {
         method: 'DELETE',
       });
-      console.log('경매 삭제 성공:', id);
     } catch (error) {
-      console.error('경매 삭제 실패:', error);
       throw error;
     }
   },
@@ -946,7 +913,6 @@ export const auctionApi = {
         isHighestBidder: backendResponse.isHighestBidder || backendResponse.is_highest_bidder || false,
       };
     } catch (error) {
-      console.error('경매 입찰 실패:', error);
       throw error;
     }
   },
@@ -980,10 +946,9 @@ export const auctionApi = {
         },
         bidderNickname: bid.bidderNickname || bid.bidder_nickname || bid.bidder?.nickname || '',
         bidPrice: bid.bidPrice || bid.bid_price || 0,
-        bidAt: bid.bidAt || bid.bid_at || bid.createdAt || '',
+          bidAt: bid.bidAt || bid.bid_at || bid.createdAt || '',
       }));
     } catch (error) {
-      console.error('입찰 내역 조회 실패:', error);
       throw error;
     }
   },
@@ -1012,7 +977,6 @@ export const auctionApi = {
         isPaid: myBid.isPaid !== undefined ? myBid.isPaid : (myBid.is_paid !== undefined ? myBid.is_paid : false),
       }));
     } catch (error) {
-      console.error('내 입찰 내역 조회 실패:', error);
       throw error;
     }
   },
@@ -1059,7 +1023,6 @@ export const auctionApi = {
         };
       });
     } catch (error) {
-      console.error('경매 검색 실패:', error);
       throw error;
     }
   },
@@ -1161,7 +1124,6 @@ export const userApi = {
         })),
       };
     } catch (error) {
-      console.error('마이페이지 조회 실패:', error);
       throw error;
     }
   },
@@ -1195,7 +1157,6 @@ export const userApi = {
         },
       };
     } catch (error) {
-      console.error('프로필 조회 실패:', error);
       throw error;
     }
   },
@@ -1209,7 +1170,6 @@ export const userApi = {
       const profile = await userApi.getUserProfile(id);
       return profile.user;
     } catch (error) {
-      console.error('사용자 정보 조회 실패:', error);
       throw error;
     }
   },
@@ -1251,7 +1211,6 @@ export const userApi = {
         roleLevel: backendResponse.roleLevel || backendResponse.role_level || 0,
       };
     } catch (error) {
-      console.error('사용자 정보 수정 실패:', error);
       throw error;
     }
   },
@@ -1296,13 +1255,6 @@ export const authApi = {
         } catch {
           // JSON 파싱 실패 시 기본 메시지 사용
         }
-        
-        console.error('로그인 실패:', {
-          status: response.status,
-          statusText: response.statusText,
-          errorMessage,
-        });
-        
         throw new Error(errorMessage);
       }
 
@@ -1361,13 +1313,6 @@ export const authApi = {
         },
       };
     } catch (error) {
-      console.error('로그인 실패 상세:', {
-        error,
-        errorType: error instanceof Error ? error.constructor.name : typeof error,
-        errorMessage: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
-      });
-      
       // 네트워크 오류 처리
       if (error instanceof TypeError && error.message === 'Failed to fetch') {
         // CORS 에러인지 확인
@@ -1409,22 +1354,7 @@ export const authApi = {
       bankType: data.bankType || null,
     };
     const jsonBody = JSON.stringify(requestBody);
-    
-    // 회원가입 요청 로그
-    console.group('🟢 회원가입 요청 상세 정보');
-    console.log('📤 요청 URL:', `${API_BASE_URL}/api/users/register`);
-    console.log('📤 요청 메서드:', 'POST');
-    console.log('📤 요청 헤더:', {
-      'Content-Type': 'application/json',
-    });
-    console.log('📤 요청 Body (JSON 문자열):', jsonBody);
-    console.log('📤 요청 Body (객체):', {
-      ...requestBody,
-      password: '***' + (requestBody.password?.slice(-2) || ''),
-    });
-    console.log('📤 Body 길이:', jsonBody.length, 'bytes');
-    console.groupEnd();
-    
+
     try {
       // 회원가입 요청
       const response = await fetch(`${API_BASE_URL}/api/users/register`, {
@@ -1434,12 +1364,6 @@ export const authApi = {
         },
         credentials: 'include', // refreshToken 쿠키 저장을 위해 필수
         body: jsonBody,
-      });
-      
-      console.log('회원가입 응답 받음:', {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok,
       });
 
       if (!response.ok) {
@@ -1460,19 +1384,14 @@ export const authApi = {
       }
       
       // 백엔드가 UserResponseDto만 반환하는 경우, 자동 로그인 처리
-      // 회원가입 후 자동 로그인을 위해 로그인 API 호출
-      console.log('회원가입 성공, 자동 로그인 시도...');
       try {
         const loginResponse = await authApi.login({
           email: data.email,
           password: data.password,
         });
-        console.log('자동 로그인 성공');
         return loginResponse;
-      } catch (loginError) {
-        // 자동 로그인 실패해도 회원가입은 성공한 것으로 처리
-        console.warn('자동 로그인 실패 (회원가입은 성공):', loginError);
-        // 사용자 정보만 반환 (수동 로그인 필요)
+      } catch {
+        // 자동 로그인 실패해도 회원가입은 성공한 것으로 처리, 사용자 정보만 반환
         const user: UserResponse = {
           id: userData.id,
           email: userData.email,
@@ -1488,12 +1407,6 @@ export const authApi = {
         };
       }
     } catch (error) {
-      console.error('회원가입 실패 상세:', {
-        error,
-        errorType: error instanceof Error ? error.constructor.name : typeof error,
-        errorMessage: error instanceof Error ? error.message : String(error),
-      });
-      
       // 네트워크 오류인 경우 더 명확한 메시지 제공
       if (error instanceof TypeError && error.message === 'Failed to fetch') {
         const errorStr = String(error);
@@ -1522,8 +1435,7 @@ export const authApi = {
       await apiRequest<void>('/api/users/logout', {
         method: 'POST',
       });
-    } catch (error) {
-      console.error('로그아웃 API 호출 실패:', error);
+    } catch {
       // API 호출 실패해도 클라이언트에서 토큰 삭제는 진행
       // (네트워크 오류 등으로 백엔드 호출이 실패해도 로그아웃은 처리)
     }
@@ -1572,8 +1484,6 @@ export const authApi = {
       
       return user;
     } catch (error) {
-      console.error('getCurrentUser 실패:', error);
-      
       // 401 Unauthorized인 경우 토큰이 만료되었거나 유효하지 않음
       if (error instanceof Error && (error.message.includes('401') || error.message.includes('Unauthorized'))) {
         // 토큰 삭제
@@ -1659,7 +1569,6 @@ export const authApi = {
         user: data.user,
       };
     } catch (error) {
-      console.error('OAuth 콜백 처리 실패:', error);
       throw error instanceof Error ? error : new Error('OAuth 인증에 실패했습니다');
     }
   },
@@ -1687,7 +1596,6 @@ export const authApi = {
       // 백엔드 응답에서 newAccessToken 추출 및 저장
       if (backendResponse.newAccessToken) {
         tokenStorage.setAccessToken(backendResponse.newAccessToken);
-        console.log('새로운 accessToken이 저장되었습니다');
       }
 
       // 사용자 정보는 별도로 조회 (백엔드가 newAccessToken만 반환하는 경우)
@@ -1713,7 +1621,6 @@ export const authApi = {
       tokenStorage.setUser(user);
       return user;
     } catch (error) {
-      console.error('프로필 업데이트 실패:', error);
       throw error;
     }
   },
@@ -1759,7 +1666,6 @@ export const addressApi = {
         isDefault: backendResponse.isDefault !== undefined ? backendResponse.isDefault : (backendResponse.is_default !== undefined ? backendResponse.is_default : false),
       };
     } catch (error) {
-      console.error('기본 배송지 조회 실패:', error);
       throw error;
     }
   },
@@ -1784,7 +1690,6 @@ export const addressApi = {
         isDefault: address.isDefault !== undefined ? address.isDefault : (address.is_default !== undefined ? address.is_default : false),
       }));
     } catch (error) {
-      console.error('배송지 목록 조회 실패:', error);
       throw error;
     }
   },
@@ -1824,7 +1729,6 @@ export const addressApi = {
 
       return addressId;
     } catch (error) {
-      console.error('배송지 생성 실패:', error);
       throw error;
     }
   },
@@ -1849,7 +1753,6 @@ export const addressApi = {
         isDefault: backendResponse.isDefault !== undefined ? backendResponse.isDefault : (backendResponse.is_default !== undefined ? backendResponse.is_default : false),
       };
     } catch (error) {
-      console.error('배송지 조회 실패:', error);
       throw error;
     }
   },
@@ -1875,7 +1778,6 @@ export const addressApi = {
         body: JSON.stringify(requestData),
       });
     } catch (error) {
-      console.error('배송지 수정 실패:', error);
       throw error;
     }
   },
@@ -1890,7 +1792,6 @@ export const addressApi = {
         method: 'DELETE',
       });
     } catch (error) {
-      console.error('배송지 삭제 실패:', error);
       throw error;
     }
   },
@@ -1906,7 +1807,6 @@ export const addressApi = {
         method: 'PUT',
       });
     } catch (error) {
-      console.error('기본 배송지 설정 실패:', error);
       throw error;
     }
   },

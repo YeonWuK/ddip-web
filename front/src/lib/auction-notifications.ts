@@ -39,8 +39,7 @@ export function hasNotificationBeenShown(auctionId: number, type: "started" | "e
   try {
     const key = getNotificationKey(auctionId, type)
     return localStorage.getItem(key) === "true"
-  } catch (error) {
-    console.error("알림 상태 확인 실패:", error)
+  } catch {
     return false
   }
 }
@@ -54,8 +53,8 @@ export function markNotificationAsShown(auctionId: number, type: "started" | "en
   try {
     const key = getNotificationKey(auctionId, type)
     localStorage.setItem(key, "true")
-  } catch (error) {
-    console.error("알림 상태 저장 실패:", error)
+  } catch {
+    // 저장 실패 시 무시
   }
 }
 

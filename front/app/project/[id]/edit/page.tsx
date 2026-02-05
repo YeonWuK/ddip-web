@@ -105,8 +105,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
           tags: projectData.tags || undefined,
           summary: projectData.summary || undefined,
         })
-      } catch (error) {
-        console.error("프로젝트 로드 실패:", error)
+      } catch {
         toast.error("프로젝트를 불러오는데 실패했습니다")
         router.push("/")
       } finally {
@@ -216,7 +215,6 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
       toast.success("프로젝트가 수정되었습니다!")
       router.push(`/project/${projectId}`)
     } catch (error) {
-      console.error("프로젝트 수정 에러:", error)
       toast.error(error instanceof Error ? error.message : "프로젝트 수정에 실패했습니다")
     } finally {
       setIsSubmitting(false)

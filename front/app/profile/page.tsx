@@ -67,8 +67,7 @@ function ProfileTabs({ defaultTab }: { defaultTab: string }) {
         try {
           const auctionDetail = await auctionApi.getAuction(auctionSummary.id)
           myAuctionsList.push(auctionDetail)
-        } catch (err) {
-          console.error(`경매 ${auctionSummary.id} 상세 조회 실패:`, err)
+        } catch {
         }
       }
       
@@ -105,7 +104,6 @@ function ProfileTabs({ defaultTab }: { defaultTab: string }) {
       
       // 배송지 목록은 별도 useEffect에서 로드하므로 여기서는 제거
     } catch (error) {
-      console.error("데이터 로드 실패:", error)
       toast.error("데이터를 불러오는데 실패했습니다")
     } finally {
       setLoading(false)
@@ -128,7 +126,6 @@ function ProfileTabs({ defaultTab }: { defaultTab: string }) {
       setAddresses(updatedAddressList)
       setDefaultAddress(defaultAddr)
     } catch (error) {
-      console.error("배송지 로드 실패:", error)
       // 에러가 발생해도 빈 배열로 설정하여 이전 상태가 남지 않도록 함
       setAddresses([])
       setDefaultAddress(null)

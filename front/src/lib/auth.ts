@@ -47,8 +47,7 @@ export const tokenStorage = {
     try {
       const userStr = localStorage.getItem(USER_KEY)
       return userStr ? (JSON.parse(userStr) as UserResponse) : null
-    } catch (error) {
-      console.error('사용자 정보 파싱 실패:', error)
+    } catch {
       return null
     }
   },
@@ -57,8 +56,8 @@ export const tokenStorage = {
     if (typeof window === 'undefined') return
     try {
       localStorage.setItem(USER_KEY, JSON.stringify(user))
-    } catch (error) {
-      console.error('사용자 정보 저장 실패:', error)
+    } catch {
+      // 저장 실패 시 무시
     }
   },
 

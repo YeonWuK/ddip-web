@@ -92,8 +92,8 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
         try {
           const bids = await auctionApi.getBidsByAuction(auctionId)
           setBidHistory(bids)
-        } catch (err) {
-          console.error("입찰 내역 로드 실패:", err)
+        } catch {
+          // 입찰 내역 로드 실패 시 무시
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "경매 정보를 불러오는 중 오류가 발생했습니다")
@@ -139,8 +139,8 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
         try {
           const bids = await auctionApi.getBidsByAuction(auctionId)
           setBidHistory(bids)
-        } catch (err) {
-          console.error("입찰 내역 로드 실패:", err)
+        } catch {
+          // 입찰 내역 로드 실패 시 무시
         }
 
         // 상태 변경 알림 (페이지가 보이고, 최초 한 번만 표시)
@@ -231,7 +231,6 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
       
       // Invalid Date 체크
       if (isNaN(endTimeObj.getTime())) {
-        console.error("Invalid endAt date:", auction.endAt)
         setTimeLeft("날짜 오류")
         return
       }
@@ -422,7 +421,6 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
   
   // Invalid Date 체크
   if (isNaN(endTime.getTime()) || isNaN(startTime.getTime())) {
-    console.error("Invalid date in auction:", { startAt: auction.startAt, endAt: auction.endAt })
     return (
       <div className="min-h-screen bg-background">
         <Navigation />

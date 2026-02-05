@@ -26,8 +26,8 @@ export function HeroBanner() {
       try {
         const stats = await projectApi.getStatistics()
         setStatistics(stats)
-      } catch (error) {
-        console.error("통계 로드 실패:", error)
+      } catch {
+        // 통계 로드 실패 시 무시
       } finally {
         setLoadingStats(false)
       }

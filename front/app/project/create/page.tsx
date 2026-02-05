@@ -118,28 +118,15 @@ export default function CreateProjectPage() {
       const startDateWithTime = startDateStr.includes("T") ? startDateStr : `${startDateStr}T00:00:00`
       const endDateWithTime = endDateStr.includes("T") ? endDateStr : `${endDateStr}T23:59:59`
 
-      console.log("날짜 변환 시작:", { startDateStr, endDateStr, startDateWithTime, endDateWithTime })
-
-      // Date 객체 생성
       const startDateObj = new Date(startDateWithTime)
       const endDateObj = new Date(endDateWithTime)
 
-      console.log("Date 객체 생성 결과:", { 
-        startDateObj: startDateObj.toString(), 
-        endDateObj: endDateObj.toString(),
-        startIsValid: !isNaN(startDateObj.getTime()),
-        endIsValid: !isNaN(endDateObj.getTime())
-      })
-
-      // Invalid Date 체크
       if (isNaN(startDateObj.getTime())) {
-        console.error("시작일 파싱 실패:", startDateStr, startDateWithTime)
         toast.error(`유효하지 않은 시작일입니다: ${startDateStr}`)
         return
       }
 
       if (isNaN(endDateObj.getTime())) {
-        console.error("종료일 파싱 실패:", endDateStr, endDateWithTime)
         toast.error(`유효하지 않은 종료일입니다: ${endDateStr}`)
         return
       }
@@ -156,14 +143,7 @@ export default function CreateProjectPage() {
       try {
         startDateISO = startDateObj.toISOString()
         endDateISO = endDateObj.toISOString()
-        console.log("ISO 변환 성공:", { startDateISO, endDateISO })
-      } catch (error) {
-        console.error("ISO 변환 실패:", error, { 
-          startDateObj, 
-          endDateObj,
-          startDateStr,
-          endDateStr
-        })
+      } catch {
         toast.error("날짜 변환 중 오류가 발생했습니다")
         return
       }
@@ -186,15 +166,10 @@ export default function CreateProjectPage() {
         status: "OPEN" as const, // 프로젝트 생성 시 바로 진행 중 상태로 설정
       }
 
-      console.log("API 호출 전 데이터:", projectData)
-      
       const createdProject = await projectApi.createProject(projectData)
-      console.log("API 호출 성공:", createdProject)
-      
       toast.success("프로젝트가 생성되었습니다!")
       router.push(`/project/${createdProject.id}`)
     } catch (error) {
-      console.error("프로젝트 생성 에러:", error)
       toast.error(error instanceof Error ? error.message : "프로젝트 생성에 실패했습니다")
     } finally {
       setIsSubmitting(false)

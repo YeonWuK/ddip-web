@@ -63,37 +63,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         if (isNaN(projectId)) {
           throw new Error("유효하지 않은 프로젝트 ID입니다")
         }
-        console.log("프로젝트 로드 시작:", projectId)
-        
-        // 상태 체크 및 업데이트
         await projectApi.checkAndUpdateProjectStatus(projectId)
-        
         const data = await projectApi.getProject(projectId)
-        console.log("프로젝트 로드 성공:", {
-          id: data.id,
-          startAt: data.startAt,
-          endAt: data.endAt,
-          startAtType: typeof data.startAt,
-          endAtType: typeof data.endAt
-        })
-        
-        // 날짜 유효성 사전 검사
-        if (data.startAt && typeof data.startAt === 'string') {
-          const testStart = new Date(data.startAt)
-          if (isNaN(testStart.getTime())) {
-            console.error("로드된 프로젝트의 startAt이 유효하지 않음:", data.startAt)
-          }
-        }
-        if (data.endAt && typeof data.endAt === 'string') {
-          const testEnd = new Date(data.endAt)
-          if (isNaN(testEnd.getTime())) {
-            console.error("로드된 프로젝트의 endAt이 유효하지 않음:", data.endAt)
-          }
-        }
-        
         setProject(data)
       } catch (err) {
-        console.error("프로젝트 로드 에러:", err)
         setError(err instanceof Error ? err.message : "프로젝트 정보를 불러오는 중 오류가 발생했습니다")
         toast.error("프로젝트 정보를 불러오는데 실패했습니다")
       } finally {
@@ -122,8 +95,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       } else if (addressList.length > 0) {
         setSelectedAddressId(addressList[0].id)
       }
-    } catch (error) {
-      console.error("배송지 로드 실패:", error)
+    } catch {
       // 에러가 발생해도 구매는 가능하도록 함
     }
   }
@@ -262,7 +234,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "리워드 구매에 실패했습니다"
       toast.error(errorMessage)
-      console.error("리워드 구매 실패:", error)
     } finally {
       setIsSupporting(false)
     }
@@ -317,37 +288,16 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     // 날짜 파싱 (안전하게)
     // 먼저 날짜 문자열 유효성 검사
     if (!project.startAt || !project.endAt || typeof project.startAt !== 'string' || typeof project.endAt !== 'string') {
-      console.error("Missing or invalid date strings:", { startAt: project.startAt, endAt: project.endAt })
       throw new Error("프로젝트 날짜 정보가 없습니다")
     }
-
-    console.log("날짜 파싱 시작:", { startAt: project.startAt, endAt: project.endAt })
-    
     startTime = new Date(project.startAt)
     endTime = new Date(project.endAt)
     const now = new Date()
-    
-    console.log("날짜 파싱 결과:", {
-      startTime: startTime.toString(),
-      endTime: endTime.toString(),
-      startTimeValid: !isNaN(startTime.getTime()),
-      endTimeValid: !isNaN(endTime.getTime())
-    })
-    
-    // Invalid Date 체크
     if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
-      console.error("Invalid date in project:", { 
-        startAt: project.startAt, 
-        endAt: project.endAt,
-        startTime: startTime.toString(),
-        endTime: endTime.toString()
-      })
       throw new Error("프로젝트 날짜 정보가 유효하지 않습니다")
     }
-    
     daysLeft = Math.ceil((endTime.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-  } catch (dateError) {
-    console.error("날짜 파싱 에러:", dateError)
+  } catch {
     return (
       <div className="min-h-screen bg-background">
         <Navigation />

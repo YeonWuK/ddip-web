@@ -43,19 +43,9 @@ export function useAuctionSocket(): UseAuctionSocketReturn {
   useEffect(() => {
     // 백엔드가 준비되지 않았으면 소켓 연결하지 않음
     // 환경 변수로 제어 가능
-    if (process.env.NEXT_PUBLIC_ENABLE_WEBSOCKET === 'false') {
-      console.log('웹소켓 비활성화됨 (환경 변수)')
-      return
-    }
-
-    // 토큰 가져오기
+    if (process.env.NEXT_PUBLIC_ENABLE_WEBSOCKET === 'false') return
     const token = tokenStorage.getAccessToken()
-    if (!token) {
-      console.log('웹소켓 연결 실패: 토큰이 없습니다')
-      return
-    }
-
-    console.log('웹소켓 연결 시도:', SOCKET_URL)
+    if (!token) return
     setConnectionStatus('connecting')
 
     // 소켓 연결 (인증 토큰 포함)
@@ -69,21 +59,9 @@ export function useAuctionSocket(): UseAuctionSocketReturn {
       reconnectionAttempts: 5,
     })
 
-    // 연결 성공
-    newSocket.on('connect', () => {
-      console.log('웹소켓 연결 성공')
-      setConnectionStatus('connected')
-    })
-
-    // 연결 해제
-    newSocket.on('disconnect', (reason) => {
-      console.log('웹소켓 연결 해제:', reason)
-      setConnectionStatus('disconnected')
-    })
-
-    // 연결 에러
-    newSocket.on('connect_error', (error) => {
-      console.error('웹소켓 연결 에러:', error)
+    newSocket.on('connect', () => setConnectionStatus('connected'))
+    newSocket.on('disconnect', () => setConnectionStatus('disconnected'))
+    newSocket.on('connect_error', () => {
       setConnectionStatus('error')
       // 백엔드가 준비되지 않았을 때는 조용히 실패 (에러 표시 안 함)
     })
@@ -92,7 +70,6 @@ export function useAuctionSocket(): UseAuctionSocketReturn {
 
     // cleanup
     return () => {
-      console.log('웹소켓 연결 종료')
       newSocket.close()
       setSocket(null)
       setConnectionStatus('disconnected')
@@ -103,11 +80,7 @@ export function useAuctionSocket(): UseAuctionSocketReturn {
    * 경매 방 입장
    */
   const joinAuction = useCallback((auctionId: number) => {
-    if (!socket || !socket.connected) {
-      console.warn('웹소켓이 연결되지 않았습니다. Mock API를 사용합니다.')
-      return
-    }
-    console.log('경매 방 입장:', auctionId)
+    if (!socket || !socket.connected) return
     socket.emit('auction:join', { auctionId })
   }, [socket])
 
@@ -115,10 +88,7 @@ export function useAuctionSocket(): UseAuctionSocketReturn {
    * 경매 방 퇴장
    */
   const leaveAuction = useCallback((auctionId: number) => {
-    if (!socket || !socket.connected) {
-      return
-    }
-    console.log('경매 방 퇴장:', auctionId)
+    if (!socket || !socket.connected) return
     socket.emit('auction:leave', { auctionId })
   }, [socket])
 
@@ -126,11 +96,7 @@ export function useAuctionSocket(): UseAuctionSocketReturn {
    * 입찰하기
    */
   const placeBid = useCallback((auctionId: number, amount: number) => {
-    if (!socket || !socket.connected) {
-      console.warn('웹소켓이 연결되지 않았습니다. Mock API를 사용합니다.')
-      return
-    }
-    console.log('입찰 요청:', { auctionId, amount })
+    if (!socket || !socket.connected) return
     socket.emit('bid:place', { auctionId, amount })
   }, [socket])
 

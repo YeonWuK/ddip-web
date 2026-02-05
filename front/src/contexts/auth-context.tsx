@@ -37,9 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const currentUser = await authApi.getCurrentUser()
             setUser(currentUser)
             tokenStorage.setUser(currentUser)
-          } catch (error) {
-            // getCurrentUser 실패 시 저장된 사용자 정보 사용 (토큰은 유효하므로)
-            console.warn("사용자 정보 조회 실패, 저장된 정보 사용:", error)
+          } catch {
             const savedUser = tokenStorage.getUser()
             if (savedUser && savedUser.id !== 0) {
               setUser(savedUser)
@@ -54,8 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setIsAuthenticated(false)
           setUser(null)
         }
-      } catch (error) {
-        console.error("인증 초기화 실패:", error)
+      } catch {
         // 에러 발생 시 모든 정보 삭제
         tokenStorage.clearAll()
         setIsAuthenticated(false)
@@ -93,9 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const currentUser = await authApi.getCurrentUser()
           tokenStorage.setUser(currentUser)
           setUser(currentUser)
-        } catch (error) {
-          // getCurrentUser 실패 시 사용자 정보 없이 로그인 유지
-          console.warn('사용자 정보 조회 실패:', error)
+        } catch {
           setUser(null)
           tokenStorage.removeUser()
         }
@@ -131,8 +126,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     try {
       await authApi.logout()
-    } catch (error) {
-      console.error("로그아웃 실패:", error)
+    } catch {
+      // 로그아웃 API 실패해도 클라이언트 상태는 정리
     } finally {
       tokenStorage.clearAll()
       setIsAuthenticated(false)
@@ -146,8 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(currentUser)
       tokenStorage.setUser(currentUser)
       setIsAuthenticated(true)
-    } catch (error) {
-      console.error("사용자 정보 갱신 실패:", error)
+    } catch {
       // getCurrentUser 실패해도 토큰이 있으면 로그아웃하지 않음
       // (백엔드에 해당 엔드포인트가 없을 수 있음)
       const token = tokenStorage.getAccessToken()
@@ -172,7 +166,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // 인증 후 콜백 URL로 돌아옴
       window.location.href = redirectUrl
     } catch (error) {
-      console.error("OAuth 로그인 실패:", error)
       throw error
     }
   }

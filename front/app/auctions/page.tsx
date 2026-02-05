@@ -34,12 +34,9 @@ export default function AuctionsPage() {
           limit: PAGE_SIZE, 
           status: auctionStatus === 'ALL' ? undefined : auctionStatus 
         })
-        
-        console.log(`[AuctionsPage] 로드된 데이터: ${data.length}개, 페이지: 1`)
         setAuctions(data)
         setHasMore(data.length === PAGE_SIZE)
-      } catch (error) {
-        console.error("데이터 로드 실패:", error)
+      } catch {
       } finally {
         setLoading(false)
       }
@@ -62,8 +59,8 @@ export default function AuctionsPage() {
           })
           setAuctions(data)
         }
-      } catch (error) {
-        console.error("상태 체크 실패:", error)
+      } catch {
+        // 상태 체크 실패 시 무시
       }
     }
 
@@ -73,38 +70,24 @@ export default function AuctionsPage() {
 
   // 더 많은 데이터 로드
   const loadMore = useCallback(async () => {
-    if (loadingMore || !hasMore) {
-      console.log(`[AuctionsPage] loadMore 스킵: loadingMore=${loadingMore}, hasMore=${hasMore}`)
-      return
-    }
+    if (loadingMore || !hasMore) return
 
     try {
       setLoadingMore(true)
       const nextPage = pageRef.current + 1
-      
-      console.log(`[AuctionsPage] 다음 페이지 로드 시작: 페이지 ${nextPage}`)
       const data = await auctionApi.getAuctions({ 
         page: nextPage, 
         limit: PAGE_SIZE,
         status: auctionStatus === 'ALL' ? undefined : auctionStatus
       })
-      
-      console.log(`[AuctionsPage] 페이지 ${nextPage} 로드 완료: ${data.length}개`)
-      
       if (data.length === 0) {
-        console.log(`[AuctionsPage] 더 이상 데이터 없음`)
         setHasMore(false)
       } else {
-        setAuctions(prev => {
-          const updated = [...prev, ...data]
-          console.log(`[AuctionsPage] 총 경매 수: ${updated.length}개`)
-          return updated
-        })
+        setAuctions(prev => [...prev, ...data])
         setHasMore(data.length === PAGE_SIZE)
         pageRef.current = nextPage
       }
-    } catch (error) {
-      console.error("추가 데이터 로드 실패:", error)
+    } catch {
       setHasMore(false)
     } finally {
       setLoadingMore(false)
@@ -120,13 +103,7 @@ export default function AuctionsPage() {
 
     const observer = new IntersectionObserver(
       (entries) => {
-        const isIntersecting = entries[0].isIntersecting
-        console.log(`[AuctionsPage] Observer: intersecting=${isIntersecting}, hasMore=${hasMore}, loadingMore=${loadingMore}`)
-        
-        if (isIntersecting && hasMore && !loadingMore) {
-          console.log(`[AuctionsPage] 트리거 감지! loadMore 호출`)
-          loadMore()
-        }
+        if (entries[0].isIntersecting && hasMore && !loadingMore) loadMore()
       },
       { 
         threshold: 0.1,
@@ -136,16 +113,10 @@ export default function AuctionsPage() {
 
     const currentTarget = observerTarget.current
     if (currentTarget) {
-      console.log(`[AuctionsPage] Observer 등록됨`)
       observer.observe(currentTarget)
     } else {
-      console.warn(`[AuctionsPage] Observer 타겟이 없음 - 잠시 후 재시도`)
-      // 타겟이 아직 렌더링되지 않았을 수 있으므로 짧은 지연 후 재시도
       const timeoutId = setTimeout(() => {
-        if (observerTarget.current) {
-          observer.observe(observerTarget.current)
-          console.log(`[AuctionsPage] Observer 재등록 성공`)
-        }
+        if (observerTarget.current) observer.observe(observerTarget.current)
       }, 100)
       return () => clearTimeout(timeoutId)
     }

@@ -22,10 +22,9 @@ export function getWishlist(): WishlistItem[] {
     if (stored) {
       return JSON.parse(stored) as WishlistItem[]
     }
-  } catch (error) {
-    console.error("위시리스트 로드 실패:", error)
+  } catch {
+    // 로드 실패 시 빈 배열
   }
-  
   return []
 }
 
@@ -51,8 +50,7 @@ export function addToWishlist(id: number, type: "project" | "auction"): boolean 
     
     localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(wishlist))
     return true
-  } catch (error) {
-    console.error("위시리스트 추가 실패:", error)
+  } catch {
     return false
   }
 }
@@ -71,8 +69,7 @@ export function removeFromWishlist(id: number, type: "project" | "auction"): boo
     
     localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(filtered))
     return true
-  } catch (error) {
-    console.error("위시리스트 제거 실패:", error)
+  } catch {
     return false
   }
 }
