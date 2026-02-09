@@ -64,39 +64,14 @@ export default function CreateProjectPage() {
         return
       }
 
-      // 이미지 파일들을 base64로 변환 (localStorage 저장용)
-      let imageUrls: string[] | null = null
-      if (imageFiles.length > 0) {
-        // Mock: 실제로는 FormData로 백엔드에 업로드
-        // localStorage 저장을 위해 base64로 변환 (크기 제한 적용)
-        imageUrls = await Promise.all(
-          imageFiles.map(
-            (file) =>
-              new Promise<string>((resolve, reject) => {
-                // 파일 크기 체크 (5MB 제한)
-                if (file.size > 5 * 1024 * 1024) {
-                  toast.error(`이미지 크기가 너무 큽니다: ${file.name} (최대 5MB)`)
-                  reject(new Error(`이미지 크기 초과: ${file.name}`))
-                  return
-                }
-                
-                const reader = new FileReader()
-                reader.onload = () => {
-                  const result = reader.result as string
-                  // base64 문자열 크기 체크 (약 2MB 제한)
-                  if (result.length > 2 * 1024 * 1024) {
-                    toast.warning(`이미지 ${file.name}의 크기가 큽니다. 저장 시 문제가 발생할 수 있습니다.`)
-                  }
-                  resolve(result)
-                }
-                reader.onerror = reject
-                reader.readAsDataURL(file)
-              })
-          )
-        )
+      // 파일 크기 체크 (5MB 제한)
+      for (const file of imageFiles) {
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error(`이미지 크기가 너무 큽니다: ${file.name} (최대 5MB)`)
+          setIsSubmitting(false)
+          return
+        }
       }
-      // 첫 번째 이미지를 imageUrl로 설정 (하위 호환성)
-      const imageUrl = imageUrls && imageUrls.length > 0 ? imageUrls[0] : null
 
       // 날짜 유효성 검사 및 ISO 형식으로 변환
       if (!data.startAt || !data.endAt || data.startAt.trim() === "" || data.endAt.trim() === "") {
@@ -104,17 +79,9 @@ export default function CreateProjectPage() {
         return
       }
 
-      // date input은 YYYY-MM-DD 형식이므로 시간을 추가
       const startDateStr = data.startAt.trim()
       const endDateStr = data.endAt.trim()
 
-      if (!startDateStr || !endDateStr) {
-        toast.error("시작일과 종료일을 모두 선택해주세요")
-        return
-      }
-
-      // date input은 YYYY-MM-DD 형식이므로 시간을 추가
-      // 로컬 시간대를 명시적으로 처리하기 위해 시간을 추가
       const startDateWithTime = startDateStr.includes("T") ? startDateStr : `${startDateStr}T00:00:00`
       const endDateWithTime = endDateStr.includes("T") ? endDateStr : `${endDateStr}T23:59:59`
 
@@ -136,37 +103,28 @@ export default function CreateProjectPage() {
         return
       }
 
-      // ISO 형식으로 변환
-      let startDateISO: string
-      let endDateISO: string
+      const startDateISO = startDateObj.toISOString()
+      const endDateISO = endDateObj.toISOString()
 
-      try {
-        startDateISO = startDateObj.toISOString()
-        endDateISO = endDateObj.toISOString()
-      } catch {
-        toast.error("날짜 변환 중 오류가 발생했습니다")
-        return
-      }
-
-      const projectData = {
-        ...data,
+      // 백엔드 ProjectRequestDto 형식
+      const projectRequest = {
+        title: data.title,
+        description: data.description,
+        targetAmount: data.targetAmount,
         startAt: startDateISO,
         endAt: endDateISO,
-        imageUrl,
-        imageUrls,
+        categoryPath: data.categoryPath || null,
+        tags: data.tags || null,
+        summary: data.summary || null,
         rewardTiers: rewardTiers.map((tier) => ({
-          id: 0,
           title: tier.title,
           description: tier.description,
           price: tier.price,
           limitQuantity: tier.limitQuantity,
-          soldQuantity: 0,
         })),
-        currentAmount: 0,
-        status: "OPEN" as const, // 프로젝트 생성 시 바로 진행 중 상태로 설정
       }
 
-      const createdProject = await projectApi.createProject(projectData)
+      const createdProject = await projectApi.createProject(imageFiles, projectRequest)
       toast.success("프로젝트가 생성되었습니다!")
       router.push(`/project/${createdProject.id}`)
     } catch (error) {

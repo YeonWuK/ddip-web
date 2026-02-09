@@ -62,14 +62,38 @@ export interface OAuthCallbackRequest {
   state?: string;
 }
 
+// 프로젝트 생성/수정 요청 타입 - 백엔드 ProjectRequestDto / ProjectUpdateRequestDto와 일치
+export interface RewardTierRequest {
+  title: string;
+  description: string;
+  price: number;
+  limitQuantity: number | null; // null이면 무제한
+}
+
+export interface ProjectCreateRequest {
+  title: string;
+  description: string;
+  targetAmount: number;
+  startAt: string; // ISO 8601
+  endAt: string; // ISO 8601
+  categoryPath?: string | null;
+  tags?: string | null;
+  summary?: string | null;
+  rewardTiers: RewardTierRequest[];
+}
+
+export interface ProjectUpdateRequest extends Partial<ProjectCreateRequest> {}
+
 // 프로젝트 관련 타입
 export interface RewardTierResponse {
   id: number;
+  rewardTierId?: number; // 백엔드 RewardTierResponseDto 필드명
   title: string;
   description: string;
   price: number;
   limitQuantity: number | null;
   soldQuantity: number;
+  soldOut?: boolean;
 }
 
 export interface ProjectResponse {
@@ -169,22 +193,32 @@ export interface SupportResponse {
   createdAt: string;
 }
 
-// 리워드 구매(Pledge) 관련 타입
-export interface PledgeCreateRequest {
+// 리워드 구매(Pledge) 관련 타입 - 백엔드 PledgeCreateRequestDto / PledgeResponseDto와 일치
+export interface PledgeItemRequest {
   rewardTierId: number;
-  amount: number;
+  quantity: number;
+}
+
+export interface PledgeCreateRequest {
+  /** 추가 후원(선택) - null/미지정이면 0으로 처리 */
+  donateAmount?: number;
+  /** 구매할 리워드 아이템 목록 */
+  items: PledgeItemRequest[];
 }
 
 export interface PledgeResponse {
-  id: number;
+  pledgeId: number;
   projectId: number;
-  projectTitle?: string;
+  userId?: number;
   rewardTierId: number;
-  rewardTierTitle?: string;
   amount: number;
-  supporter?: UserResponse;
-  createdAt: string;
   status?: string;
+  createdAt: string;
+  // 하위 호환성
+  id?: number;
+  projectTitle?: string;
+  rewardTierTitle?: string;
+  supporter?: UserResponse;
 }
 
 // 입찰 요청 타입
@@ -238,31 +272,33 @@ export interface UserProfileResponse {
   // 추가 정보가 필요하면 여기에 추가
 }
 
-// 배송지 관련 타입
+// 배송지 관련 타입 - 백엔드 AddressCreateRequestDto / AddressResponseDto / AddressUpdateRequestDto와 일치
 export interface AddressCreateRequest {
-  label?: string; // 배송지 라벨 (선택사항, 최대 30자)
+  label?: string; // 배송지 라벨 (선택, 최대 30자) - 집/회사 등
   recipientName: string; // 수령인 이름 (필수, 최대 100자)
   phone: string; // 전화번호 (필수, 최대 20자)
   zipCode: string; // 우편번호 (필수, 최대 10자)
-  address: string; // 주소 (백엔드: address1, 필수, 최대 255자)
+  address: string; // 주소/도로명 (백엔드: address1, 필수, 최대 255자)
   detailAddress: string; // 상세주소 (백엔드: address2, 필수, 최대 255자)
-  setAsDefault?: boolean; // 기본 배송지로 설정 여부
+  setAsDefault?: boolean; // 기본 배송지로 설정 여부 (생성 시)
 }
 
 export interface AddressUpdateRequest {
+  label?: string;
   recipientName?: string;
   phone?: string;
   zipCode?: string;
-  address?: string;
-  detailAddress?: string;
+  address?: string; // 백엔드: address1
+  detailAddress?: string; // 백엔드: address2
 }
 
 export interface AddressResponse {
   id: number;
+  label?: string | null; // 배송지 라벨 (집/회사 등)
   recipientName: string;
   phone: string;
   zipCode: string;
-  address: string;
-  detailAddress: string;
-  isDefault: boolean; // 기본 배송지 여부
+  address: string; // 도로명/지번 주소 (백엔드: address1)
+  detailAddress: string; // 상세주소 (백엔드: address2)
+  isDefault: boolean;
 }

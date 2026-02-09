@@ -140,33 +140,26 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     }
   }, [project])
 
-  // 프로젝트 취소 핸들러
+  // 프로젝트 취소 핸들러 (삭제)
   const handleCancelProject = async () => {
     if (!project) return
-    
-    if (!confirm("정말로 이 프로젝트를 취소하시겠습니까? 취소된 프로젝트는 복구할 수 없습니다.")) {
+
+    if (!confirm("정말로 이 프로젝트를 삭제하시겠습니까? 삭제된 프로젝트는 복구할 수 없습니다.")) {
       return
     }
 
     try {
-      await projectApi.updateProject(project.id, {
-        status: "CANCELED" as const,
-      })
-      toast.success("프로젝트가 취소되었습니다")
-      // 프로젝트 정보 새로고침
-      const updatedProject = await projectApi.getProject(project.id)
-      setProject(updatedProject)
+      await projectApi.deleteProject(project.id)
+      toast.success("프로젝트가 삭제되었습니다")
+      router.push("/projects")
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "프로젝트 취소에 실패했습니다")
+      toast.error(error instanceof Error ? error.message : "프로젝트 삭제에 실패했습니다")
     }
   }
 
-  // 후원하기 핸들러
+  // 후원하기 핸들러 (PledgeCreateRequestDto: items, donateAmount)
   const handleSupport = async () => {
-    if (!project || !supportAmount) {
-      toast.error("후원 금액을 입력해주세요")
-      return
-    }
+    if (!project) return
 
     // 권한 체크
     if (!canSupportProject(project, user)) {
@@ -178,57 +171,52 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       return
     }
 
-    const amount = parseInt(supportAmount.replace(/,/g, ""), 10)
-    if (isNaN(amount) || amount < 1000) {
-      toast.error("최소 1,000원 이상 후원해주세요")
-      return
-    }
-
-    // 리워드 티어가 선택되지 않았으면 첫 번째 리워드 티어 사용
+    // 리워드 티어 선택 필수
     let rewardTierId = selectedRewardTier
     if (rewardTierId === null || rewardTierId === undefined) {
       if (project.rewardTiers.length > 0) {
-        rewardTierId = project.rewardTiers[0].id
+        rewardTierId = project.rewardTiers[0].id ?? project.rewardTiers[0].rewardTierId
       } else {
         toast.error("리워드 티어가 없습니다")
         return
       }
     }
 
-    // rewardTierId가 유효한지 확인
-    const selectedTier = project.rewardTiers.find(t => t.id === rewardTierId)
+    const selectedTier = project.rewardTiers.find(
+      (t) => t.id === rewardTierId || t.rewardTierId === rewardTierId
+    )
     if (!selectedTier) {
       toast.error("유효하지 않은 리워드 티어입니다")
       return
     }
 
-    // 리워드 티어의 가격과 입력한 금액이 다를 수 있으므로 확인
-    if (amount < selectedTier.price) {
+    const amount = parseInt(supportAmount.replace(/,/g, ""), 10)
+    if (isNaN(amount) || amount < selectedTier.price) {
       toast.error(`최소 ${selectedTier.price.toLocaleString()}원 이상 후원해주세요`)
       return
     }
 
+    const tierId = selectedTier.rewardTierId ?? selectedTier.id
+    const donateAmount = Math.max(0, amount - selectedTier.price)
+
     try {
       setIsSupporting(true)
-      // 새로운 Pledge API 사용
       await projectApi.createPledge(project.id, {
-        rewardTierId: rewardTierId,
-        amount: amount,
+        items: [{ rewardTierId: tierId, quantity: 1 }],
+        donateAmount,
       })
-      
+
       toast.success("리워드 구매가 완료되었습니다!")
       setSupportDialogOpen(false)
       setSupportAmount("")
       setSelectedRewardTier(null)
       setSelectedAddressId(null)
       setShowAddressForm(false)
-      
-      // 후원 후 프로젝트 정보 새로고침
+
       const updatedProject = await projectApi.getProject(project.id)
       setProject(updatedProject)
-      
-      // 상태 변경 알림
-      if (updatedProject.status === 'SUCCESS' && project.status === 'OPEN') {
+
+      if (updatedProject.status === "SUCCESS" && project.status === "OPEN") {
         toast.success("축하합니다! 프로젝트가 목표 금액을 달성했습니다!")
       }
     } catch (error) {
@@ -297,7 +285,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       throw new Error("프로젝트 날짜 정보가 유효하지 않습니다")
     }
     daysLeft = Math.ceil((endTime.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-  } catch {
+  } catch (err) {
     return (
       <div className="min-h-screen bg-background">
         <Navigation />
@@ -305,7 +293,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           <Alert variant="destructive">
             <AlertCircle className="size-4" />
             <AlertDescription>
-              {dateError instanceof Error ? dateError.message : "프로젝트 날짜 정보 처리 중 오류가 발생했습니다"}
+              {err instanceof Error ? err.message : "프로젝트 날짜 정보 처리 중 오류가 발생했습니다"}
             </AlertDescription>
           </Alert>
         </main>
@@ -486,39 +474,49 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
               <TabsContent value="rewards" className="mt-6">
                 <div className="space-y-4">
-                  {project.rewardTiers.map((reward) => (
-                    <RewardCard
-                      key={reward.id}
-                      id={String(reward.id)}
-                      title={reward.title}
-                      amount={reward.price}
-                      description={reward.description}
-                      items={[]}
-                      estimatedDelivery="예정일 미정"
-                      limited={reward.limitQuantity || undefined}
-                      remaining={reward.limitQuantity ? reward.limitQuantity - reward.soldQuantity : undefined}
-                      backers={reward.soldQuantity}
-                      featured={false}
-                      onSelect={() => {
-                        // 리워드 선택 시 다이얼로그 열고 해당 리워드 선택
-                        if (!isAuthenticated) {
-                          toast.error("로그인이 필요합니다")
-                          return
+                  {project.rewardTiers.map((reward) => {
+                    const tierId = reward.rewardTierId ?? reward.id
+                    return (
+                      <RewardCard
+                        key={tierId}
+                        id={String(tierId)}
+                        title={reward.title}
+                        amount={reward.price}
+                        description={reward.description}
+                        items={[]}
+                        estimatedDelivery="예정일 미정"
+                        limited={reward.limitQuantity || undefined}
+                        remaining={
+                          reward.limitQuantity
+                            ? reward.limitQuantity - reward.soldQuantity
+                            : undefined
                         }
-                        if (isProjectCreator(project, user)) {
-                          toast.error("자신의 프로젝트에는 후원할 수 없습니다")
-                          return
-                        }
-                        if (project.status !== "OPEN") {
-                          toast.error("후원할 수 없는 프로젝트입니다")
-                          return
-                        }
-                        setSelectedRewardTier(reward.id)
-                        setSupportAmount(reward.price.toLocaleString())
-                        setSupportDialogOpen(true)
-                      }}
-                    />
-                  ))}
+                        backers={reward.soldQuantity}
+                        featured={false}
+                        onSelect={() => {
+                          if (!isAuthenticated) {
+                            toast.error("로그인이 필요합니다")
+                            return
+                          }
+                          if (isProjectCreator(project, user)) {
+                            toast.error("자신의 프로젝트에는 후원할 수 없습니다")
+                            return
+                          }
+                          if (project.status !== "OPEN") {
+                            toast.error("후원할 수 없는 프로젝트입니다")
+                            return
+                          }
+                          if (reward.soldOut) {
+                            toast.error("품절된 리워드입니다")
+                            return
+                          }
+                          setSelectedRewardTier(tierId)
+                          setSupportAmount(reward.price.toLocaleString())
+                          setSupportDialogOpen(true)
+                        }}
+                      />
+                    )
+                  })}
                 </div>
               </TabsContent>
             </Tabs>
@@ -624,6 +622,24 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               {/* 자기 프로젝트일 때 버튼들 */}
               {isProjectCreator(project, user) && (
                 <div className="space-y-2">
+                  {project.status === "DRAFT" && (
+                    <Button
+                      size="lg"
+                      className="w-full"
+                      onClick={async () => {
+                        try {
+                          await projectApi.openFunding(project.id)
+                          toast.success("펀딩이 오픈되었습니다!")
+                          const updated = await projectApi.getProject(project.id)
+                          setProject(updated)
+                        } catch (error) {
+                          toast.error(error instanceof Error ? error.message : "펀딩 오픈에 실패했습니다")
+                        }
+                      }}
+                    >
+                      펀딩 오픈하기
+                    </Button>
+                  )}
                   {canEditProject(project, user) && (
                     <Button
                       size="lg"
@@ -689,35 +705,39 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                       <div className="space-y-2">
                         <Label>리워드 티어 선택 *</Label>
                         <div className="space-y-2">
-                          {project.rewardTiers.map((tier) => (
+                          {project.rewardTiers.map((tier) => {
+                            const tierId = tier.rewardTierId ?? tier.id
+                            return (
                             <button
-                              key={tier.id}
+                              key={tierId}
                               type="button"
                               onClick={(e) => {
                                 e.preventDefault()
                                 e.stopPropagation()
-                                setSelectedRewardTier(tier.id)
+                                setSelectedRewardTier(tierId)
                                 setSupportAmount(tier.price.toLocaleString())
                               }}
                               className={`w-full rounded-lg border p-4 text-left transition-colors ${
-                                selectedRewardTier === tier.id
+                                selectedRewardTier === tierId
                                   ? "border-primary bg-primary/5"
                                   : "border-border hover:bg-accent"
-                              }`}
+                              } ${tier.soldOut ? "opacity-60 cursor-not-allowed" : ""}`}
+                              disabled={tier.soldOut}
                             >
                               <div className="flex items-center justify-between">
                                 <div>
                                   <div className="font-semibold">{tier.title}</div>
                                   <div className="text-sm text-muted-foreground">
                                     {tier.price.toLocaleString()}원
+                                    {tier.soldOut && " (품절)"}
                                   </div>
                                 </div>
-                                {selectedRewardTier === tier.id && (
+                                {selectedRewardTier === tierId && (
                                   <CheckCircle2 className="size-5 text-primary" />
                                 )}
                               </div>
                             </button>
-                          ))}
+                          )})}
                         </div>
                       </div>
 
@@ -896,10 +916,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                         </div>
                       )}
 
-                      {/* 구매 버튼 */}
+                      {/* 구매 버튼 (백엔드 Pledge API는 배송지 미포함, 추후 확장 가능) */}
                       <Button
                         onClick={handleSupport}
-                        disabled={!supportAmount || isSupporting || (project.rewardTiers.length === 0) || (!selectedAddressId && !showAddressForm)}
+                        disabled={!supportAmount || isSupporting || project.rewardTiers.length === 0}
                         className="w-full"
                       >
                         {isSupporting ? (

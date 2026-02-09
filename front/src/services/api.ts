@@ -3,6 +3,8 @@ import {
   UserPageResponse,
   UserProfileResponse,
   ProjectResponse,
+  ProjectCreateRequest,
+  ProjectUpdateRequest,
   AuctionResponse,
   AuctionSummary,
   AuctionCreateRequest,
@@ -177,14 +179,16 @@ export const projectApi = {
           status: backendProject.status || 'DRAFT',
           startAt,
           endAt,
-          rewardTiers: (backendProject.rewardTiers || backendProject.reward_tiers || []).map((tier: any) => ({
-            id: tier.id || 0,
-            title: tier.title || '',
-            description: tier.description || '',
-            price: tier.price || 0,
-            limitQuantity: tier.limitQuantity !== undefined ? tier.limitQuantity : (tier.limit_quantity !== undefined ? tier.limit_quantity : null),
-            soldQuantity: tier.soldQuantity || tier.sold_quantity || 0,
-          })),
+        rewardTiers: (backendProject.rewardTiers || backendProject.reward_tiers || []).map((tier: any) => ({
+          id: tier.rewardTierId ?? tier.id ?? 0,
+          rewardTierId: tier.rewardTierId ?? tier.id,
+          title: tier.title || '',
+          description: tier.description || '',
+          price: tier.price || 0,
+          limitQuantity: tier.limitQuantity !== undefined ? tier.limitQuantity : (tier.limit_quantity !== undefined ? tier.limit_quantity : null),
+          soldQuantity: tier.soldQuantity ?? tier.sold_quantity ?? 0,
+          soldOut: tier.soldOut ?? false,
+        })),
           createdAt,
           categoryPath: backendProject.categoryPath || backendProject.category_path || null,
           tags: backendProject.tags || null,
@@ -312,12 +316,14 @@ export const projectApi = {
         startAt,
         endAt,
         rewardTiers: (backendResponse.rewardTiers || backendResponse.reward_tiers || []).map((tier: any) => ({
-          id: tier.id || 0,
+          id: tier.rewardTierId ?? tier.id ?? 0,
+          rewardTierId: tier.rewardTierId ?? tier.id,
           title: tier.title || '',
           description: tier.description || '',
           price: tier.price || 0,
           limitQuantity: tier.limitQuantity !== undefined ? tier.limitQuantity : (tier.limit_quantity !== undefined ? tier.limit_quantity : null),
-          soldQuantity: tier.soldQuantity || tier.sold_quantity || 0,
+          soldQuantity: tier.soldQuantity ?? tier.sold_quantity ?? 0,
+          soldOut: tier.soldOut ?? false,
         })),
         createdAt,
         categoryPath: backendResponse.categoryPath || backendResponse.category_path || null,
@@ -333,49 +339,51 @@ export const projectApi = {
 
   /**
    * 프로젝트 생성
-   * POST /api/crowd
+   * POST /api/crowd (multipart/form-data)
+   * - data: ProjectRequestDto (JSON)
+   * - file: 이미지 파일 목록
    * 백엔드 응답: Long projectId
    */
   createProject: async (
-    data: Omit<ProjectResponse, 'id' | 'creator' | 'createdAt'>
+    files: File[],
+    data: ProjectCreateRequest
   ): Promise<ProjectResponse> => {
     try {
-      // 백엔드에 전송할 데이터 형식 변환
-      // thumbnailImageUrl은 필수 필드이므로 첫 번째 이미지 URL을 사용
-      const thumbnailImageUrl = data.imageUrl || (data.imageUrls && data.imageUrls.length > 0 ? data.imageUrls[0] : null);
-      
-      if (!thumbnailImageUrl) {
-        throw new Error('프로젝트 이미지(썸네일)를 업로드해주세요');
+      if (!files || files.length === 0) {
+        throw new Error('프로젝트 이미지를 최소 1개 이상 업로드해주세요');
       }
 
-      const requestData = {
+      const formData = new FormData();
+      // data 파트: JSON (백엔드 @RequestPart(value = "data"))
+      const dataPart = {
         title: data.title,
         description: data.description,
         targetAmount: data.targetAmount,
         startAt: data.startAt,
         endAt: data.endAt,
-        thumbnailImageUrl: thumbnailImageUrl,
-        rewardTiers: data.rewardTiers.map(tier => ({
+        categoryPath: data.categoryPath ?? null,
+        tags: data.tags ?? null,
+        summary: data.summary ?? null,
+        rewardTiers: data.rewardTiers.map((tier) => ({
           title: tier.title,
           description: tier.description,
           price: tier.price,
           limitQuantity: tier.limitQuantity,
         })),
-        categoryPath: data.categoryPath || null,
-        tags: data.tags || null,
-        summary: data.summary || null,
-        // 이미지는 별도 업로드 API가 필요할 수 있음
-        // imageUrls: data.imageUrls || null,
       };
+      formData.append('data', new Blob([JSON.stringify(dataPart)], { type: 'application/json' }));
+
+      // file 파트: 이미지 파일들 (백엔드 @RequestPart(name = "file"))
+      for (const file of files) {
+        formData.append('file', file);
+      }
 
       const projectId = await apiRequest<number>('/api/crowd', {
         method: 'POST',
-        body: JSON.stringify(requestData),
+        body: formData,
       });
 
-      // 생성된 프로젝트 ID로 상세 정보 조회
       const createdProject = await projectApi.getProject(projectId);
-      
       return createdProject;
     } catch (error) {
       throw error;
@@ -384,14 +392,61 @@ export const projectApi = {
 
   /**
    * 프로젝트 수정
-   * TODO: 백엔드에 수정 API가 추가되면 연동 필요 (현재 비활성화 상태)
+   * PATCH /api/crowd/{projectId} (multipart/form-data)
+   * - data: ProjectUpdateRequestDto (JSON)
+   * - file: 이미지 파일 목록 (선택, 없으면 빈 배열)
    */
   updateProject: async (
     id: number,
-    data: Partial<ProjectResponse>
+    files: File[],
+    data: ProjectUpdateRequest
   ): Promise<ProjectResponse> => {
-    // 백엔드에 수정 API가 비활성화되어 있음
-    throw new Error('프로젝트 수정 API가 현재 비활성화되어 있습니다.');
+    try {
+      const formData = new FormData();
+      const dataPart = {
+        ...(data.title !== undefined && { title: data.title }),
+        ...(data.description !== undefined && { description: data.description }),
+        ...(data.targetAmount !== undefined && { targetAmount: data.targetAmount }),
+        ...(data.startAt !== undefined && { startAt: data.startAt }),
+        ...(data.endAt !== undefined && { endAt: data.endAt }),
+        ...(data.categoryPath !== undefined && { categoryPath: data.categoryPath }),
+        ...(data.tags !== undefined && { tags: data.tags }),
+        ...(data.summary !== undefined && { summary: data.summary }),
+        ...(data.rewardTiers !== undefined && {
+          rewardTiers: data.rewardTiers.map((tier) => ({
+            title: tier.title,
+            description: tier.description,
+            price: tier.price,
+            limitQuantity: tier.limitQuantity,
+          })),
+        }),
+      };
+      formData.append('data', new Blob([JSON.stringify(dataPart)], { type: 'application/json' }));
+
+      for (const file of files) {
+        formData.append('file', file);
+      }
+
+      await apiRequest(`/api/crowd/${id}`, {
+        method: 'PATCH',
+        body: formData,
+      });
+
+      return projectApi.getProject(id);
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * 펀딩 오픈
+   * PATCH /api/crowd/{projectId}/open
+   * DRAFT 상태의 프로젝트를 OPEN으로 전환
+   */
+  openFunding: async (projectId: number): Promise<void> => {
+    await apiRequest(`/api/crowd/${projectId}/open`, {
+      method: 'PATCH',
+    });
   },
 
   /**
@@ -413,14 +468,12 @@ export const projectApi = {
    * @deprecated createPledge 사용 권장
    */
   supportProject: async (data: SupportRequest): Promise<SupportResponse> => {
-    // 새로운 API로 변환
     const pledgeResponse = await projectApi.createPledge(data.projectId, {
-      rewardTierId: data.rewardTierId,
-      amount: data.amount,
+      items: [{ rewardTierId: data.rewardTierId, quantity: 1 }],
+      donateAmount: data.amount - 0, // amount가 리워드 가격과 동일할 수 있음
     });
-    
     return {
-      id: pledgeResponse.id,
+      id: pledgeResponse.pledgeId ?? pledgeResponse.id ?? 0,
       projectId: pledgeResponse.projectId,
       projectTitle: pledgeResponse.projectTitle || '',
       rewardTierId: pledgeResponse.rewardTierId,
@@ -441,38 +494,39 @@ export const projectApi = {
   /**
    * 리워드 구매 (Pledge 생성)
    * POST /api/crowd/pledges/{projectId}
+   * 백엔드 PledgeCreateRequestDto: donateAmount, items[{rewardTierId, quantity}]
    */
   createPledge: async (
     projectId: number,
     data: PledgeCreateRequest
   ): Promise<PledgeResponse> => {
     try {
+      if (!data.items || data.items.length === 0) {
+        throw new Error('구매할 리워드를 선택해주세요');
+      }
+
+      const requestBody = {
+        donateAmount: data.donateAmount ?? 0,
+        items: data.items.map((item) => ({
+          rewardTierId: item.rewardTierId,
+          quantity: item.quantity,
+        })),
+      };
+
       const backendResponse = await apiRequest<any>(`/api/crowd/pledges/${projectId}`, {
         method: 'POST',
-        body: JSON.stringify({
-          rewardTierId: data.rewardTierId,
-          amount: data.amount,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
-      // 백엔드 응답을 프론트엔드 타입으로 변환
       const pledge: PledgeResponse = {
-        id: backendResponse.id || 0,
-        projectId: backendResponse.projectId || projectId,
-        projectTitle: backendResponse.projectTitle || null,
-        rewardTierId: backendResponse.rewardTierId || data.rewardTierId,
-        rewardTierTitle: backendResponse.rewardTierTitle || null,
-        amount: backendResponse.amount || data.amount,
-        supporter: backendResponse.supporter ? {
-          id: backendResponse.supporter.id || 0,
-          email: backendResponse.supporter.email || null,
-          name: backendResponse.supporter.name || backendResponse.supporter.username || '',
-          nickname: backendResponse.supporter.nickname || '',
-          profileImageUrl: backendResponse.supporter.profileImageUrl || null,
-          phone: backendResponse.supporter.phone || backendResponse.supporter.phoneNumber || null,
-        } : undefined,
+        pledgeId: backendResponse.pledgeId ?? backendResponse.id ?? 0,
+        id: backendResponse.pledgeId ?? backendResponse.id,
+        projectId: backendResponse.projectId ?? projectId,
+        userId: backendResponse.userId,
+        rewardTierId: backendResponse.rewardTierId ?? data.items[0]?.rewardTierId,
+        amount: backendResponse.amount ?? 0,
+        status: backendResponse.status,
         createdAt: backendResponse.createdAt || new Date().toISOString(),
-        status: backendResponse.status || null,
       };
 
       return pledge;
@@ -484,6 +538,7 @@ export const projectApi = {
   /**
    * 본인의 리워드 전체 조회
    * GET /api/crowd/pledges
+   * 백엔드 PledgeResponseDto: pledgeId, projectId, userId, rewardTierId, amount, status, createdAt
    */
   getMyPledges: async (): Promise<PledgeResponse[]> => {
     try {
@@ -492,22 +547,14 @@ export const projectApi = {
       });
 
       return backendResponse.map((pledge: any) => ({
-        id: pledge.id || 0,
-        projectId: pledge.projectId || 0,
-        projectTitle: pledge.projectTitle || null,
-        rewardTierId: pledge.rewardTierId || 0,
-        rewardTierTitle: pledge.rewardTierTitle || null,
-        amount: pledge.amount || 0,
-        supporter: pledge.supporter ? {
-          id: pledge.supporter.id || 0,
-          email: pledge.supporter.email || null,
-          name: pledge.supporter.name || pledge.supporter.username || '',
-          nickname: pledge.supporter.nickname || '',
-          profileImageUrl: pledge.supporter.profileImageUrl || null,
-          phone: pledge.supporter.phone || pledge.supporter.phoneNumber || null,
-        } : undefined,
+        pledgeId: pledge.pledgeId ?? pledge.id ?? 0,
+        id: pledge.pledgeId ?? pledge.id,
+        projectId: pledge.projectId ?? 0,
+        userId: pledge.userId,
+        rewardTierId: pledge.rewardTierId ?? 0,
+        amount: pledge.amount ?? 0,
+        status: pledge.status,
         createdAt: pledge.createdAt || new Date().toISOString(),
-        status: pledge.status || null,
       }));
     } catch (error) {
       throw error;
@@ -1649,48 +1696,53 @@ export const authApi = {
   },
 };
 
-// API 함수들 - 배송지 관련
+/** 백엔드 AddressResponseDto → 프론트엔드 AddressResponse 변환 */
+function mapAddressResponse(raw: any, fallbackId = 0): AddressResponse {
+  return {
+    id: raw.id ?? fallbackId,
+    label: raw.label ?? null,
+    recipientName: raw.recipientName ?? raw.recipient_name ?? '',
+    phone: raw.phone ?? '',
+    zipCode: raw.zipCode ?? raw.zip_code ?? '',
+    address: raw.address1 ?? raw.address ?? '',
+    detailAddress: raw.address2 ?? raw.detailAddress ?? raw.detail_address ?? '',
+    isDefault: raw.isDefault ?? raw.is_default ?? false,
+  };
+}
+
+// API 함수들 - 배송지 관련 (백엔드 AddressController 기준)
 export const addressApi = {
   /**
-   * 기본 배송지 조회
+   * 기본 배송지 단건 조회
    * GET /api/addresses/default
-   * - 기본 배송지 있으면 200 + AddressResponse
-   * - 없으면 204 No Content
+   * - 기본 배송지 있으면 200 + AddressResponseDto
+   * - 없으면 204 No Content → null 반환
    */
   getDefaultAddress: async (): Promise<AddressResponse | null> => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/addresses/default`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(tokenStorage.getAccessToken() ? {
-            'Authorization': `Bearer ${tokenStorage.getAccessToken()?.trim().replace(/^["']|["']$/g, '')}`,
-          } : {}),
-        },
-        credentials: 'include',
-      });
+    const token = tokenStorage.getAccessToken();
+    const response = await fetch(`${API_BASE_URL}/api/addresses/default`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token.trim().replace(/^["']|["']$/g, '')}` } : {}),
+      },
+      credentials: 'include',
+    });
 
-      if (response.status === 204) {
-        return null; // 기본 배송지 없음
-      }
-
-      if (!response.ok) {
-        throw new Error(`배송지 조회 실패: ${response.status}`);
-      }
-
-      const backendResponse = await response.json();
-      return {
-        id: backendResponse.id || 0,
-        recipientName: backendResponse.recipientName || backendResponse.recipient_name || '',
-        phone: backendResponse.phone || '',
-        zipCode: backendResponse.zipCode || backendResponse.zip_code || '',
-        address: backendResponse.address1 || backendResponse.address || '', // 백엔드: address1
-        detailAddress: backendResponse.address2 || backendResponse.detailAddress || backendResponse.detail_address || '', // 백엔드: address2
-        isDefault: backendResponse.isDefault !== undefined ? backendResponse.isDefault : (backendResponse.is_default !== undefined ? backendResponse.is_default : false),
-      };
-    } catch (error) {
-      throw error;
+    if (response.status === 204) {
+      return null;
     }
+    if (!response.ok) {
+      const errText = await response.text();
+      let msg = `배송지 조회 실패 (${response.status})`;
+      try {
+        const j = JSON.parse(errText);
+        if (j.message ?? j.error) msg = j.message ?? j.error;
+      } catch {}
+      throw new Error(msg);
+    }
+    const backendResponse = await response.json();
+    return mapAddressResponse(backendResponse);
   },
 
   /**
@@ -1698,62 +1750,32 @@ export const addressApi = {
    * GET /api/addresses
    */
   getMyAddresses: async (): Promise<AddressResponse[]> => {
-    try {
-      const backendResponse = await apiRequest<any[]>('/api/addresses', {
-        method: 'GET',
-      });
-
-      return backendResponse.map((address: any) => ({
-        id: address.id || 0,
-        recipientName: address.recipientName || address.recipient_name || '',
-        phone: address.phone || '',
-        zipCode: address.zipCode || address.zip_code || '',
-        address: address.address1 || address.address || '', // 백엔드: address1
-        detailAddress: address.address2 || address.detailAddress || address.detail_address || '', // 백엔드: address2
-        isDefault: address.isDefault !== undefined ? address.isDefault : (address.is_default !== undefined ? address.is_default : false),
-      }));
-    } catch (error) {
-      throw error;
-    }
+    const backendResponse = await apiRequest<any[]>('/api/addresses', { method: 'GET' });
+    return backendResponse.map((addr: any) => mapAddressResponse(addr));
   },
 
   /**
    * 배송지 생성
    * POST /api/addresses
-   * - setAsDefault=true 면 생성과 동시에 기본 배송지로 설정
-   * - 응답: 201 Created + 생성된 배송지 ID
+   * - 201 Created + body: 생성된 배송지 ID (Long)
+   * - setAsDefault=true면 생성과 동시에 기본 배송지로 설정
    */
   createAddress: async (data: AddressCreateRequest): Promise<number> => {
-    try {
-      // 백엔드 DTO 필드명에 맞춰 데이터 변환
-      // 백엔드: label, recipientName, phone, zipCode, address1, address2, setAsDefault
-      const requestData: any = {
-        recipientName: data.recipientName,
-        phone: data.phone,
-        zipCode: data.zipCode,
-        address1: data.address, // 프론트엔드의 address → 백엔드의 address1
-        address2: data.detailAddress, // 프론트엔드의 detailAddress → 백엔드의 address2
-      };
-      
-      // label은 선택사항이므로 값이 있을 때만 추가
-      if (data.label) {
-        requestData.label = data.label;
-      }
-      
-      // setAsDefault는 boolean이므로 undefined가 아닐 때만 추가
-      if (data.setAsDefault !== undefined) {
-        requestData.setAsDefault = data.setAsDefault;
-      }
+    const requestData: Record<string, unknown> = {
+      recipientName: data.recipientName,
+      phone: data.phone,
+      zipCode: data.zipCode,
+      address1: data.address,
+      address2: data.detailAddress,
+    };
+    if (data.label != null && data.label !== '') requestData.label = data.label;
+    if (data.setAsDefault !== undefined) requestData.setAsDefault = data.setAsDefault;
 
-      const addressId = await apiRequest<number>('/api/addresses', {
-        method: 'POST',
-        body: JSON.stringify(requestData),
-      });
-
-      return addressId;
-    } catch (error) {
-      throw error;
-    }
+    const result = await apiRequest<number>('/api/addresses', {
+      method: 'POST',
+      body: JSON.stringify(requestData),
+    });
+    return typeof result === 'number' ? result : (result as any)?.id ?? 0;
   },
 
   /**
@@ -1761,76 +1783,46 @@ export const addressApi = {
    * GET /api/addresses/{addressId}
    */
   getAddress: async (addressId: number): Promise<AddressResponse> => {
-    try {
-      const backendResponse = await apiRequest<any>(`/api/addresses/${addressId}`, {
-        method: 'GET',
-      });
-
-      return {
-        id: backendResponse.id || addressId,
-        recipientName: backendResponse.recipientName || backendResponse.recipient_name || '',
-        phone: backendResponse.phone || '',
-        zipCode: backendResponse.zipCode || backendResponse.zip_code || '',
-        address: backendResponse.address1 || backendResponse.address || '', // 백엔드: address1
-        detailAddress: backendResponse.address2 || backendResponse.detailAddress || backendResponse.detail_address || '', // 백엔드: address2
-        isDefault: backendResponse.isDefault !== undefined ? backendResponse.isDefault : (backendResponse.is_default !== undefined ? backendResponse.is_default : false),
-      };
-    } catch (error) {
-      throw error;
-    }
+    const backendResponse = await apiRequest<any>(`/api/addresses/${addressId}`, { method: 'GET' });
+    return mapAddressResponse(backendResponse, addressId);
   },
 
   /**
    * 배송지 수정
    * PATCH /api/addresses/{addressId}
+   * - 204 No Content
    */
-  updateAddress: async (
-    addressId: number,
-    data: AddressUpdateRequest
-  ): Promise<void> => {
-    try {
-      const requestData: any = {};
-      if (data.recipientName !== undefined) requestData.recipientName = data.recipientName;
-      if (data.phone !== undefined) requestData.phone = data.phone;
-      if (data.zipCode !== undefined) requestData.zipCode = data.zipCode;
-      if (data.address !== undefined) requestData.address1 = data.address; // 백엔드: address1
-      if (data.detailAddress !== undefined) requestData.address2 = data.detailAddress; // 백엔드: address2
+  updateAddress: async (addressId: number, data: AddressUpdateRequest): Promise<void> => {
+    const requestData: Record<string, unknown> = {};
+    if (data.label !== undefined) requestData.label = data.label;
+    if (data.recipientName !== undefined) requestData.recipientName = data.recipientName;
+    if (data.phone !== undefined) requestData.phone = data.phone;
+    if (data.zipCode !== undefined) requestData.zipCode = data.zipCode;
+    if (data.address !== undefined) requestData.address1 = data.address;
+    if (data.detailAddress !== undefined) requestData.address2 = data.detailAddress;
 
-      await apiRequest(`/api/addresses/${addressId}`, {
-        method: 'PATCH',
-        body: JSON.stringify(requestData),
-      });
-    } catch (error) {
-      throw error;
-    }
+    await apiRequest(`/api/addresses/${addressId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(requestData),
+    });
   },
 
   /**
    * 배송지 삭제
    * DELETE /api/addresses/{addressId}
+   * - 204 No Content
    */
   deleteAddress: async (addressId: number): Promise<void> => {
-    try {
-      await apiRequest(`/api/addresses/${addressId}`, {
-        method: 'DELETE',
-      });
-    } catch (error) {
-      throw error;
-    }
+    await apiRequest(`/api/addresses/${addressId}`, { method: 'DELETE' });
   },
 
   /**
    * 기본 배송지 설정
    * PUT /api/addresses/{addressId}/default
-   * - 기존 기본 배송지는 해제되고, 지정한 addressId가 기본이 됨
+   * - 204 No Content
+   * - 기존 기본 배송지 해제 후 지정한 addressId가 기본이 됨
    */
   setDefaultAddress: async (addressId: number): Promise<void> => {
-    try {
-      await apiRequest(`/api/addresses/${addressId}/default`, {
-        method: 'PUT',
-      });
-    } catch (error) {
-      throw error;
-    }
+    await apiRequest(`/api/addresses/${addressId}/default`, { method: 'PUT' });
   },
 };

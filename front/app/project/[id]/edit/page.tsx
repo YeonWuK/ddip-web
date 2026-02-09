@@ -194,23 +194,25 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
       const startDateISO = startDateObj.toISOString()
       const endDateISO = endDateObj.toISOString()
 
-      // 프로젝트 수정
-      const updatedProject = await projectApi.updateProject(projectId, {
-        ...data,
+      // 프로젝트 수정 (multipart/form-data)
+      const updateData = {
+        title: data.title,
+        description: data.description,
+        targetAmount: data.targetAmount,
         startAt: startDateISO,
         endAt: endDateISO,
-        imageUrl,
-        imageUrls,
+        categoryPath: data.categoryPath || null,
+        tags: data.tags || null,
+        summary: data.summary || null,
         rewardTiers: rewardTiers.map((tier) => ({
-          id: 0, // 수정 시 ID는 백엔드에서 처리
           title: tier.title,
           description: tier.description,
           price: tier.price,
           limitQuantity: tier.limitQuantity,
-          soldQuantity: 0, // 수정 시 판매량은 유지되어야 하지만 Mock API에서는 0으로 설정
         })),
-        // currentAmount와 status는 수정하지 않음
-      })
+      }
+
+      const updatedProject = await projectApi.updateProject(projectId, imageFiles, updateData)
 
       toast.success("프로젝트가 수정되었습니다!")
       router.push(`/project/${projectId}`)
