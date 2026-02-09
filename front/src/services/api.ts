@@ -157,10 +157,16 @@ export const projectApi = {
           };
         }
 
-        // 이미지 처리
+        // 이미지 처리 - S3 키를 전체 URL로 변환
         const thumbnailUrl = backendProject.thumbnailUrl || backendProject.thumbnail_url || null;
-        const imageUrl = backendProject.imageUrl || thumbnailUrl || null;
-        const imageUrls = backendProject.imageUrls || (imageUrl ? [imageUrl] : null);
+        const rawImageUrl = backendProject.imageUrl || thumbnailUrl || null;
+        const rawImageUrls = backendProject.imageUrls || backendProject.image_urls || null;
+        const imageUrl = toS3ImageUrl(rawImageUrl) ?? toS3ImageUrl(thumbnailUrl);
+        const imageUrls = rawImageUrls?.length
+          ? rawImageUrls.map((u: string) => toS3ImageUrl(u)).filter(Boolean) as string[]
+          : imageUrl
+            ? [imageUrl]
+            : null;
 
         // 날짜 필드 처리
         const startAt = backendProject.startAt || backendProject.start_at || '';
@@ -293,10 +299,16 @@ export const projectApi = {
         };
       }
 
-      // 이미지 처리 (백엔드에 thumbnail_url이 있을 수 있음)
+      // 이미지 처리 - S3 키(project/2/xxx.png)를 전체 URL로 변환 (Next.js Image 필수)
       const thumbnailUrl = backendResponse.thumbnailUrl || backendResponse.thumbnail_url || null;
-      const imageUrl = backendResponse.imageUrl || thumbnailUrl || null;
-      const imageUrls = backendResponse.imageUrls || (imageUrl ? [imageUrl] : null);
+      const rawImageUrl = backendResponse.imageUrl || thumbnailUrl || null;
+      const rawImageUrls = backendResponse.imageUrls || backendResponse.image_urls || null;
+      const imageUrl = toS3ImageUrl(rawImageUrl) ?? toS3ImageUrl(thumbnailUrl);
+      const imageUrls = rawImageUrls?.length
+        ? rawImageUrls.map((u: string) => toS3ImageUrl(u)).filter(Boolean) as string[]
+        : imageUrl
+          ? [imageUrl]
+          : null;
 
       // 날짜 필드 처리 (백엔드 필드명이 다를 수 있음)
       const startAt = backendResponse.startAt || backendResponse.start_at || '';

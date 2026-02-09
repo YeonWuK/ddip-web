@@ -140,8 +140,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     }
   }, [project])
 
-  // 프로젝트 취소 핸들러 (삭제)
-  const handleCancelProject = async () => {
+  // 프로젝트 삭제 핸들러
+  const handleDeleteProject = async () => {
     if (!project) return
 
     if (!confirm("정말로 이 프로젝트를 삭제하시겠습니까? 삭제된 프로젝트는 복구할 수 없습니다.")) {
@@ -151,7 +151,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     try {
       await projectApi.deleteProject(project.id)
       toast.success("프로젝트가 삭제되었습니다")
-      router.push("/projects")
+      router.push("/")
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "프로젝트 삭제에 실패했습니다")
     }
@@ -425,10 +425,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={handleCancelProject}
+                    onClick={handleDeleteProject}
                   >
                     <X className="mr-2 size-4" />
-                    취소하기
+                    삭제하기
                   </Button>
                 )}
               </div>
@@ -657,19 +657,19 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                       variant="destructive"
                       className="w-full"
                       onClick={async () => {
-                        if (confirm("프로젝트를 취소하시겠습니까?")) {
+                        if (confirm("프로젝트를 삭제하시겠습니까? 삭제된 프로젝트는 복구할 수 없습니다.")) {
                           try {
                             await projectApi.deleteProject(project.id)
-                            toast.success("프로젝트가 취소되었습니다")
-                            router.push("/projects")
+                            toast.success("프로젝트가 삭제되었습니다")
+                            router.push("/")
                           } catch (error) {
-                            toast.error("프로젝트 취소에 실패했습니다")
+                            toast.error("프로젝트 삭제에 실패했습니다")
                           }
                         }
                       }}
                     >
                       <X className="mr-2 size-4" />
-                      프로젝트 취소
+                      프로젝트 삭제
                     </Button>
                   )}
                 </div>
