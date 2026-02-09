@@ -77,12 +77,12 @@ public class Project extends BaseTimeEntity {
     @Column(name = "like_count", nullable = false)
     private Long likeCount = 0L;
 
-    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RewardTier> rewardTiers = new ArrayList<>();
 
-    @OneToMany(mappedBy = "project")
     @Builder.Default
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Pledge> pledges = new ArrayList<>();
 
     @Builder.Default
@@ -121,6 +121,7 @@ public class Project extends BaseTimeEntity {
                 .description(dto.getDescription())
                 .price(dto.getPrice())
                 .limitQuantity(dto.getLimitQuantity())
+                .soldQuantity(0L)
                 .build();
 
         this.rewardTiers.add(tier);
