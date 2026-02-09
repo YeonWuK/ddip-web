@@ -46,9 +46,6 @@ public class ProjectRequestDto {
     @Size(max = 200)
     private String summary;
 
-    @NotBlank
-    private String thumbnailImageUrl;
-
     @NotNull
     @Valid
     private List<RewardTierRequestDto> rewardTiers;
