@@ -73,7 +73,8 @@ public class Project extends BaseTimeEntity {
     @Column(name = "summary", length = 200)
     private String summary;
 
-    @Column(name = "like_count")
+    @Builder.Default
+    @Column(name = "like_count", nullable = false)
     private Long likeCount = 0L;
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
