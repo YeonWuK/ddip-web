@@ -518,23 +518,23 @@ export const projectApi = {
   /**
    * 리워드 구매 (Pledge 생성)
    * POST /api/crowd/pledges/{projectId}
-   * 백엔드 PledgeCreateRequestDto: donateAmount, items[{rewardTierId, quantity}]
+   * 백엔드 PledgeCreateRequestDto: rewardTierId (Long), quantity (Integer)
    */
   createPledge: async (
     projectId: number,
     data: PledgeCreateRequest
   ): Promise<PledgeResponse> => {
     try {
-      if (!data.items || data.items.length === 0) {
+      const rewardTierId = data.rewardTierId ?? data.items?.[0]?.rewardTierId
+      const quantity = data.quantity ?? data.items?.[0]?.quantity ?? 1
+
+      if (rewardTierId == null) {
         throw new Error('구매할 리워드를 선택해주세요');
       }
 
       const requestBody = {
-        donateAmount: data.donateAmount ?? 0,
-        items: data.items.map((item) => ({
-          rewardTierId: item.rewardTierId,
-          quantity: item.quantity,
-        })),
+        rewardTierId: Number(rewardTierId),
+        quantity: Math.max(1, Number(quantity) || 1),
       };
 
       const backendResponse = await apiRequest<any>(`/api/crowd/pledges/${projectId}`, {
@@ -547,7 +547,7 @@ export const projectApi = {
         id: backendResponse.pledgeId ?? backendResponse.id,
         projectId: backendResponse.projectId ?? projectId,
         userId: backendResponse.userId,
-        rewardTierId: backendResponse.rewardTierId ?? data.items[0]?.rewardTierId,
+        rewardTierId: backendResponse.rewardTierId ?? rewardTierId,
         amount: backendResponse.amount ?? 0,
         status: backendResponse.status,
         createdAt: backendResponse.createdAt || new Date().toISOString(),
@@ -1347,6 +1347,7 @@ export const userApi = {
         profileImageUrl: backendResponse.profileImageUrl || backendResponse.profile_image_url || null,
         phone: backendResponse.phone || backendResponse.phoneNumber || null,
         role: normalizeUserRole(backendResponse.role ?? backendResponse.role_level),
+        pointBalance: backendResponse.pointBalance ?? backendResponse.point_balance ?? 0,
       };
     } catch (error) {
       throw error;
@@ -1416,7 +1417,11 @@ export const authApi = {
       
       if (responseData.user) {
         // 로그인 응답에 사용자 정보가 포함되어 있는 경우
-        user = responseData.user;
+        const u = responseData.user;
+        user = {
+          ...u,
+          pointBalance: u.pointBalance ?? u.point_balance ?? 0,
+        };
         if (user) {
           tokenStorage.setUser(user);
         }
@@ -1429,6 +1434,7 @@ export const authApi = {
           nickname: responseData.nickname || '',
           profileImageUrl: responseData.profileImageUrl || null,
           phone: responseData.phoneNumber || responseData.phone || null,
+          pointBalance: responseData.pointBalance ?? responseData.point_balance ?? 0,
         };
         tokenStorage.setUser(user);
       } else {
@@ -1616,6 +1622,7 @@ export const authApi = {
         profileImageUrl: backendResponse.profileImageUrl ?? backendResponse.profile_image_url ?? null,
         phone: backendResponse.phone ?? backendResponse.phoneNumber ?? backendResponse.phone_number ?? null,
         role: normalizeUserRole(backendResponse.role ?? backendResponse.role_level),
+        pointBalance: backendResponse.pointBalance ?? backendResponse.point_balance ?? 0,
       };
       
       // 사용자 정보를 localStorage에 저장
@@ -1751,6 +1758,7 @@ export const authApi = {
           profileImageUrl: backendResponse.profileImageUrl ?? backendResponse.profile_image_url ?? null,
           phone: backendResponse.phone ?? backendResponse.phoneNumber ?? backendResponse.phone_number ?? null,
           role: normalizeUserRole(backendResponse.role ?? backendResponse.role_level),
+          pointBalance: backendResponse.pointBalance ?? backendResponse.point_balance ?? 0,
         };
       } else {
         // 응답에 사용자 정보가 없는 경우, 새 토큰으로 사용자 정보 조회

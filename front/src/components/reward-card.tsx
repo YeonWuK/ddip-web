@@ -14,6 +14,8 @@ interface RewardCardProps {
   remaining?: number
   backers: number
   featured?: boolean
+  /** 펀딩 OPEN일 때만 true, 미리보기(DRAFT 등)에서는 false */
+  selectable?: boolean
   onSelect?: () => void
 }
 
@@ -27,6 +29,7 @@ export function RewardCard({
   remaining,
   backers,
   featured,
+  selectable = true,
   onSelect,
 }: RewardCardProps) {
   return (
@@ -83,16 +86,18 @@ export function RewardCard({
         </div>
       </CardContent>
 
-      <CardFooter>
-        <Button 
-          className="w-full" 
-          size="lg" 
-          disabled={limited !== undefined && remaining === 0}
-          onClick={onSelect}
-        >
-          {limited !== undefined && remaining === 0 ? "품절" : "이 리워드 선택"}
-        </Button>
-      </CardFooter>
+      {selectable && (
+        <CardFooter>
+          <Button 
+            className="w-full" 
+            size="lg" 
+            disabled={limited !== undefined && remaining === 0}
+            onClick={onSelect}
+          >
+            {limited !== undefined && remaining === 0 ? "품절" : "이 리워드 선택"}
+          </Button>
+        </CardFooter>
+      )}
     </Card>
   )
 }

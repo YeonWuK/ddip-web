@@ -57,6 +57,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const [error, setError] = useState<string | null>(null)
   const [supportDialogOpen, setSupportDialogOpen] = useState(false)
   const [selectedRewardTier, setSelectedRewardTier] = useState<number | null>(null)
+  const [supportQuantity, setSupportQuantity] = useState<number>(1)
   const [supportAmount, setSupportAmount] = useState<string>("")
   const [isSupporting, setIsSupporting] = useState(false)
   const [timeLeft, setTimeLeft] = useState<string>("")
@@ -213,25 +214,31 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       return
     }
 
+    const quantity = Math.max(1, supportQuantity)
+    const minAmount = selectedTier.price * quantity
     const amount = parseInt(supportAmount.replace(/,/g, ""), 10)
-    if (isNaN(amount) || amount < selectedTier.price) {
-      toast.error(`최소 ${selectedTier.price.toLocaleString()}원 이상 후원해주세요`)
+    if (isNaN(amount) || amount < minAmount) {
+      toast.error(`최소 ${minAmount.toLocaleString()}원 이상 후원해주세요`)
       return
     }
 
     const tierId = selectedTier.rewardTierId ?? selectedTier.id
-    const donateAmount = Math.max(0, amount - selectedTier.price)
+    if (selectedTier.limitQuantity != null && quantity > selectedTier.limitQuantity - selectedTier.soldQuantity) {
+      toast.error(`남은 수량(${selectedTier.limitQuantity - selectedTier.soldQuantity}개)을 초과할 수 없습니다`)
+      return
+    }
 
     try {
       setIsSupporting(true)
       await projectApi.createPledge(project.id, {
-        items: [{ rewardTierId: tierId, quantity: 1 }],
-        donateAmount,
+        rewardTierId: tierId,
+        quantity,
       })
 
       toast.success("리워드 구매가 완료되었습니다!")
       setSupportDialogOpen(false)
       setSupportAmount("")
+      setSupportQuantity(1)
       setSelectedRewardTier(null)
       setSelectedAddressId(null)
       setShowAddressForm(false)
@@ -600,6 +607,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                         }
                         backers={reward.soldQuantity}
                         featured={false}
+                        selectable={project.status === "OPEN"}
                         onSelect={() => {
                           if (!isAuthenticated) {
                             toast.error("로그인이 필요합니다")
@@ -618,6 +626,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                             return
                           }
                           setSelectedRewardTier(tierId)
+                          setSupportQuantity(1)
                           setSupportAmount(reward.price.toLocaleString())
                           setSupportDialogOpen(true)
                         }}
@@ -928,6 +937,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     // 다이얼로그가 닫힐 때 상태 초기화
                     if (!open) {
                       setSelectedRewardTier(null)
+                      setSupportQuantity(1)
                       setSupportAmount("")
                     }
                   }}
@@ -959,6 +969,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                                 e.preventDefault()
                                 e.stopPropagation()
                                 setSelectedRewardTier(tierId)
+                                setSupportQuantity(1)
                                 setSupportAmount(tier.price.toLocaleString())
                               }}
                               className={`w-full rounded-lg border p-4 text-left transition-colors ${
@@ -985,6 +996,35 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                         </div>
                       </div>
 
+                      {/* 수량 입력 */}
+                      {selectedRewardTier && (
+                        <div className="space-y-2">
+                          <Label htmlFor="supportQuantity">수량 *</Label>
+                          <Input
+                            id="supportQuantity"
+                            type="number"
+                            min={1}
+                            value={supportQuantity}
+                            onChange={(e) => {
+                              const val = parseInt(e.target.value, 10)
+                              const qty = Math.max(1, isNaN(val) ? 1 : val)
+                              setSupportQuantity(qty)
+                              const tier = project.rewardTiers.find(t => (t.rewardTierId ?? t.id) === selectedRewardTier)
+                              if (tier) setSupportAmount((tier.price * qty).toLocaleString())
+                            }}
+                          />
+                          {selectedRewardTier && (() => {
+                            const tier = project.rewardTiers.find(t => (t.rewardTierId ?? t.id) === selectedRewardTier)
+                            const limitRemaining = tier?.limitQuantity ? tier.limitQuantity - tier.soldQuantity : null
+                            return limitRemaining != null && (
+                              <p className="text-xs text-muted-foreground">
+                                남은 수량: {limitRemaining}개
+                              </p>
+                            )
+                          })()}
+                        </div>
+                      )}
+
                       {/* 후원 금액 입력 */}
                       <div className="space-y-2">
                         <Label htmlFor="supportAmount">후원 금액 (원) *</Label>
@@ -997,13 +1037,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                             setSupportAmount(formatted)
                           }}
                           placeholder={selectedRewardTier 
-                            ? project.rewardTiers.find(t => t.id === selectedRewardTier)?.price.toLocaleString() || "10,000"
+                            ? project.rewardTiers.find(t => (t.rewardTierId ?? t.id) === selectedRewardTier)?.price.toLocaleString() || "10,000"
                             : "10,000"
                           }
                         />
                         {selectedRewardTier && (
                           <p className="text-xs text-muted-foreground">
-                            선택한 리워드 티어: {project.rewardTiers.find(t => t.id === selectedRewardTier)?.price.toLocaleString()}원
+                            선택한 리워드 티어: {project.rewardTiers.find(t => (t.rewardTierId ?? t.id) === selectedRewardTier)?.price.toLocaleString()}원 × {supportQuantity}개
                           </p>
                         )}
                         {!selectedRewardTier && project.rewardTiers.length > 0 && (
