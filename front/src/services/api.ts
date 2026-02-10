@@ -1355,6 +1355,7 @@ export const userApi = {
         profileImageUrl: backendResponse.profileImageUrl || backendResponse.profile_image_url || null,
         phone: backendResponse.phone || backendResponse.phoneNumber || null,
         role: normalizeUserRole(backendResponse.role ?? backendResponse.role_level),
+        pointBalance: backendResponse.pointBalance ?? backendResponse.point_balance ?? 0,
       };
     } catch (error) {
       throw error;
@@ -1437,6 +1438,7 @@ export const authApi = {
           nickname: responseData.nickname || '',
           profileImageUrl: responseData.profileImageUrl || null,
           phone: responseData.phoneNumber || responseData.phone || null,
+          pointBalance: responseData.pointBalance ?? responseData.point_balance ?? 0,
         };
         tokenStorage.setUser(user);
       } else {
@@ -1545,6 +1547,7 @@ export const authApi = {
           nickname: userData.nickname || '',
           profileImageUrl: userData.profileImageUrl || null,
           phone: userData.phoneNumber || userData.phone || null,
+          pointBalance: userData.pointBalance ?? userData.point_balance ?? 0,
         };
         return {
           accessToken: '',
@@ -1624,6 +1627,7 @@ export const authApi = {
         profileImageUrl: backendResponse.profileImageUrl ?? backendResponse.profile_image_url ?? null,
         phone: backendResponse.phone ?? backendResponse.phoneNumber ?? backendResponse.phone_number ?? null,
         role: normalizeUserRole(backendResponse.role ?? backendResponse.role_level),
+        pointBalance: backendResponse.pointBalance ?? backendResponse.point_balance ?? 0,
       };
       
       // 사용자 정보를 localStorage에 저장
@@ -1759,6 +1763,7 @@ export const authApi = {
           profileImageUrl: backendResponse.profileImageUrl ?? backendResponse.profile_image_url ?? null,
           phone: backendResponse.phone ?? backendResponse.phoneNumber ?? backendResponse.phone_number ?? null,
           role: normalizeUserRole(backendResponse.role ?? backendResponse.role_level),
+          pointBalance: backendResponse.pointBalance ?? backendResponse.point_balance ?? 0,
         };
       } else {
         // 응답에 사용자 정보가 없는 경우, 새 토큰으로 사용자 정보 조회

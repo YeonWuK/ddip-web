@@ -27,6 +27,7 @@ import { ProtectedRoute } from "@/src/components/protected-route"
 import { isInWishlist, toggleWishlist } from "@/src/lib/wishlist"
 import { canEditProject, canCancelProject, canSupportProject, isProjectCreator, isAdmin } from "@/src/lib/permissions"
 import type { ProjectStatus } from "@/src/types/api"
+import { useDaumPostcodePopup } from "react-daum-postcode"
 
 /** 프로젝트 상태 한글 라벨 */
 const STATUS_LABELS: Record<ProjectStatus, string> = {
@@ -76,6 +77,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   })
   const [adminActionDialog, setAdminActionDialog] = useState<"reject" | "force-stop" | "force-cancel" | null>(null)
   const [adminActionReason, setAdminActionReason] = useState("")
+  const openPostcodePopup = useDaumPostcodePopup()
 
   // 프로젝트 데이터 로드
   useEffect(() => {
@@ -1128,12 +1130,40 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="zipCode">우편번호 *</Label>
-                            <Input
-                              id="zipCode"
-                              value={newAddress.zipCode}
-                              onChange={(e) => setNewAddress({ ...newAddress, zipCode: e.target.value })}
-                              placeholder="12345"
-                            />
+                            <div className="flex gap-2">
+                              <Input
+                                id="zipCode"
+                                value={newAddress.zipCode}
+                                onChange={(e) => setNewAddress({ ...newAddress, zipCode: e.target.value })}
+                                placeholder="12345"
+                                readOnly
+                                className="flex-1"
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                  openPostcodePopup({
+                                    onComplete: (data) => {
+                                      let fullAddress = data.address
+                                      if (data.addressType === "R") {
+                                        let extra = ""
+                                        if (data.bname) extra += data.bname
+                                        if (data.buildingName) extra += (extra ? `, ${data.buildingName}` : data.buildingName)
+                                        if (extra) fullAddress += ` (${extra})`
+                                      }
+                                      setNewAddress((prev) => ({
+                                        ...prev,
+                                        zipCode: data.zonecode,
+                                        address: fullAddress,
+                                      }))
+                                    },
+                                  })
+                                }}
+                              >
+                                주소 검색
+                              </Button>
+                            </div>
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="address">주소 *</Label>
@@ -1141,7 +1171,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                               id="address"
                               value={newAddress.address}
                               onChange={(e) => setNewAddress({ ...newAddress, address: e.target.value })}
-                              placeholder="서울특별시 강남구 테헤란로 123"
+                              placeholder="주소 검색을 클릭하세요"
                             />
                           </div>
                           <div className="space-y-2">

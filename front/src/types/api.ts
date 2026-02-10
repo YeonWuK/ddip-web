@@ -10,6 +10,8 @@ export interface UserResponse {
   profileImageUrl: string | null;
   phone: string | null;
   role?: UserRole; // ADMIN: 관리자, USER: 일반 사용자
+  /** 포인트 잔액 (상단 바 등에 표시) */
+  pointBalance?: number;
 }
 
 // 인증 관련 타입
