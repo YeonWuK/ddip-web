@@ -1,7 +1,8 @@
 package com.ddip.backend.controller;
 
-import com.ddip.backend.dto.crowd.PledgeCreateRequestDto;
-import com.ddip.backend.dto.crowd.PledgeResponseDto;
+import com.ddip.backend.dto.crowd.pledge.PledgeCreateResponseDto;
+import com.ddip.backend.dto.crowd.pledge.PledgeCreateRequestDto;
+import com.ddip.backend.dto.crowd.pledge.PledgeResponseDto;
 import com.ddip.backend.security.auth.CustomUserDetails;
 import com.ddip.backend.service.PledgeService;
 import jakarta.validation.Valid;
@@ -26,10 +27,10 @@ public class PledgeController {
      * POST /api/crowd/pledges/{projectId}
      */
     @PostMapping("{projectId}")
-    public ResponseEntity<PledgeResponseDto> createPledge(@AuthenticationPrincipal CustomUserDetails userDetails,
-            @PathVariable Long projectId, @Valid @RequestBody PledgeCreateRequestDto requestDto) {
+    public ResponseEntity<PledgeCreateResponseDto> createPledge(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                                                      @PathVariable Long projectId, @Valid @RequestBody PledgeCreateRequestDto requestDto) {
         Long userId = userDetails.getUserId();
-        PledgeResponseDto response = pledgeService.createPledge(userId, projectId, requestDto);
+        PledgeCreateResponseDto response = pledgeService.createPledge(userId, projectId, requestDto);
         return ResponseEntity.ok(response);
     }
 
@@ -38,9 +39,9 @@ public class PledgeController {
      * GET /api/crowd/pledges/{pledgeId}
      */
     @GetMapping
-    public ResponseEntity<List<PledgeResponseDto>> getMyPledges(@AuthenticationPrincipal CustomUserDetails userDetails) {
+    public ResponseEntity<List<PledgeCreateResponseDto>> getMyPledges(@AuthenticationPrincipal CustomUserDetails userDetails) {
         Long userId = userDetails.getUserId();
-        List<PledgeResponseDto> response = pledgeService.getAllPledges(userId);
+        List<PledgeCreateResponseDto> response = pledgeService.getPledgeHistory(userId);
         return ResponseEntity.ok(response);
     }
 

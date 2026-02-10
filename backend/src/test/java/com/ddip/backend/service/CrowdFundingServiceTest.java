@@ -1,28 +1,13 @@
 package com.ddip.backend.service;
 
-import com.ddip.backend.dto.crowd.ProjectRequestDto;
-import com.ddip.backend.dto.crowd.ProjectUpdateRequestDto;
-import com.ddip.backend.dto.crowd.RewardTierRequestDto;
-import com.ddip.backend.dto.enums.ProjectStatus;
-import com.ddip.backend.entity.Project;
-import com.ddip.backend.entity.User;
-import com.ddip.backend.exception.reward.RewardTierRequiredException;
 import com.ddip.backend.repository.ProjectRepository;
-import com.ddip.backend.repository.UserRepository;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDate;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class CrowdFundingServiceTest {

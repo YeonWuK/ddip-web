@@ -1,6 +1,8 @@
 package com.ddip.backend.controller;
 
-import com.ddip.backend.dto.crowd.*;
+import com.ddip.backend.dto.crowd.project.ProjectRequestDto;
+import com.ddip.backend.dto.crowd.project.ProjectResponseDto;
+import com.ddip.backend.dto.crowd.project.ProjectUpdateRequestDto;
 import com.ddip.backend.security.auth.CustomUserDetails;
 import com.ddip.backend.service.CrowdFundingService;
 import jakarta.validation.Valid;
@@ -54,7 +56,6 @@ public class CrowdFundingController {
      *
      * 프로젝트 작성자만 수정 가능하도록 인증된 사용자 정보를 사용한다.
      *
-     * (현재 비활성화 상태) - 리워드 수정 따로 Project 수정 따로 할지에 대한 논의
      */
     @PatchMapping(value = "/{projectId}", consumes = {"multipart/form-data"})
     public ResponseEntity<?> updateCrowdFunding(

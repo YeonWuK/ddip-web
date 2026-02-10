@@ -1,35 +1,7 @@
 package com.ddip.backend.service;
 
-import com.ddip.backend.dto.crowd.PledgeCreateRequestDto;
-import com.ddip.backend.dto.crowd.PledgeResponseDto;
-import com.ddip.backend.dto.enums.PledgeStatus;
-import com.ddip.backend.dto.enums.PointLedgerSource;
-import com.ddip.backend.dto.enums.PointLedgerType;
-import com.ddip.backend.dto.enums.ProjectStatus;
-import com.ddip.backend.entity.Pledge;
-import com.ddip.backend.entity.Project;
-import com.ddip.backend.entity.RewardTier;
-import com.ddip.backend.entity.User;
-import com.ddip.backend.exception.reward.InvalidQuantityException;
-import com.ddip.backend.exception.reward.RewardNotFoundException;
-import com.ddip.backend.exception.project.ProjectNotFoundException;
-import com.ddip.backend.exception.user.UserNotFoundException;
-import com.ddip.backend.repository.PledgeRepository;
-import com.ddip.backend.repository.ProjectRepository;
-import com.ddip.backend.repository.RewardTierRepository;
-import com.ddip.backend.repository.UserRepository;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.List;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class PledgeServiceTest {

@@ -39,8 +39,9 @@ public class RewardTier extends BaseTimeEntity{
     @Column(name = "limit_quantity")
     private Long limitQuantity;
 
+    @Builder.Default
     @Column(name = "sold_quantity", nullable = false)
-    private Long soldQuantity;
+    private Long soldQuantity = 0L;
 
     @Builder.Default
     @OneToMany(mappedBy = "rewardTier")

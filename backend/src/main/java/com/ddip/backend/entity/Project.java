@@ -1,8 +1,8 @@
 package com.ddip.backend.entity;
 
-import com.ddip.backend.dto.crowd.ProjectRequestDto;
-import com.ddip.backend.dto.crowd.ProjectUpdateRequestDto;
-import com.ddip.backend.dto.crowd.RewardTierRequestDto;
+import com.ddip.backend.dto.crowd.project.ProjectRequestDto;
+import com.ddip.backend.dto.crowd.project.ProjectUpdateRequestDto;
+import com.ddip.backend.dto.crowd.reward.RewardTierRequestDto;
 import com.ddip.backend.dto.enums.ProjectStatus;
 import com.ddip.backend.exception.project.InvalidProjectStatusException;
 import com.ddip.backend.exception.project.ProjectAccessDeniedException;
@@ -73,15 +73,16 @@ public class Project extends BaseTimeEntity {
     @Column(name = "summary", length = 200)
     private String summary;
 
+    @Builder.Default
     @Column(name = "like_count", nullable = false)
     private Long likeCount = 0L;
 
-    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RewardTier> rewardTiers = new ArrayList<>();
 
-    @OneToMany(mappedBy = "project")
     @Builder.Default
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Pledge> pledges = new ArrayList<>();
 
     @Builder.Default
@@ -120,6 +121,7 @@ public class Project extends BaseTimeEntity {
                 .description(dto.getDescription())
                 .price(dto.getPrice())
                 .limitQuantity(dto.getLimitQuantity())
+                .soldQuantity(0L)
                 .build();
 
         this.rewardTiers.add(tier);
