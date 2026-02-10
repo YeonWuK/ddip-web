@@ -22,12 +22,8 @@ export default function CreateAuctionPage() {
   const router = useRouter()
   const [imageFiles, setImageFiles] = useState<File[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [startDateTime, setStartDateTime] = useState<string>("")
-
-  // 오늘 날짜와 시간을 datetime-local 형식으로 가져오기
-  const now = new Date()
-  // datetime-local 형식: YYYY-MM-DDTHH:mm (초 단위 제외)
-  const today = now.toISOString().slice(0, 16)
+  // 페이지 진입 시각을 종료일 min으로 사용 (이전 시각 선택 불가)
+  const [minEndAt] = useState(() => new Date().toISOString().slice(0, 16))
 
   const {
     register,
@@ -62,50 +58,26 @@ export default function CreateAuctionPage() {
         }
       }
 
-      // 날짜 유효성 검사 및 ISO 형식으로 변환
-      if (!data.startAt || !data.endAt || data.startAt.trim() === "" || data.endAt.trim() === "") {
-        toast.error("시작일과 종료일을 모두 선택해주세요")
+      if (!data.endAt || data.endAt.trim() === "") {
+        toast.error("종료일을 선택해주세요")
         return
       }
 
-      // datetime-local은 YYYY-MM-DDTHH:mm 형식
-      // 빈 문자열이나 잘못된 형식 체크
-      const startDateTimeStr = data.startAt.trim()
       const endDateTimeStr = data.endAt.trim()
-
-      if (!startDateTimeStr || !endDateTimeStr) {
-        toast.error("시작일과 종료일을 모두 선택해주세요")
-        return
-      }
-
-      // Date 객체 생성 및 유효성 검사
-      const startDateTimeObj = new Date(startDateTimeStr)
       const endDateTimeObj = new Date(endDateTimeStr)
-
-      // Invalid Date 체크
-      if (isNaN(startDateTimeObj.getTime())) {
-        toast.error(`유효하지 않은 시작일입니다: ${startDateTimeStr}`)
-        return
-      }
 
       if (isNaN(endDateTimeObj.getTime())) {
         toast.error(`유효하지 않은 종료일입니다: ${endDateTimeStr}`)
         return
       }
 
-      // 시작일이 과거인지 확인
-      const now = new Date()
-      if (startDateTimeObj < now) {
-        toast.error("경매 시작일은 현재 시간 이후여야 합니다")
+      // 종료일이 현재보다 이후인지 확인
+      if (endDateTimeObj <= new Date()) {
+        toast.error("종료일은 현재 시각 이후여야 합니다")
         return
       }
 
-      if (endDateTimeObj <= startDateTimeObj) {
-        toast.error("종료일은 시작일 이후여야 합니다")
-        return
-      }
-
-      // 백엔드 LocalDateTime.parse()는 Z를 받지 못함 → 타임존 없이 "2026-02-05T20:30:00" 형식으로 전송
+      // 종료 시각 포맷
       const formatLocalDateTime = (date: Date) => {
         const y = date.getFullYear()
         const m = String(date.getMonth() + 1).padStart(2, "0")
@@ -264,25 +236,9 @@ export default function CreateAuctionPage() {
                 </div>
 
                 {/* 기간 */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="startAt">경매 시작일 *</Label>
-                    <Input
-                      id="startAt"
-                      type="datetime-local"
-                      min={today}
-                      {...register("startAt", {
-                        onChange: (e) => {
-                          setStartDateTime(e.target.value)
-                        },
-                      })}
-                    />
-                    {errors.startAt && (
-                      <Alert variant="destructive">
-                        <AlertCircle className="size-4" />
-                        <AlertDescription>{errors.startAt.message}</AlertDescription>
-                      </Alert>
-                    )}
+                <div className="space-y-4">
+                  <div className="rounded-lg border bg-muted/50 p-3 text-sm text-muted-foreground">
+                    경매는 <strong className="text-foreground">생성 버튼을 누른 시점에 자동으로 시작</strong>됩니다.
                   </div>
 
                   <div className="space-y-2">
@@ -290,18 +246,12 @@ export default function CreateAuctionPage() {
                     <Input
                       id="endAt"
                       type="datetime-local"
-                      min={startDateTime ? (() => {
-                        // 시작일이 설정되어 있으면 시작일보다 1분 이후만 선택 가능
-                        const startDate = new Date(startDateTime)
-                        const minEndDate = new Date(startDate.getTime() + 60000) // 1분 후
-                        return minEndDate.toISOString().slice(0, 16)
-                      })() : today}
-                      disabled={!startDateTime}
+                      min={minEndAt}
                       {...register("endAt")}
                     />
-                    {!startDateTime && (
-                      <p className="text-xs text-muted-foreground">시작일을 먼저 선택해주세요</p>
-                    )}
+                    <p className="text-xs text-muted-foreground">
+                      종료일은 이 창에 들어온 시각 이전은 선택할 수 없습니다
+                    </p>
                     {errors.endAt && (
                       <Alert variant="destructive">
                         <AlertCircle className="size-4" />

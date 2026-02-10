@@ -30,34 +30,27 @@ export const projectCreateSchema = z.object({
   summary: z.string().max(200, "요약은 200자 이하여야 합니다").optional().nullable(),
 })
 
-// 경매 등록 스키마
+// 경매 등록 스키마 (startAt은 생성 시 자동 설정되므로 optional)
 export const auctionCreateSchema = z.object({
   title: z.string().min(1, "제목을 입력해주세요").max(100, "제목은 100자 이하여야 합니다"),
   description: z.string().min(10, "설명은 최소 10자 이상이어야 합니다"),
   startPrice: z.number().min(1000, "시작가는 최소 1,000원 이상이어야 합니다"),
   bidStep: z.number().min(1000, "입찰 단위는 최소 1,000원 이상이어야 합니다"),
   buyoutPrice: z.number().min(1000).nullable().optional(),
-  startAt: z.string().min(1, "시작일을 선택해주세요").refine((val) => {
-    if (!val) return false
-    const date = new Date(val)
-    if (isNaN(date.getTime())) return false
-    // 시작일은 현재 시간 이후여야 함
-    return date > new Date()
-  }, "경매 시작일은 현재 시간 이후여야 합니다"),
+  startAt: z.string().optional(),
   endAt: z.string().min(1, "종료일을 선택해주세요").refine((val) => {
     if (!val) return false
     const date = new Date(val)
     return !isNaN(date.getTime())
   }, "유효하지 않은 종료일입니다"),
 }).refine((data) => {
-  // 종료일은 시작일 이후여야 함
-  const startDate = new Date(data.startAt)
+  // 종료일은 현재 시각 이후여야 함
   const endDate = new Date(data.endAt)
-  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return true // 개별 검증에서 처리
-  return endDate > startDate
+  if (isNaN(endDate.getTime())) return true
+  return endDate > new Date()
 }, {
-  message: "종료일은 시작일 이후여야 합니다",
-  path: ["endAt"], // endAt 필드에 에러 표시
+  message: "종료일은 현재 시각 이후여야 합니다",
+  path: ["endAt"],
 })
 
 export type ProjectCreateFormData = z.infer<typeof projectCreateSchema>

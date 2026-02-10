@@ -826,7 +826,7 @@ export const auctionApi = {
     try {
       const formData = new FormData();
       files.forEach((file) => formData.append('file', file));
-      const dataPart: { title: string; description: string; startPrice: number; bidStep: number; endAt: string } = {
+      const dataPart = {
         title: data.title,
         description: data.description,
         startPrice: data.startPrice,

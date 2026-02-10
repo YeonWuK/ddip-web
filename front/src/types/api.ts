@@ -128,7 +128,7 @@ export interface AuctionCreateRequest {
   description: string;
   startPrice: number;
   bidStep: number;
-  endAt: string; // ISO 8601 형식
+  endAt: string; // ISO 8601 형식 (시작은 백엔드에서 생성 시점으로 자동 설정)
   thumbnailImageUrl?: string | null;
   categoryPath?: string | null;
   tags?: string | null;
