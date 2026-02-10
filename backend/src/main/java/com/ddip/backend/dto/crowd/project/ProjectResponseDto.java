@@ -1,7 +1,8 @@
-package com.ddip.backend.dto.crowd;
+package com.ddip.backend.dto.crowd.project;
 
+import com.ddip.backend.dto.crowd.CreatorDto;
+import com.ddip.backend.dto.crowd.reward.RewardTierResponseDto;
 import com.ddip.backend.dto.enums.ProjectStatus;
-import com.ddip.backend.dto.image.ProjectImageResponseDto;
 import com.ddip.backend.entity.Project;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

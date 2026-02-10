@@ -1,7 +1,7 @@
 package com.ddip.backend.controller;
 
-import com.ddip.backend.dto.crowd.ProjectDetailResponseDto;
-import com.ddip.backend.dto.crowd.ProjectResponseDto;
+import com.ddip.backend.dto.crowd.project.ProjectDetailResponseDto;
+import com.ddip.backend.dto.crowd.project.ProjectResponseDto;
 import com.ddip.backend.dto.crowd.project.ProjectRequestDto;
 import com.ddip.backend.dto.crowd.project.ProjectUpdateRequestDto;
 import com.ddip.backend.security.auth.CustomUserDetails;
