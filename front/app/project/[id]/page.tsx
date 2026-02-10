@@ -18,14 +18,35 @@ import { useState, useEffect, use } from "react"
 import { useRouter } from "next/navigation"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Alert, AlertDescription } from "@/src/components/ui/alert"
-import { projectApi, addressApi } from "@/src/services/api"
-import { ProjectResponse, AddressResponse, AddressCreateRequest } from "@/src/types/api"
+import { projectApi, addressApi, adminApi } from "@/src/services/api"
+import { ProjectResponse, AddressResponse, AddressCreateRequest, UserResponse } from "@/src/types/api"
 import { RewardCard } from "@/src/components/reward-card"
 import { toast } from "sonner"
 import { useAuth } from "@/src/contexts/auth-context"
 import { ProtectedRoute } from "@/src/components/protected-route"
 import { isInWishlist, toggleWishlist } from "@/src/lib/wishlist"
-import { canEditProject, canCancelProject, canSupportProject, isProjectCreator } from "@/src/lib/permissions"
+import { canEditProject, canCancelProject, canSupportProject, isProjectCreator, isAdmin } from "@/src/lib/permissions"
+import type { ProjectStatus } from "@/src/types/api"
+
+/** 프로젝트 상태 한글 라벨 */
+const STATUS_LABELS: Record<ProjectStatus, string> = {
+  DRAFT: "오픈 전",
+  OPEN: "열림",
+  SUCCESS: "펀딩 성공",
+  FAILED: "실패",
+  CANCELED: "취소됨",
+  REJECTED: "관리자 거절",
+  STOP: "일시정지",
+}
+
+/** 비공개 상태: 작성자/어드민만 접근 가능 */
+function canViewProject(project: ProjectResponse, user: UserResponse | null): boolean {
+  if (!project) return false
+  if (project.status === "DRAFT" || project.status === "REJECTED" || project.status === "STOP") {
+    return isProjectCreator(project, user) || isAdmin(user)
+  }
+  return true
+}
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -52,6 +73,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     detailAddress: "",
     setAsDefault: false,
   })
+  const [adminActionDialog, setAdminActionDialog] = useState<"reject" | "force-stop" | "force-cancel" | null>(null)
+  const [adminActionReason, setAdminActionReason] = useState("")
 
   // 프로젝트 데이터 로드
   useEffect(() => {
@@ -301,6 +324,32 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     )
   }
 
+  // DRAFT/REJECTED/STOP: 작성자·어드민이 아니면 비공개 화면
+  if (!canViewProject(project, user)) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <main className="container mx-auto flex min-h-[60vh] flex-col items-center justify-center px-4 py-8">
+          <Card className="max-w-md">
+            <CardHeader>
+              <CardTitle>접근할 수 없습니다</CardTitle>
+              <CardDescription>
+                {project.status === "DRAFT" && "이 프로젝트는 아직 공개되지 않았습니다."}
+                {project.status === "REJECTED" && "관리자에 의해 거절된 프로젝트입니다."}
+                {project.status === "STOP" && "관리자에 의해 일시정지된 프로젝트입니다."}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" onClick={() => router.push("/projects")}>
+                프로젝트 목록으로
+              </Button>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -367,18 +416,73 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   )}
                   
                   <Badge className="absolute left-4 top-4">크라우드펀딩</Badge>
-                  {project.status === "OPEN" && (
-                    <Badge className="absolute right-4 top-4 bg-primary">진행 중</Badge>
-                  )}
-                  {project.status === "SUCCESS" && (
-                    <Badge className="absolute right-4 top-4 bg-green-500">성공</Badge>
-                  )}
-                  {project.status === "FAILED" && (
-                    <Badge variant="destructive" className="absolute right-4 top-4">실패</Badge>
-                  )}
+                  <Badge
+                    variant={
+                      project.status === "OPEN" || project.status === "SUCCESS"
+                        ? "default"
+                        : project.status === "FAILED" || project.status === "REJECTED" || project.status === "CANCELED"
+                        ? "destructive"
+                        : "secondary"
+                    }
+                    className={`absolute right-4 top-4 ${
+                      project.status === "SUCCESS" ? "bg-green-500" : ""
+                    } ${project.status === "STOP" ? "bg-amber-500" : ""}`}
+                  >
+                    {STATUS_LABELS[project.status] ?? project.status}
+                  </Badge>
                 </div>
               )
             })()}
+
+            {/* 상태별 배너 (DRAFT/REJECTED/STOP) */}
+            {project.status === "DRAFT" && (
+              <Alert className="mb-4 border-amber-500/50 bg-amber-500/10">
+                <AlertCircle className="size-4" />
+                <AlertDescription>
+                  <strong>미리보기</strong> — 아직 오픈 전입니다. 내용 확인 후 펀딩을 오픈해주세요.
+                </AlertDescription>
+              </Alert>
+            )}
+            {project.status === "REJECTED" && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="size-4" />
+                <AlertDescription>
+                  <strong>관리자에 의해 거절</strong>되었습니다. 자세한 사항은 문의해주세요.
+                </AlertDescription>
+              </Alert>
+            )}
+            {project.status === "STOP" && (
+              <Alert className="mb-4 border-amber-500/50 bg-amber-500/10">
+                <AlertCircle className="size-4" />
+                <AlertDescription>
+                  <strong>일시정지</strong> — 관리자에 의해 일시정지된 프로젝트입니다.
+                </AlertDescription>
+              </Alert>
+            )}
+            {project.status === "SUCCESS" && (
+              <Alert className="mb-4 border-green-500/50 bg-green-500/10">
+                <CheckCircle2 className="size-4 text-green-600" />
+                <AlertDescription>
+                  <strong>펀딩 성공!</strong> 목표 금액을 달성했습니다.
+                </AlertDescription>
+              </Alert>
+            )}
+            {project.status === "FAILED" && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="size-4" />
+                <AlertDescription>
+                  <strong>펀딩 실패</strong> — 목표 금액을 달성하지 못했습니다.
+                </AlertDescription>
+              </Alert>
+            )}
+            {project.status === "CANCELED" && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="size-4" />
+                <AlertDescription>
+                  <strong>취소됨</strong> — 작성자에 의해 취소된 프로젝트입니다.
+                </AlertDescription>
+              </Alert>
+            )}
 
             {/* Title and actions */}
             <div className="mb-6">
@@ -386,29 +490,32 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               <p className="mb-4 text-pretty text-lg text-muted-foreground">{project.description}</p>
 
               <div className="flex flex-wrap gap-3">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => {
-                    if (!project) return
-                    const newState = toggleWishlist(project.id, "project")
-                    setIsFavorite(newState)
-                    if (newState) {
-                      toast.success("찜하기에 추가되었습니다")
-                    } else {
-                      toast.info("찜하기에서 제거되었습니다")
-                    }
-                  }}
-                >
-                  <Heart className={`mr-2 size-4 ${isFavorite ? "fill-red-500 text-red-500" : ""}`} />
-                  찜하기
-                </Button>
-                <Button variant="outline" size="sm">
-                  <Share2 className="mr-2 size-4" />
-                  공유하기
-                </Button>
-                
-                {/* 판매자 전용 버튼 */}
+                {project.status !== "DRAFT" && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (!project) return
+                        const newState = toggleWishlist(project.id, "project")
+                        setIsFavorite(newState)
+                        if (newState) {
+                          toast.success("찜하기에 추가되었습니다")
+                        } else {
+                          toast.info("찜하기에서 제거되었습니다")
+                        }
+                      }}
+                    >
+                      <Heart className={`mr-2 size-4 ${isFavorite ? "fill-red-500 text-red-500" : ""}`} />
+                      찜하기
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      <Share2 className="mr-2 size-4" />
+                      공유하기
+                    </Button>
+                  </>
+                )}
+                {/* 작성자 전용 버튼 */}
                 {canEditProject(project, user) && (
                   <Button 
                     variant="outline" 
@@ -598,48 +705,185 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     <span className="text-muted-foreground">상태</span>
                     <Badge
                       variant={
-                        project.status === "OPEN"
+                        project.status === "OPEN" || project.status === "SUCCESS"
                           ? "default"
-                          : project.status === "SUCCESS"
-                          ? "default"
+                          : project.status === "FAILED" || project.status === "REJECTED" || project.status === "CANCELED"
+                          ? "destructive"
                           : "secondary"
                       }
+                      className={project.status === "SUCCESS" ? "bg-green-500" : project.status === "STOP" ? "bg-amber-500" : ""}
                     >
-                      {project.status === "OPEN"
-                        ? "진행 중"
-                        : project.status === "SUCCESS"
-                        ? "성공"
-                        : project.status === "FAILED"
-                        ? "실패"
-                        : project.status === "CANCELED"
-                        ? "취소됨"
-                        : "초안"}
+                      {STATUS_LABELS[project.status] ?? project.status}
                     </Badge>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* 자기 프로젝트일 때 버튼들 */}
-              {isProjectCreator(project, user) && (
+              {/* 어드민 전용: 크라우드펀딩 관리 (AdminController 기준) */}
+              {isAdmin(user) && (
                 <div className="space-y-2">
                   {project.status === "DRAFT" && (
+                    <>
+                      <Button
+                        size="lg"
+                        className="w-full"
+                        onClick={async () => {
+                          try {
+                            await adminApi.approveProject(project.id)
+                            toast.success("펀딩이 오픈되었습니다!")
+                            const updated = await projectApi.getProject(project.id)
+                            setProject(updated)
+                          } catch (error) {
+                            toast.error(error instanceof Error ? error.message : "펀딩 오픈에 실패했습니다")
+                          }
+                        }}
+                      >
+                        펀딩 오픈 승인
+                      </Button>
+                      <Button
+                        size="lg"
+                        variant="destructive"
+                        className="w-full"
+                        onClick={() => {
+                          setAdminActionReason("")
+                          setAdminActionDialog("reject")
+                        }}
+                      >
+                        프로젝트 거절
+                      </Button>
+                    </>
+                  )}
+                  {project.status === "OPEN" && (
+                    <>
+                      <Button
+                        size="lg"
+                        variant="outline"
+                        className="w-full border-amber-500 text-amber-600 hover:bg-amber-50"
+                        onClick={() => {
+                          setAdminActionReason("")
+                          setAdminActionDialog("force-stop")
+                        }}
+                      >
+                        강제 정지
+                      </Button>
+                      <Button
+                        size="lg"
+                        variant="destructive"
+                        className="w-full"
+                        onClick={() => {
+                          setAdminActionReason("")
+                          setAdminActionDialog("force-cancel")
+                        }}
+                      >
+                        강제 취소 (환불)
+                      </Button>
+                    </>
+                  )}
+                  {project.status === "STOP" && (
                     <Button
                       size="lg"
                       className="w-full"
                       onClick={async () => {
                         try {
-                          await projectApi.openFunding(project.id)
-                          toast.success("펀딩이 오픈되었습니다!")
+                          await adminApi.approveProject(project.id)
+                          toast.success("펀딩이 재개되었습니다!")
                           const updated = await projectApi.getProject(project.id)
                           setProject(updated)
                         } catch (error) {
-                          toast.error(error instanceof Error ? error.message : "펀딩 오픈에 실패했습니다")
+                          toast.error(error instanceof Error ? error.message : "펀딩 재개에 실패했습니다")
                         }
                       }}
                     >
-                      펀딩 오픈하기
+                      펀딩 재개
                     </Button>
                   )}
+                </div>
+              )}
+
+              {/* 어드민 전용 다이얼로그: 거절/강제정지/강제취소 사유 입력 */}
+              {adminActionDialog && (
+                <Dialog
+                  open={!!adminActionDialog}
+                  onOpenChange={(open) => {
+                    if (!open) {
+                      setAdminActionDialog(null)
+                      setAdminActionReason("")
+                    }
+                  }}
+                >
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>
+                        {adminActionDialog === "reject" && "프로젝트 거절"}
+                        {adminActionDialog === "force-stop" && "프로젝트 강제 정지"}
+                        {adminActionDialog === "force-cancel" && "프로젝트 강제 취소"}
+                      </DialogTitle>
+                      <DialogDescription>
+                        {adminActionDialog === "reject" && "거절 사유를 입력해주세요."}
+                        {adminActionDialog === "force-stop" && "정지 사유를 입력해주세요."}
+                        {adminActionDialog === "force-cancel" && "취소 사유를 입력해주세요. (환불이 진행됩니다)"}
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="admin-reason">사유 *</Label>
+                        <textarea
+                          id="admin-reason"
+                          value={adminActionReason}
+                          onChange={(e) => setAdminActionReason(e.target.value)}
+                          placeholder="사유를 입력해주세요"
+                          rows={4}
+                          className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          className="flex-1"
+                          onClick={() => {
+                            setAdminActionDialog(null)
+                            setAdminActionReason("")
+                          }}
+                        >
+                          취소
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          className="flex-1"
+                          disabled={!adminActionReason.trim()}
+                          onClick={async () => {
+                            if (!adminActionReason.trim()) return
+                            try {
+                              if (adminActionDialog === "reject") {
+                                await adminApi.rejectProject(project.id, adminActionReason.trim())
+                                toast.success("프로젝트가 거절되었습니다")
+                              } else if (adminActionDialog === "force-stop") {
+                                await adminApi.forceStopProject(project.id, adminActionReason.trim())
+                                toast.success("프로젝트가 정지되었습니다")
+                              } else if (adminActionDialog === "force-cancel") {
+                                await adminApi.forceCancelProject(project.id, adminActionReason.trim())
+                                toast.success("프로젝트가 취소되었습니다 (환불 진행)")
+                              }
+                              setAdminActionDialog(null)
+                              setAdminActionReason("")
+                              const updated = await projectApi.getProject(project.id)
+                              setProject(updated)
+                            } catch (error) {
+                              toast.error(error instanceof Error ? error.message : "처리 중 오류가 발생했습니다")
+                            }
+                          }}
+                        >
+                          확인
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
+
+              {/* 자기 프로젝트일 때 버튼들 */}
+              {isProjectCreator(project, user) && (
+                <div className="space-y-2">
                   {canEditProject(project, user) && (
                     <Button
                       size="lg"

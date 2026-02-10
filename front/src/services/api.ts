@@ -38,6 +38,14 @@ const S3_IMAGE_BASE_URL =
   process.env.NEXT_PUBLIC_S3_IMAGE_BASE_URL ||
   'https://ddip-image.s3.ap-northeast-2.amazonaws.com';
 
+/** DB role (ADMIN | USER) 정규화 - 백엔드 role 또는 구 role_level 지원 */
+function normalizeUserRole(val: unknown): 'ADMIN' | 'USER' | undefined {
+  if (val === 'ADMIN' || val === 'USER') return val;
+  if (typeof val === 'number' && val >= 50) return 'ADMIN'; // 구 role_level 호환
+  if (typeof val === 'number' && val < 50) return 'USER';
+  return undefined;
+}
+
 /** S3 키 또는 이미 전체 URL인 값을 브라우저에서 접근 가능한 URL로 변환 */
 function toS3ImageUrl(keyOrUrl: string | null | undefined): string | null {
   if (!keyOrUrl || typeof keyOrUrl !== 'string') return null;
@@ -659,6 +667,50 @@ export const projectApi = {
   },
 };
 
+// API 함수들 - 관리자 (AdminController 기준)
+export const adminApi = {
+  /**
+   * 프로젝트 OPEN 승인 (DRAFT → OPEN)
+   * POST /api/admin/projects/{projectId}/approve
+   */
+  approveProject: async (projectId: number): Promise<void> => {
+    await apiRequest(`/api/admin/projects/${projectId}/approve`, { method: 'POST' });
+  },
+
+  /**
+   * 프로젝트 거절 (DRAFT → REJECTED)
+   * POST /api/admin/projects/{projectId}/reject
+   */
+  rejectProject: async (projectId: number, reason: string): Promise<void> => {
+    await apiRequest(`/api/admin/projects/${projectId}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+  },
+
+  /**
+   * 프로젝트 강제 정지 (OPEN → STOP)
+   * POST /api/admin/projects/{projectId}/force-stop
+   */
+  forceStopProject: async (projectId: number, reason: string): Promise<void> => {
+    await apiRequest(`/api/admin/projects/${projectId}/force-stop`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+  },
+
+  /**
+   * 프로젝트 강제 취소 (환불 포함)
+   * POST /api/admin/projects/{projectId}/force-cancel
+   */
+  forceCancelProject: async (projectId: number, reason: string): Promise<void> => {
+    await apiRequest(`/api/admin/projects/${projectId}/force-cancel`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+  },
+};
+
 // API 함수들 - 경매 관련
 export const auctionApi = {
   /**
@@ -1134,7 +1186,7 @@ export const userApi = {
           nickname: backendResponse.user.nickname || '',
           profileImageUrl: backendResponse.user.profileImageUrl || backendResponse.user.profile_image_url || null,
           phone: backendResponse.user.phone || backendResponse.user.phoneNumber || null,
-          roleLevel: backendResponse.user.roleLevel || backendResponse.user.role_level || 0,
+          role: normalizeUserRole(backendResponse.user.role ?? backendResponse.user.role_level),
         } : {
           id: 0,
           email: null,
@@ -1232,7 +1284,7 @@ export const userApi = {
           nickname: backendResponse.user.nickname || '',
           profileImageUrl: backendResponse.user.profileImageUrl || backendResponse.user.profile_image_url || null,
           phone: backendResponse.user.phone || backendResponse.user.phoneNumber || null,
-          roleLevel: backendResponse.user.roleLevel || backendResponse.user.role_level || 0,
+          role: normalizeUserRole(backendResponse.user.role ?? backendResponse.user.role_level),
         } : {
           id: 0,
           email: null,
@@ -1294,7 +1346,7 @@ export const userApi = {
         nickname: backendResponse.nickname || '',
         profileImageUrl: backendResponse.profileImageUrl || backendResponse.profile_image_url || null,
         phone: backendResponse.phone || backendResponse.phoneNumber || null,
-        roleLevel: backendResponse.roleLevel || backendResponse.role_level || 0,
+        role: normalizeUserRole(backendResponse.role ?? backendResponse.role_level),
       };
     } catch (error) {
       throw error;
@@ -1563,6 +1615,7 @@ export const authApi = {
         nickname: backendResponse.nickname ?? '',
         profileImageUrl: backendResponse.profileImageUrl ?? backendResponse.profile_image_url ?? null,
         phone: backendResponse.phone ?? backendResponse.phoneNumber ?? backendResponse.phone_number ?? null,
+        role: normalizeUserRole(backendResponse.role ?? backendResponse.role_level),
       };
       
       // 사용자 정보를 localStorage에 저장
@@ -1697,7 +1750,7 @@ export const authApi = {
           nickname: backendResponse.nickname ?? '',
           profileImageUrl: backendResponse.profileImageUrl ?? backendResponse.profile_image_url ?? null,
           phone: backendResponse.phone ?? backendResponse.phoneNumber ?? backendResponse.phone_number ?? null,
-          roleLevel: backendResponse.roleLevel ?? backendResponse.role_level ?? 0,
+          role: normalizeUserRole(backendResponse.role ?? backendResponse.role_level),
         };
       } else {
         // 응답에 사용자 정보가 없는 경우, 새 토큰으로 사용자 정보 조회

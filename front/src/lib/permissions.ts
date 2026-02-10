@@ -1,64 +1,23 @@
 /**
  * 권한 관리 유틸리티
- * OAuth 도입 시에도 확장 가능하도록 설계
- * 
- * 권한 레벨 시스템:
- * - 0: 일반 사용자 (USER)
- * - 50: 중간 관리자 (MODERATOR)
- * - 100: 최고 관리자 (ADMIN)
+ * DB role enum: ADMIN | USER
  */
 
-import { UserResponse, USER_ROLE_LEVEL } from "@/src/types/api"
+import { UserResponse } from "@/src/types/api"
 import { ProjectResponse, AuctionResponse } from "@/src/types/api"
 
 /**
- * 사용자의 권한 레벨 가져오기 (기본값: 일반 사용자)
- */
-export function getUserRoleLevel(user: UserResponse | null): number {
-  return user?.roleLevel ?? USER_ROLE_LEVEL.USER
-}
-
-/**
- * 일반 사용자인지 확인 (0 이상 50 미만)
- */
-export function isUser(user: UserResponse | null): boolean {
-  const level = getUserRoleLevel(user)
-  return level >= USER_ROLE_LEVEL.USER && level < USER_ROLE_LEVEL.MODERATOR
-}
-
-/**
- * 중간 관리자 이상인지 확인 (50 이상)
- */
-export function isModeratorOrAbove(user: UserResponse | null): boolean {
-  const level = getUserRoleLevel(user)
-  return level >= USER_ROLE_LEVEL.MODERATOR
-}
-
-/**
- * 중간 관리자인지 확인 (50 이상 100 미만)
- */
-export function isModerator(user: UserResponse | null): boolean {
-  const level = getUserRoleLevel(user)
-  return level >= USER_ROLE_LEVEL.MODERATOR && level < USER_ROLE_LEVEL.ADMIN
-}
-
-/**
- * 최고 관리자인지 확인 (100 이상)
+ * 관리자인지 확인 (role === 'ADMIN')
  */
 export function isAdmin(user: UserResponse | null): boolean {
-  const level = getUserRoleLevel(user)
-  return level >= USER_ROLE_LEVEL.ADMIN
+  return user?.role === 'ADMIN'
 }
 
 /**
- * 특정 권한 레벨 이상인지 확인
+ * 일반 사용자인지 확인 (role === 'USER' 또는 role 없음)
  */
-export function hasRoleLevelOrAbove(
-  user: UserResponse | null,
-  requiredLevel: number
-): boolean {
-  const level = getUserRoleLevel(user)
-  return level >= requiredLevel
+export function isUser(user: UserResponse | null): boolean {
+  return !user || user.role === 'USER' || !user.role
 }
 
 /**
@@ -140,6 +99,18 @@ export function canCancelAuction(
 }
 
 /**
+ * 어드민만 펀딩 오픈 가능 (DRAFT → OPEN 전환)
+ */
+export function canOpenFunding(
+  project: ProjectResponse,
+  user: UserResponse | null
+): boolean {
+  if (!user || !project) return false
+  if (project.status !== "DRAFT") return false
+  return isAdmin(user)
+}
+
+/**
  * 사용자가 프로젝트에 후원할 수 있는지 확인
  * - 로그인한 사용자만 가능
  * - 생성자는 자신의 프로젝트에 후원 불가
@@ -191,18 +162,16 @@ export function canDeleteAnyAuction(user: UserResponse | null): boolean {
 
 /**
  * 관리자 전용: 프로젝트 상태를 강제로 변경할 수 있는지 확인
- * - 중간 관리자 이상 가능 (50 이상)
  */
 export function canForceUpdateProjectStatus(user: UserResponse | null): boolean {
-  return isModeratorOrAbove(user)
+  return isAdmin(user)
 }
 
 /**
  * 관리자 전용: 경매 상태를 강제로 변경할 수 있는지 확인
- * - 중간 관리자 이상 가능 (50 이상)
  */
 export function canForceUpdateAuctionStatus(user: UserResponse | null): boolean {
-  return isModeratorOrAbove(user)
+  return isAdmin(user)
 }
 
 /**

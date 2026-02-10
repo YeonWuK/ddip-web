@@ -1,11 +1,5 @@
-// 권한 레벨 상수
-export const USER_ROLE_LEVEL = {
-  USER: 0,           // 일반 사용자
-  MODERATOR: 50,     // 중간 관리자
-  ADMIN: 100,        // 최고 관리자
-} as const
-
-export type UserRoleLevel = typeof USER_ROLE_LEVEL[keyof typeof USER_ROLE_LEVEL]
+// DB role enum: ADMIN | USER
+export type UserRole = 'ADMIN' | 'USER';
 
 // 공통 사용자 타입
 export interface UserResponse {
@@ -15,7 +9,7 @@ export interface UserResponse {
   nickname: string;
   profileImageUrl: string | null;
   phone: string | null;
-  roleLevel?: number; // 권한 레벨 (0: 일반 사용자, 50: 중간 관리자, 100: 최고 관리자)
+  role?: UserRole; // ADMIN: 관리자, USER: 일반 사용자
 }
 
 // 인증 관련 타입
@@ -87,6 +81,16 @@ export interface ProjectUpdateRequest extends Partial<ProjectCreateRequest> {
   removedImageUrls?: string[];
 }
 
+// 프로젝트 상태 (백엔드 ProjectStatus enum)
+export type ProjectStatus =
+  | 'DRAFT'      // 오픈 전
+  | 'OPEN'      // 열림 (진행 중)
+  | 'SUCCESS'   // 펀딩 성공
+  | 'FAILED'    // 실패
+  | 'CANCELED'  // 유저 직접 취소
+  | 'REJECTED'  // 어드민 거절
+  | 'STOP';     // 어드민 일시정지
+
 // 프로젝트 관련 타입
 export interface RewardTierResponse {
   id: number;
@@ -108,7 +112,7 @@ export interface ProjectResponse {
   imageUrls?: string[] | null; // 다중 이미지 (최대 3장)
   targetAmount: number;
   currentAmount: number;
-  status: 'DRAFT' | 'OPEN' | 'SUCCESS' | 'FAILED' | 'CANCELED';
+  status: ProjectStatus;
   startAt: string;
   endAt: string;
   rewardTiers: RewardTierResponse[];
