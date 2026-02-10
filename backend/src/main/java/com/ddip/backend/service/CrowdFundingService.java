@@ -1,9 +1,9 @@
 package com.ddip.backend.service;
 
 import com.ddip.backend.dto.admin.crowdfunding.AdminProjectSearchCondition;
-import com.ddip.backend.dto.crowd.ProjectRequestDto;
-import com.ddip.backend.dto.crowd.ProjectResponseDto;
-import com.ddip.backend.dto.crowd.ProjectUpdateRequestDto;
+import com.ddip.backend.dto.crowd.project.ProjectRequestDto;
+import com.ddip.backend.dto.crowd.project.ProjectResponseDto;
+import com.ddip.backend.dto.crowd.project.ProjectUpdateRequestDto;
 import com.ddip.backend.dto.enums.ProjectStatus;
 import com.ddip.backend.entity.Project;
 import com.ddip.backend.entity.ProjectImage;

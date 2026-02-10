@@ -21,6 +21,9 @@ public class Pledge extends BaseTimeEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "order_id", nullable = false, length = 64)
+    private String orderId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id", nullable = false)
     private Project project;
@@ -43,8 +46,9 @@ public class Pledge extends BaseTimeEntity {
     @Column(length = 20, nullable = false)
     private PledgeStatus status;
 
-    public static Pledge toEntity(User user, Project project, RewardTier rewardTier, long requiredAmount, long quantity) {
+    public static Pledge toEntity(String orderId, User user, Project project, RewardTier rewardTier, long requiredAmount, long quantity) {
         return Pledge.builder()
+                .orderId(orderId)
                 .user(user)
                 .project(project)
                 .rewardTier(rewardTier)

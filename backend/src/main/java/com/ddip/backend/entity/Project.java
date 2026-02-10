@@ -1,8 +1,8 @@
 package com.ddip.backend.entity;
 
-import com.ddip.backend.dto.crowd.ProjectRequestDto;
-import com.ddip.backend.dto.crowd.ProjectUpdateRequestDto;
-import com.ddip.backend.dto.crowd.RewardTierRequestDto;
+import com.ddip.backend.dto.crowd.project.ProjectRequestDto;
+import com.ddip.backend.dto.crowd.project.ProjectUpdateRequestDto;
+import com.ddip.backend.dto.crowd.reward.RewardTierRequestDto;
 import com.ddip.backend.dto.enums.ProjectStatus;
 import com.ddip.backend.exception.project.InvalidProjectStatusException;
 import com.ddip.backend.exception.project.ProjectAccessDeniedException;
