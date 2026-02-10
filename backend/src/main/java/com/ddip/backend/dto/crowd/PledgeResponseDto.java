@@ -16,8 +16,6 @@ import java.time.LocalDateTime;
 public class PledgeResponseDto {
 
     private Long pledgeId;
-    private Long projectId;
-    private Long userId;
     private Long rewardTierId;
     private Long amount;
     private PledgeStatus status;
@@ -26,8 +24,6 @@ public class PledgeResponseDto {
     public static PledgeResponseDto from(Pledge pledge) {
         return PledgeResponseDto.builder()
                 .pledgeId(pledge.getId())
-                .projectId(pledge.getProject().getId())
-                .userId(pledge.getUser().getId())
                 .rewardTierId(pledge.getRewardTier() == null ? null : pledge.getRewardTier().getId())
                 .amount(pledge.getPaidAmount())
                 .status(pledge.getStatus())
