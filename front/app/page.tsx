@@ -14,9 +14,9 @@ import { Loader2, Package, Gavel, Clock, ArrowRight, Sparkles } from "lucide-rea
 
 export default function HomePage() {
   const [popularProjects, setPopularProjects] = useState<ProjectResponse[]>([])
-  const [popularAuctions, setPopularAuctions] = useState<AuctionSummary[]>([])
+  const [popularAuctions, setPopularAuctions] = useState<AuctionResponse[]>([])
   const [urgentProjects, setUrgentProjects] = useState<ProjectResponse[]>([])
-  const [urgentAuctions, setUrgentAuctions] = useState<AuctionSummary[]>([])
+  const [urgentAuctions, setUrgentAuctions] = useState<AuctionResponse[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -31,18 +31,16 @@ export default function HomePage() {
           auctionApi.getAuctions({ limit: 50 }).catch(() => [] as AuctionSummary[]),
         ])
         
-        // 인기 프로젝트: OPEN(진행 중)만 노출, 후원자 수 기준 정렬
-        const openProjects = allProjects.filter((p) => p.status === 'OPEN')
-        const sortedByPopularity = [...openProjects].sort((a, b) => {
+        // 인기 프로젝트: 후원자 수 기준 정렬
+        const sortedByPopularity = [...allProjects].sort((a, b) => {
           const backersA = (a.rewardTiers ?? []).reduce((sum, tier) => sum + tier.soldQuantity, 0)
           const backersB = (b.rewardTiers ?? []).reduce((sum, tier) => sum + tier.soldQuantity, 0)
           return backersB - backersA
         })
         setPopularProjects(sortedByPopularity.slice(0, 8))
         
-        // 인기 경매: RUNNING(진행 중)만 노출
-        const runningAuctions = allAuctions.filter((a) => a.status === 'RUNNING')
-        const sortedAuctions = [...runningAuctions].sort((a, b) => b.id - a.id)
+        // 인기 경매: 입찰 수 기준 (현재는 ID 순으로 대체)
+        const sortedAuctions = [...allAuctions].sort((a, b) => b.id - a.id)
         setPopularAuctions(sortedAuctions.slice(0, 8))
         
         // 마감 임박 프로젝트: 24시간 이내 마감
@@ -59,11 +57,11 @@ export default function HomePage() {
         })
         setUrgentProjects(urgentProj.slice(0, 8))
         
-        // 마감 임박 경매: 24시간 이내 마감, RUNNING만
+        // 마감 임박 경매: 24시간 이내 마감
         const urgentAuc = allAuctions.filter(auction => {
           const endTime = new Date(auction.endAt).getTime()
           const hoursLeft = (endTime - now) / (1000 * 60 * 60)
-          return hoursLeft <= 24 && hoursLeft > 0 && auction.status === 'RUNNING'
+          return hoursLeft <= 24 && hoursLeft > 0 && (auction.status === 'RUNNING' || auction.status === 'SCHEDULED')
         })
         urgentAuc.sort((a, b) => {
           const endTimeA = new Date(a.endAt).getTime()
@@ -95,18 +93,15 @@ export default function HomePage() {
           auctionApi.getAuctions({ limit: 50 }).catch(() => [] as AuctionSummary[]),
         ])
         
-        // 인기 프로젝트: OPEN만, 후원자 수 정렬
-        const openProjects = allProjects.filter((p) => p.status === 'OPEN')
-        const sortedByPopularity = [...openProjects].sort((a, b) => {
+        // 인기 프로젝트 정렬
+        const sortedByPopularity = [...allProjects].sort((a, b) => {
           const backersA = (a.rewardTiers ?? []).reduce((sum, tier) => sum + tier.soldQuantity, 0)
           const backersB = (b.rewardTiers ?? []).reduce((sum, tier) => sum + tier.soldQuantity, 0)
           return backersB - backersA
         })
         setPopularProjects(sortedByPopularity.slice(0, 8))
         
-        // 인기 경매: RUNNING만
-        const runningAuctions = allAuctions.filter((a) => a.status === 'RUNNING')
-        const sortedAuctions = [...runningAuctions].sort((a, b) => b.id - a.id)
+        const sortedAuctions = [...allAuctions].sort((a, b) => b.id - a.id)
         setPopularAuctions(sortedAuctions.slice(0, 8))
         
         // 마감 임박 항목 업데이트
@@ -126,7 +121,7 @@ export default function HomePage() {
         const urgentAuc = allAuctions.filter(auction => {
           const endTime = new Date(auction.endAt).getTime()
           const hoursLeft = (endTime - now) / (1000 * 60 * 60)
-          return hoursLeft <= 24 && hoursLeft > 0 && auction.status === 'RUNNING'
+          return hoursLeft <= 24 && hoursLeft > 0 && (auction.status === 'RUNNING' || auction.status === 'SCHEDULED')
         })
         urgentAuc.sort((a, b) => {
           const endTimeA = new Date(a.endAt).getTime()

@@ -14,7 +14,7 @@ interface RewardCardProps {
   remaining?: number
   backers: number
   featured?: boolean
-  /** 펀딩 OPEN일 때만 true, 미리보기(DRAFT 등)에서는 false */
+  /** OPEN일 때만 true (DRAFT 등에서는 false) */
   selectable?: boolean
   onSelect?: () => void
 }

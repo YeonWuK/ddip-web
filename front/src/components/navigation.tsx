@@ -15,7 +15,6 @@ import {
   Rocket,
   Gavel,
   Search,
-  Coins,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -91,11 +90,6 @@ export function Navigation() {
             <div className="size-10" /> // 로딩 중 플레이스홀더
           ) : isAuthenticated ? (
             <>
-              {/* 포인트 표시 */}
-              <div className="flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1.5 text-sm font-medium">
-                <Coins className="size-4 text-amber-500" />
-                <span>{(user?.pointBalance ?? 0).toLocaleString()}P</span>
-              </div>
               {/* 알림 아이콘 */}
               <Button variant="ghost" size="icon" className="relative">
                 <Bell className="size-5" />

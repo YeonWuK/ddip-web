@@ -203,6 +203,7 @@ export const projectApi = {
           soldQuantity: tier.soldQuantity ?? tier.sold_quantity ?? 0,
           soldOut: tier.soldOut ?? false,
         })),
+          backerCount: backendProject.backerCount ?? backendProject.backer_count,
           createdAt,
           categoryPath: backendProject.categoryPath || backendProject.category_path || null,
           tags: backendProject.tags || null,
@@ -345,6 +346,7 @@ export const projectApi = {
           soldQuantity: tier.soldQuantity ?? tier.sold_quantity ?? 0,
           soldOut: tier.soldOut ?? false,
         })),
+        backerCount: backendResponse.backerCount ?? backendResponse.backer_count,
         createdAt,
         categoryPath: backendResponse.categoryPath || backendResponse.category_path || null,
         tags: backendResponse.tags || null,
@@ -518,23 +520,28 @@ export const projectApi = {
   /**
    * 리워드 구매 (Pledge 생성)
    * POST /api/crowd/pledges/{projectId}
-   * 백엔드 PledgeCreateRequestDto: rewardTierId (Long), quantity (Integer)
+   * 백엔드 PledgeCreateRequestDto: items (List, @NotEmpty) [{ rewardTierId, quantity }]
    */
   createPledge: async (
     projectId: number,
     data: PledgeCreateRequest
   ): Promise<PledgeResponse> => {
     try {
-      const rewardTierId = data.rewardTierId ?? data.items?.[0]?.rewardTierId
-      const quantity = data.quantity ?? data.items?.[0]?.quantity ?? 1
+      const items = data.items?.length
+        ? data.items
+        : (data.rewardTierId != null
+            ? [{ rewardTierId: data.rewardTierId, quantity: data.quantity ?? 1 }]
+            : []);
 
-      if (rewardTierId == null) {
+      if (items.length === 0) {
         throw new Error('구매할 리워드를 선택해주세요');
       }
 
       const requestBody = {
-        rewardTierId: Number(rewardTierId),
-        quantity: Math.max(1, Number(quantity) || 1),
+        items: items.map((item) => ({
+          rewardTierId: Number(item.rewardTierId),
+          quantity: Math.max(1, Number(item.quantity) || 1),
+        })),
       };
 
       const backendResponse = await apiRequest<any>(`/api/crowd/pledges/${projectId}`, {
@@ -542,12 +549,13 @@ export const projectApi = {
         body: JSON.stringify(requestBody),
       });
 
+      const firstItem = items[0];
       const pledge: PledgeResponse = {
         pledgeId: backendResponse.pledgeId ?? backendResponse.id ?? 0,
         id: backendResponse.pledgeId ?? backendResponse.id,
         projectId: backendResponse.projectId ?? projectId,
         userId: backendResponse.userId,
-        rewardTierId: backendResponse.rewardTierId ?? rewardTierId,
+        rewardTierId: backendResponse.rewardTierId ?? firstItem.rewardTierId,
         amount: backendResponse.amount ?? 0,
         status: backendResponse.status,
         createdAt: backendResponse.createdAt || new Date().toISOString(),
@@ -1347,7 +1355,6 @@ export const userApi = {
         profileImageUrl: backendResponse.profileImageUrl || backendResponse.profile_image_url || null,
         phone: backendResponse.phone || backendResponse.phoneNumber || null,
         role: normalizeUserRole(backendResponse.role ?? backendResponse.role_level),
-        pointBalance: backendResponse.pointBalance ?? backendResponse.point_balance ?? 0,
       };
     } catch (error) {
       throw error;
@@ -1417,11 +1424,7 @@ export const authApi = {
       
       if (responseData.user) {
         // 로그인 응답에 사용자 정보가 포함되어 있는 경우
-        const u = responseData.user;
-        user = {
-          ...u,
-          pointBalance: u.pointBalance ?? u.point_balance ?? 0,
-        };
+        user = responseData.user;
         if (user) {
           tokenStorage.setUser(user);
         }
@@ -1434,7 +1437,6 @@ export const authApi = {
           nickname: responseData.nickname || '',
           profileImageUrl: responseData.profileImageUrl || null,
           phone: responseData.phoneNumber || responseData.phone || null,
-          pointBalance: responseData.pointBalance ?? responseData.point_balance ?? 0,
         };
         tokenStorage.setUser(user);
       } else {
@@ -1622,7 +1624,6 @@ export const authApi = {
         profileImageUrl: backendResponse.profileImageUrl ?? backendResponse.profile_image_url ?? null,
         phone: backendResponse.phone ?? backendResponse.phoneNumber ?? backendResponse.phone_number ?? null,
         role: normalizeUserRole(backendResponse.role ?? backendResponse.role_level),
-        pointBalance: backendResponse.pointBalance ?? backendResponse.point_balance ?? 0,
       };
       
       // 사용자 정보를 localStorage에 저장
@@ -1758,7 +1759,6 @@ export const authApi = {
           profileImageUrl: backendResponse.profileImageUrl ?? backendResponse.profile_image_url ?? null,
           phone: backendResponse.phone ?? backendResponse.phoneNumber ?? backendResponse.phone_number ?? null,
           role: normalizeUserRole(backendResponse.role ?? backendResponse.role_level),
-          pointBalance: backendResponse.pointBalance ?? backendResponse.point_balance ?? 0,
         };
       } else {
         // 응답에 사용자 정보가 없는 경우, 새 토큰으로 사용자 정보 조회

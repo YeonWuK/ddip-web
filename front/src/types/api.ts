@@ -10,8 +10,6 @@ export interface UserResponse {
   profileImageUrl: string | null;
   phone: string | null;
   role?: UserRole; // ADMIN: 관리자, USER: 일반 사용자
-  /** 보유 포인트 (point_balance) */
-  pointBalance?: number;
 }
 
 // 인증 관련 타입
@@ -122,6 +120,8 @@ export interface ProjectResponse {
   categoryPath?: string | null;
   tags?: string | null;
   summary?: string | null;
+  /** 참여자 수 (pledge 건수, 백엔드 제공 시) */
+  backerCount?: number;
 }
 
 // 경매 상태 타입
@@ -209,13 +209,11 @@ export interface PledgeItemRequest {
 }
 
 export interface PledgeCreateRequest {
-  /** 리워드 티어 ID (백엔드 필수) */
+  /** rewardTierId + quantity (items 없을 때 사용) */
   rewardTierId?: number;
-  /** 수량 (백엔드 필수, 기본 1) */
   quantity?: number;
-  /** 하위 호환: items[0]에서 rewardTierId, quantity 사용 */
+  /** 구매할 리워드 아이템 목록 (백엔드 필수) */
   items?: PledgeItemRequest[];
-  /** 추가 후원 - 백엔드 DTO에 없으면 무시 */
   donateAmount?: number;
 }
 

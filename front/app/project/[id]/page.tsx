@@ -221,18 +221,17 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       toast.error(`최소 ${minAmount.toLocaleString()}원 이상 후원해주세요`)
       return
     }
-
-    const tierId = selectedTier.rewardTierId ?? selectedTier.id
     if (selectedTier.limitQuantity != null && quantity > selectedTier.limitQuantity - selectedTier.soldQuantity) {
       toast.error(`남은 수량(${selectedTier.limitQuantity - selectedTier.soldQuantity}개)을 초과할 수 없습니다`)
       return
     }
 
+    const tierId = selectedTier.rewardTierId ?? selectedTier.id
+
     try {
       setIsSupporting(true)
       await projectApi.createPledge(project.id, {
-        rewardTierId: tierId,
-        quantity,
+        items: [{ rewardTierId: tierId, quantity }],
       })
 
       toast.success("리워드 구매가 완료되었습니다!")
@@ -654,7 +653,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     <div className="mb-2 text-sm text-muted-foreground">
                       목표 금액: {project.targetAmount.toLocaleString()}원
                     </div>
-                    <Progress value={progress} className="h-2" />
+                    <Progress value={Math.min(progress, 100)} className="h-2" />
                     <div className="mt-2 text-right text-sm font-medium">{progress.toFixed(0)}% 달성</div>
                   </div>
 
@@ -667,7 +666,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                         <span className="text-xs">참여자</span>
                       </div>
                       <p className="text-xl font-bold">
-                        {project.rewardTiers.reduce((sum, tier) => sum + tier.soldQuantity, 0).toLocaleString()}명
+                        {(project.backerCount ?? project.rewardTiers.reduce((sum, tier) => sum + tier.soldQuantity, 0)).toLocaleString()}명
                       </p>
                     </div>
                     <div>
@@ -1016,11 +1015,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                           {selectedRewardTier && (() => {
                             const tier = project.rewardTiers.find(t => (t.rewardTierId ?? t.id) === selectedRewardTier)
                             const limitRemaining = tier?.limitQuantity ? tier.limitQuantity - tier.soldQuantity : null
-                            return limitRemaining != null && (
-                              <p className="text-xs text-muted-foreground">
-                                남은 수량: {limitRemaining}개
-                              </p>
-                            )
+                            return limitRemaining != null ? (
+                              <p className="text-xs text-muted-foreground">남은 수량: {limitRemaining}개</p>
+                            ) : null
                           })()}
                         </div>
                       )}
@@ -1043,7 +1040,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                         />
                         {selectedRewardTier && (
                           <p className="text-xs text-muted-foreground">
-                            선택한 리워드 티어: {project.rewardTiers.find(t => (t.rewardTierId ?? t.id) === selectedRewardTier)?.price.toLocaleString()}원 × {supportQuantity}개
+                            선택한 리워드: {project.rewardTiers.find(t => (t.rewardTierId ?? t.id) === selectedRewardTier)?.price.toLocaleString()}원 × {supportQuantity}개
                           </p>
                         )}
                         {!selectedRewardTier && project.rewardTiers.length > 0 && (
