@@ -82,7 +82,10 @@ export interface ProjectCreateRequest {
   rewardTiers: RewardTierRequest[];
 }
 
-export interface ProjectUpdateRequest extends Partial<ProjectCreateRequest> {}
+export interface ProjectUpdateRequest extends Partial<ProjectCreateRequest> {
+  /** 삭제할 이미지 URL 목록 (X 버튼으로 제거한 기존 이미지들) */
+  removedImageUrls?: string[];
+}
 
 // 프로젝트 관련 타입
 export interface RewardTierResponse {

@@ -127,39 +127,24 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
     try {
       setIsSubmitting(true)
 
-      // 이미지 처리: 새로 업로드한 파일이 있으면 base64로 변환, 없으면 기존 이미지 유지
-      let imageUrls: string[] | null = null
-      if (imageFiles.length > 0) {
-        // 새 이미지 업로드
-        imageUrls = await Promise.all(
-          imageFiles.map(
-            (file) =>
-              new Promise<string>((resolve, reject) => {
-                if (file.size > 5 * 1024 * 1024) {
-                  toast.error(`이미지 크기가 너무 큽니다: ${file.name} (최대 5MB)`)
-                  reject(new Error(`이미지 크기 초과: ${file.name}`))
-                  return
-                }
-                
-                const reader = new FileReader()
-                reader.onload = () => {
-                  const result = reader.result as string
-                  if (result.length > 2 * 1024 * 1024) {
-                    toast.warning(`이미지 ${file.name}의 크기가 큽니다. 저장 시 문제가 발생할 수 있습니다.`)
-                  }
-                  resolve(result)
-                }
-                reader.onerror = reject
-                reader.readAsDataURL(file)
-              })
-          )
-        )
-      } else if (existingImageUrls.length > 0) {
-        // 기존 이미지 유지
-        imageUrls = existingImageUrls
+      // 유지되는 기존 이미지 + 새 이미지 최소 1개 필요
+      const keptExistingCount = existingImageUrls.filter(
+        (_, i) => !removedExistingImageIndices.has(i)
+      ).length
+      if (keptExistingCount + imageFiles.length === 0) {
+        toast.error("프로젝트 이미지를 최소 1개 이상 유지해주세요")
+        setIsSubmitting(false)
+        return
       }
 
-      const imageUrl = imageUrls && imageUrls.length > 0 ? imageUrls[0] : null
+      // 새 이미지 파일 크기 검사
+      for (const file of imageFiles) {
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error(`이미지 크기가 너무 큽니다: ${file.name} (최대 5MB)`)
+          setIsSubmitting(false)
+          return
+        }
+      }
 
       // 날짜 유효성 검사 및 ISO 형식으로 변환
       if (!data.startAt || !data.endAt || data.startAt.trim() === "" || data.endAt.trim() === "") {
@@ -194,6 +179,11 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
       const startDateISO = startDateObj.toISOString()
       const endDateISO = endDateObj.toISOString()
 
+      // X 버튼으로 제거한 기존 이미지 URL 목록 (백엔드로 전달)
+      const removedImageUrls = existingImageUrls.filter((_, i) =>
+        removedExistingImageIndices.has(i)
+      )
+
       // 프로젝트 수정 (multipart/form-data)
       const updateData = {
         title: data.title,
@@ -210,6 +200,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
           price: tier.price,
           limitQuantity: tier.limitQuantity,
         })),
+        ...(removedImageUrls.length > 0 && { removedImageUrls }),
       }
 
       const updatedProject = await projectApi.updateProject(projectId, imageFiles, updateData)

@@ -432,6 +432,10 @@ export const projectApi = {
             limitQuantity: tier.limitQuantity,
           })),
         }),
+        ...(data.removedImageUrls !== undefined &&
+          data.removedImageUrls.length > 0 && {
+            removedImageUrls: data.removedImageUrls,
+          }),
       };
       formData.append('data', new Blob([JSON.stringify(dataPart)], { type: 'application/json' }));
 
