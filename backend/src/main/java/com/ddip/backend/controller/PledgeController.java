@@ -1,8 +1,8 @@
 package com.ddip.backend.controller;
 
-import com.ddip.backend.dto.crowd.project.PledgeCreateResponseDto;
-import com.ddip.backend.dto.crowd.reward.PledgeCreateRequestDto;
-import com.ddip.backend.dto.crowd.reward.PledgeResponseDto;
+import com.ddip.backend.dto.crowd.pledge.PledgeCreateResponseDto;
+import com.ddip.backend.dto.crowd.pledge.PledgeCreateRequestDto;
+import com.ddip.backend.dto.crowd.pledge.PledgeResponseDto;
 import com.ddip.backend.security.auth.CustomUserDetails;
 import com.ddip.backend.service.PledgeService;
 import jakarta.validation.Valid;
@@ -39,9 +39,9 @@ public class PledgeController {
      * GET /api/crowd/pledges/{pledgeId}
      */
     @GetMapping
-    public ResponseEntity<List<PledgeResponseDto>> getMyPledges(@AuthenticationPrincipal CustomUserDetails userDetails) {
+    public ResponseEntity<List<PledgeCreateResponseDto>> getMyPledges(@AuthenticationPrincipal CustomUserDetails userDetails) {
         Long userId = userDetails.getUserId();
-        List<PledgeResponseDto> response = pledgeService.getAllPledges(userId);
+        List<PledgeCreateResponseDto> response = pledgeService.getPledgeHistory(userId);
         return ResponseEntity.ok(response);
     }
 

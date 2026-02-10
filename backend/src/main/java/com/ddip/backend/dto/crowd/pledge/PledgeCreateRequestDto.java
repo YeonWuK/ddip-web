@@ -1,4 +1,4 @@
-package com.ddip.backend.dto.crowd.reward;
+package com.ddip.backend.dto.crowd.pledge;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;

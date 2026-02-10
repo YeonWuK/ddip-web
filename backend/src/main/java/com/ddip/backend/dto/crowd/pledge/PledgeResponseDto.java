@@ -1,4 +1,4 @@
-package com.ddip.backend.dto.crowd.reward;
+package com.ddip.backend.dto.crowd.pledge;
 
 import com.ddip.backend.dto.enums.PledgeStatus;
 import com.ddip.backend.entity.Pledge;

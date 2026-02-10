@@ -1,4 +1,4 @@
-package com.ddip.backend.dto.crowd.project;
+package com.ddip.backend.dto.crowd.pledge;
 
 import com.ddip.backend.dto.enums.PledgeStatus;
 import com.ddip.backend.entity.Pledge;
@@ -17,6 +17,7 @@ import java.util.List;
 public class PledgeCreateResponseDto {
 
     private Long projectId;
+    private String orderId;
     private Long totalAmount;
     private List<PledgeItemResultDto> items;
     private LocalDateTime createdAt;
@@ -33,7 +34,7 @@ public class PledgeCreateResponseDto {
         private PledgeStatus status;
     }
 
-    public static PledgeCreateResponseDto of(Long projectId, List<Pledge> pledges) {
+    public static PledgeCreateResponseDto of(Long projectId, String orderId, List<Pledge> pledges) {
         long totalAmount = pledges.stream()
                 .mapToLong(Pledge::getPaidAmount)
                 .sum();
@@ -52,6 +53,7 @@ public class PledgeCreateResponseDto {
         return PledgeCreateResponseDto.builder()
                 .projectId(projectId)
                 .totalAmount(totalAmount)
+                .orderId(orderId)
                 .items(items)
                 .createdAt(LocalDateTime.now())
                 .build();
