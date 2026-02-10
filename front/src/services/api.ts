@@ -56,6 +56,53 @@ function toS3ImageUrl(keyOrUrl: string | null | undefined): string | null {
   return base + (trimmed.startsWith('/') ? trimmed.slice(1) : trimmed);
 }
 
+/**
+ * 백엔드 프로젝트 응답에서 이미지 URL 배열 추출
+ * - imageUrls / image_urls (배열)
+ * - imageKeys / image_keys (S3 키 배열)
+ * - images (객체 배열: s3Key, imageKey, url 등)
+ * - imageUrl / thumbnailUrl 단일 값 fallback
+ */
+function getProjectImageUrls(backendProject: any): { imageUrl: string | null; imageUrls: string[] | null } {
+  const thumbnailUrl = backendProject.thumbnailUrl ?? backendProject.thumbnail_url ?? null;
+  const singleUrl = backendProject.imageUrl ?? thumbnailUrl ?? null;
+  const imageUrl = toS3ImageUrl(singleUrl) ?? toS3ImageUrl(thumbnailUrl);
+
+  // 배열 형태: imageUrls, image_urls
+  let rawArray = backendProject.imageUrls ?? backendProject.image_urls ?? null;
+  if (Array.isArray(rawArray) && rawArray.length > 0) {
+    const urls = rawArray.map((u: string) => toS3ImageUrl(u)).filter((u): u is string => u != null);
+    if (urls.length > 0) {
+      return { imageUrl: urls[0], imageUrls: urls };
+    }
+  }
+
+  // S3 키 배열: imageKeys, image_keys
+  rawArray = backendProject.imageKeys ?? backendProject.image_keys ?? null;
+  if (Array.isArray(rawArray) && rawArray.length > 0) {
+    const urls = rawArray.map((k: string) => toS3ImageUrl(k)).filter((u): u is string => u != null);
+    if (urls.length > 0) {
+      return { imageUrl: urls[0], imageUrls: urls };
+    }
+  }
+
+  // 객체 배열: images (경매처럼)
+  const images = backendProject.images ?? backendProject.projectImages ?? null;
+  if (Array.isArray(images) && images.length > 0) {
+    const urls = images
+      .map((img: any) => toS3ImageUrl(img.s3Key ?? img.imageKey ?? img.url ?? img.imageUrl ?? img.image_url))
+      .filter((u): u is string => u != null);
+    if (urls.length > 0) {
+      return { imageUrl: urls[0], imageUrls: urls };
+    }
+  }
+
+  if (imageUrl) {
+    return { imageUrl, imageUrls: [imageUrl] };
+  }
+  return { imageUrl: null, imageUrls: null };
+}
+
 // API 요청 헬퍼 함수
 async function apiRequest<T>(
   endpoint: string,
@@ -165,16 +212,33 @@ export const projectApi = {
           };
         }
 
-        // 이미지 처리 - S3 키를 전체 URL로 변환
-        const thumbnailUrl = backendProject.thumbnailUrl || backendProject.thumbnail_url || null;
-        const rawImageUrl = backendProject.imageUrl || thumbnailUrl || null;
-        const rawImageUrls = backendProject.imageUrls || backendProject.image_urls || null;
-        const imageUrl = toS3ImageUrl(rawImageUrl) ?? toS3ImageUrl(thumbnailUrl);
-        const imageUrls = rawImageUrls?.length
-          ? rawImageUrls.map((u: string) => toS3ImageUrl(u)).filter(Boolean) as string[]
-          : imageUrl
-            ? [imageUrl]
-            : null;
+        // 이미지 처리 - 경매와 동일: images[] → S3 풀 URL로 변환
+        const projectImages = backendProject.images ?? [];
+        const imageUrlsFromS3 = projectImages
+          .map((img: any) => {
+            const keyOrUrl =
+              typeof img === 'string'
+                ? img
+                : img?.s3Key ??
+                  img?.s3_key ??
+                  img?.imageKey ??
+                  img?.image_key ??
+                  img?.key ??
+                  img?.imageUrl ??
+                  img?.image_url ??
+                  img?.url ??
+                  img?.filePath ??
+                  img?.file_path ??
+                  (typeof img?.image === 'string' ? img.image : img?.image?.url ?? img?.image?.imageKey ?? img?.image?.s3Key);
+            return toS3ImageUrl(keyOrUrl);
+          })
+          .filter((url: string | null): url is string => url != null);
+        const thumb = backendProject.thumbnailUrl || backendProject.thumbnail_url || null;
+        const firstImageUrl =
+          imageUrlsFromS3[0] ??
+          toS3ImageUrl(backendProject.imageUrl ?? thumb);
+        const imageUrl = firstImageUrl ?? toS3ImageUrl(thumb);
+        const imageUrls = imageUrlsFromS3.length > 0 ? imageUrlsFromS3 : (imageUrl ? [imageUrl] : null);
 
         // 날짜 필드 처리
         const startAt = backendProject.startAt || backendProject.start_at || '';
@@ -308,16 +372,34 @@ export const projectApi = {
         };
       }
 
-      // 이미지 처리 - S3 키(project/2/xxx.png)를 전체 URL로 변환 (Next.js Image 필수)
+      // 이미지 처리 - 경매와 동일: images[] → S3 풀 URL로 변환 (ProjectImageResponseDto)
+      const images = backendResponse.images ?? [];
+      const imageUrlsFromS3 = images
+        .map((img: any) => {
+          const keyOrUrl =
+            typeof img === 'string'
+              ? img
+              : img?.s3Key ??
+                img?.s3_key ??
+                img?.imageKey ??
+                img?.image_key ??
+                img?.key ??
+                img?.imageUrl ??
+                img?.image_url ??
+                img?.url ??
+                img?.filePath ??
+                img?.file_path ??
+                (typeof img?.image === 'string' ? img.image : img?.image?.url ?? img?.image?.imageKey ?? img?.image?.s3Key);
+          return toS3ImageUrl(keyOrUrl);
+        })
+        .filter((url: string | null): url is string => url != null);
       const thumbnailUrl = backendResponse.thumbnailUrl || backendResponse.thumbnail_url || null;
-      const rawImageUrl = backendResponse.imageUrl || thumbnailUrl || null;
-      const rawImageUrls = backendResponse.imageUrls || backendResponse.image_urls || null;
-      const imageUrl = toS3ImageUrl(rawImageUrl) ?? toS3ImageUrl(thumbnailUrl);
-      const imageUrls = rawImageUrls?.length
-        ? rawImageUrls.map((u: string) => toS3ImageUrl(u)).filter(Boolean) as string[]
-        : imageUrl
-          ? [imageUrl]
-          : null;
+      const firstImageUrl =
+        imageUrlsFromS3[0] ??
+        toS3ImageUrl(backendResponse.imageUrl ?? thumbnailUrl) ??
+        toS3ImageUrl(thumbnailUrl);
+      const imageUrls = imageUrlsFromS3.length > 0 ? imageUrlsFromS3 : (firstImageUrl ? [firstImageUrl] : null);
+      const imageUrl = firstImageUrl;
 
       // 날짜 필드 처리 (백엔드 필드명이 다를 수 있음)
       const startAt = backendResponse.startAt || backendResponse.start_at || '';
@@ -360,10 +442,10 @@ export const projectApi = {
   },
 
   /**
-   * 프로젝트 생성
-   * POST /api/crowd (multipart/form-data)
-   * - data: ProjectRequestDto (JSON)
-   * - file: 이미지 파일 목록
+   * 프로젝트 생성 (경매와 동일: multipart/form-data)
+   * POST /api/crowd consumes multipart/form-data
+   * - data: ProjectRequestDto (JSON) @RequestPart(value = "data")
+   * - file: 이미지 파일 목록 @RequestPart(name = "file") List<MultipartFile>
    * 백엔드 응답: Long projectId
    */
   createProject: async (
@@ -376,7 +458,6 @@ export const projectApi = {
       }
 
       const formData = new FormData();
-      // data 파트: JSON (백엔드 @RequestPart(value = "data"))
       const dataPart = {
         title: data.title,
         description: data.description,
@@ -394,8 +475,6 @@ export const projectApi = {
         })),
       };
       formData.append('data', new Blob([JSON.stringify(dataPart)], { type: 'application/json' }));
-
-      // file 파트: 이미지 파일들 (백엔드 @RequestPart(name = "file"))
       for (const file of files) {
         formData.append('file', file);
       }
@@ -413,10 +492,10 @@ export const projectApi = {
   },
 
   /**
-   * 프로젝트 수정
-   * PATCH /api/crowd/{projectId} (multipart/form-data)
-   * - data: ProjectUpdateRequestDto (JSON)
-   * - file: 이미지 파일 목록 (선택, 없으면 빈 배열)
+   * 프로젝트 수정 (경매 이미지 저장방식과 동일: multipart/form-data)
+   * PATCH /api/crowd/{projectId} consumes multipart/form-data
+   * - data: ProjectUpdateRequestDto (JSON) @RequestPart(value = "data")
+   * - file: 이미지 파일 목록 @RequestPart(name = "file") List<MultipartFile>
    */
   updateProject: async (
     id: number,

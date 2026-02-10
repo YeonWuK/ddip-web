@@ -500,31 +500,38 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               <div className="flex flex-wrap gap-3">
                 {project.status !== "DRAFT" && (
                   <>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        if (!project) return
-                        const newState = toggleWishlist(project.id, "project")
-                        setIsFavorite(newState)
-                        if (newState) {
-                          toast.success("찜하기에 추가되었습니다")
-                        } else {
-                          toast.info("찜하기에서 제거되었습니다")
-                        }
-                      }}
-                    >
-                      <Heart className={`mr-2 size-4 ${isFavorite ? "fill-red-500 text-red-500" : ""}`} />
-                      찜하기
-                    </Button>
+                    {isAuthenticated && (
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="size-9 shrink-0 rounded-full"
+                        onClick={() => {
+                          if (!project) return
+                          toggleWishlist(project.id, "project")
+                          const nowInWishlist = isInWishlist(project.id, "project")
+                          setIsFavorite(nowInWishlist)
+                          if (nowInWishlist) {
+                            toast.success("찜하기에 추가되었습니다")
+                          } else {
+                            toast.info("찜하기에서 제거되었습니다")
+                          }
+                        }}
+                      >
+                        <Heart
+                          className={`size-5 transition-colors ${
+                            isFavorite ? "fill-red-500 text-red-500" : "text-muted-foreground"
+                          }`}
+                        />
+                      </Button>
+                    )}
                     <Button variant="outline" size="sm">
                       <Share2 className="mr-2 size-4" />
                       공유하기
                     </Button>
                   </>
                 )}
-                {/* 작성자 전용 버튼 */}
-                {canEditProject(project, user) && (
+                {/* 작성자 전용 버튼 - 자기가 생성한 프로젝트면 수정 버튼 표시 */}
+                {isProjectCreator(project, user) && (
                   <Button 
                     variant="outline" 
                     size="sm"
@@ -894,17 +901,15 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               {/* 자기 프로젝트일 때 버튼들 */}
               {isProjectCreator(project, user) && (
                 <div className="space-y-2">
-                  {canEditProject(project, user) && (
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => router.push(`/project/${project.id}/edit`)}
-                    >
-                      <Edit className="mr-2 size-4" />
-                      프로젝트 수정
-                    </Button>
-                  )}
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => router.push(`/project/${project.id}/edit`)}
+                  >
+                    <Edit className="mr-2 size-4" />
+                    프로젝트 수정
+                  </Button>
                   {canCancelProject(project, user) && (
                     <Button
                       size="lg"
