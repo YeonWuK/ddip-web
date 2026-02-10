@@ -1,0 +1,21 @@
+package com.ddip.backend.project.validation.project;
+
+import com.ddip.backend.project.dto.enums.ProjectStatus;
+import com.ddip.backend.common.exception.BusinessException;
+import com.ddip.backend.common.exception.ErrorCode;
+
+public class InvalidProjectStatusException extends BusinessException {
+
+    public InvalidProjectStatusException(ProjectStatus current, ProjectStatus expected) {
+        super(ErrorCode.PROJECT_INVALID_STATUS, "프로젝트 상태 전이가 불가합니다. current=" + current + ", expected=" + expected);
+    }
+
+    public InvalidProjectStatusException(ProjectStatus current) {
+        super(ErrorCode.INVALID_REQUEST, "프로젝트 상태를 바꿀 수 없습니다. current=" + current);
+    }
+
+    public InvalidProjectStatusException(ProjectStatus current, ProjectStatus... expected) {
+        super(ErrorCode.INVALID_REQUEST, "프로젝트 상태가 올바르지 않습니다. current=" + current + ", expected=" + java.util.Arrays.toString(expected));
+    }
+
+}

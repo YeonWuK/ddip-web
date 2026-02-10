@@ -1,0 +1,12 @@
+package com.ddip.backend.project.validation.project;
+
+import com.ddip.backend.common.exception.BusinessException;
+import com.ddip.backend.common.exception.ErrorCode;
+
+public class ProjectNotFoundException extends BusinessException {
+
+    public ProjectNotFoundException(Long projectId) {
+        super(ErrorCode.PROJECT_NOT_FOUND, "존재하지 않는 Project 입니다. projectId = "+projectId);
+    }
+
+}

@@ -1,0 +1,27 @@
+package com.ddip.backend.auction.repository.custom;
+
+import com.ddip.backend.auction.domain.AuctionImage;
+import com.querydsl.jpa.impl.JPAQueryFactory;
+import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+
+import static com.ddip.backend.auction.domain.QAuction.auction;
+import static com.ddip.backend.auction.domain.QAuctionImage.auctionImage;
+
+
+@RequiredArgsConstructor
+public class AuctionImageRepositoryCustomImpl implements AuctionImageRepositoryCustom{
+
+    private final JPAQueryFactory jpaQueryFactory;
+
+
+    @Override
+    public List<AuctionImage> findImagesByAuctionId(Long auctionId) {
+        return jpaQueryFactory
+                .selectFrom(auctionImage)
+                .leftJoin(auctionImage.auction, auction)
+                .where(auctionImage.auction.id.eq(auctionId))
+                .fetch();
+    }
+}

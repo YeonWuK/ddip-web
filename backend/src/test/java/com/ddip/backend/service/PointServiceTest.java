@@ -1,24 +1,7 @@
 package com.ddip.backend.service;
 
-import com.ddip.backend.dto.enums.PointLedgerSource;
-import com.ddip.backend.dto.enums.PointLedgerType;
-import com.ddip.backend.entity.PointLedger;
-import com.ddip.backend.entity.User;
-import com.ddip.backend.exception.user.InsufficientPointException;
-import com.ddip.backend.exception.user.UserNotFoundException;
-import com.ddip.backend.repository.PointLedgerRepository;
-import com.ddip.backend.repository.UserRepository;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class PointServiceTest {

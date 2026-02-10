@@ -1,0 +1,117 @@
+package com.ddip.backend.common.config;
+
+import com.ddip.backend.common.handler.OAuth2SuccessHandler;
+import com.ddip.backend.common.security.utils.CustomAccessDeniedHandler;
+import com.ddip.backend.common.security.utils.CustomAuthenticationEntryPoint;
+import com.ddip.backend.common.security.auth.JwtAuthenticationFilter;
+import com.ddip.backend.common.security.auth.JwtTokenFilter;
+import com.ddip.backend.common.security.auth.JwtUtils;
+import com.ddip.backend.common.security.oauth2.CustomOAuth2UserService;
+import com.ddip.backend.common.security.utils.ProfileCompleteAuthorizationManager;
+import com.ddip.backend.common.security.service.TokenBlackListService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
+
+@Configuration
+@EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)
+@RequiredArgsConstructor
+public class SecurityConfig {
+
+    private final JwtUtils jwtUtils;
+    private final JwtTokenFilter jwtTokenFilter;
+    private final CustomAuthenticationEntryPoint entryPoint;
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
+    private final TokenBlackListService tokenBlackListService;
+    private final CustomAccessDeniedHandler  accessDeniedHandler;
+    private final CustomOAuth2UserService customOAuth2UserService;
+    private final ProfileCompleteAuthorizationManager profileCompleteAuthorizationManager;
+
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        AuthenticationManager authenticationManager = authenticationManager(http.getSharedObject(AuthenticationConfiguration.class));
+        JwtAuthenticationFilter jwtAuthenticationFilter = new JwtAuthenticationFilter(authenticationManager, tokenBlackListService, jwtUtils);
+
+        http.csrf(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
+                .exceptionHandling(e -> e
+                        .authenticationEntryPoint(entryPoint)
+                        .accessDeniedHandler(accessDeniedHandler))
+
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        .requestMatchers("/error",
+                                "/oauth2/**", "/login/oauth2/**", "/login/oauth2/code/**", "/api/users/login",
+                                "/oauth2/callback/**", "/api/users/refresh-token", "/api/users/register",
+                                "/api/users/find-password","/api/users/update-profile","/api/search/**").permitAll()
+
+                        .requestMatchers(HttpMethod.GET, "/api/auction", "/api/auction/{auctionId}",
+                                "/api/crowd","/api/crowd/{projectId}").permitAll()
+
+                        // admin 먼저 검증 절대 바꾸지 말것
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
+                        // 이후 일반 User 검증
+                        .requestMatchers("/api/**").access(profileCompleteAuthorizationManager)
+                        .anyRequest().authenticated()
+                )
+
+                .oauth2Login(oauth2 -> oauth2
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .userService(customOAuth2UserService))
+                        .successHandler(oAuth2SuccessHandler)
+                )
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+                .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAt(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+        return configuration.getAuthenticationManager();
+    }
+
+    @Bean
+    public BCryptPasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(List.of("http://localhost:3000"));
+        config.setAllowCredentials(true);
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        config.setAllowedHeaders(List.of("*"));
+
+        config.setExposedHeaders(List.of("Authorization", "access_token"));
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
+    }
+}
