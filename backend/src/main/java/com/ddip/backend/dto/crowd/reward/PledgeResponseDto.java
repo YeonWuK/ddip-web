@@ -1,4 +1,4 @@
-package com.ddip.backend.dto.crowd;
+package com.ddip.backend.dto.crowd.reward;
 
 import com.ddip.backend.dto.enums.PledgeStatus;
 import com.ddip.backend.entity.Pledge;
@@ -17,7 +17,7 @@ public class PledgeResponseDto {
 
     private Long pledgeId;
     private Long rewardTierId;
-    private Long amount;
+    private Long paidAmount;
     private PledgeStatus status;
     private LocalDateTime createdAt;
 
@@ -25,7 +25,7 @@ public class PledgeResponseDto {
         return PledgeResponseDto.builder()
                 .pledgeId(pledge.getId())
                 .rewardTierId(pledge.getRewardTier() == null ? null : pledge.getRewardTier().getId())
-                .amount(pledge.getPaidAmount())
+                .paidAmount(pledge.getPaidAmount())
                 .status(pledge.getStatus())
                 .createdAt(pledge.getCreateTime())
                 .build();

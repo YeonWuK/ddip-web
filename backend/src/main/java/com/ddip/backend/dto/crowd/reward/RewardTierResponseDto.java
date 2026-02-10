@@ -1,4 +1,4 @@
-package com.ddip.backend.dto.crowd;
+package com.ddip.backend.dto.crowd.reward;
 
 import com.ddip.backend.entity.RewardTier;
 import lombok.AllArgsConstructor;

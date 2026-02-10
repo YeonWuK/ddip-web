@@ -1,5 +1,6 @@
-package com.ddip.backend.dto.crowd;
+package com.ddip.backend.dto.crowd.project;
 
+import com.ddip.backend.dto.crowd.reward.RewardTierRequestDto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;

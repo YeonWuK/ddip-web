@@ -1,7 +1,8 @@
 package com.ddip.backend.service;
 
-import com.ddip.backend.dto.crowd.PledgeCreateRequestDto;
-import com.ddip.backend.dto.crowd.PledgeResponseDto;
+import com.ddip.backend.dto.crowd.project.PledgeCreateResponseDto;
+import com.ddip.backend.dto.crowd.reward.PledgeCreateRequestDto;
+import com.ddip.backend.dto.crowd.reward.PledgeResponseDto;
 import com.ddip.backend.dto.enums.PledgeStatus;
 import com.ddip.backend.dto.enums.PointLedgerSource;
 import com.ddip.backend.dto.enums.PointLedgerType;
@@ -45,7 +46,7 @@ public class PledgeService {
     /**
      * 후원 생성 (여러 리워드 티어 + 수량)
      */
-    public List<PledgeResponseDto> createPledge(Long userId, Long projectId, PledgeCreateRequestDto requestDto) {
+    public PledgeCreateResponseDto createPledge(Long userId, Long projectId, PledgeCreateRequestDto requestDto) {
 
         User user = getUser(userId);
         Project project = getOpenProject(projectId);
@@ -63,9 +64,8 @@ public class PledgeService {
         // ES 갱신 이벤트 발행 (프로젝트 단위로 한 번)
         publisher.publishEvent(new ProjectEsEvent(project.getId()));
 
-        return savedPledges.stream()
-                .map(PledgeResponseDto::from)
-                .toList();
+        return PledgeCreateResponseDto.of(project.getId(), savedPledges);
+
     }
 
     /**
