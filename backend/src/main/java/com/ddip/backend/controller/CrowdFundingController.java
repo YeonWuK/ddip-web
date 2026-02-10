@@ -44,8 +44,8 @@ public class CrowdFundingController {
      * @return 프로젝트 상세 정보 DTO
      */
     @GetMapping("/{projectId}")
-    public ResponseEntity<ProjectResponseDto> getCrowdFunding(@PathVariable Long projectId ){
-        ProjectResponseDto response = crowdFundingService.getProject(projectId);
+    public ResponseEntity<ProjectDetailResponseDto> getCrowdFunding(@PathVariable Long projectId ){
+        ProjectDetailResponseDto response = crowdFundingService.getProject(projectId);
         return ResponseEntity.ok(response);
     }
 
@@ -60,7 +60,7 @@ public class CrowdFundingController {
     public ResponseEntity<?> updateCrowdFunding(
             @AuthenticationPrincipal CustomUserDetails customUserDetails, @PathVariable Long projectId,
             @Valid @RequestPart(value = "data") ProjectUpdateRequestDto requestDto,
-            @RequestPart(name = "file") List<MultipartFile> multipartFiles) {
+            @RequestPart(name = "file", required = false) List<MultipartFile> multipartFiles) {
 
         Long userId = customUserDetails.getUserId();
         crowdFundingService.updateProject(multipartFiles, projectId, userId, requestDto);

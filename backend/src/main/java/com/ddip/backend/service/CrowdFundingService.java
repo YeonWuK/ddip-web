@@ -1,6 +1,7 @@
 package com.ddip.backend.service;
 
 import com.ddip.backend.dto.admin.crowdfunding.AdminProjectSearchCondition;
+import com.ddip.backend.dto.crowd.ProjectDetailResponseDto;
 import com.ddip.backend.dto.crowd.ProjectRequestDto;
 import com.ddip.backend.dto.crowd.ProjectResponseDto;
 import com.ddip.backend.dto.crowd.ProjectUpdateRequestDto;
@@ -65,10 +66,13 @@ public class CrowdFundingService {
      * Crowdfunding 프로젝트 단건 조회 (RewardTier 포함)
      */
     @Transactional(readOnly = true)
-    public ProjectResponseDto getProject(Long projectId) {
+    public ProjectDetailResponseDto getProject(Long projectId) {
         Project project = projectRepository.findByIdWithCreatorAndRewardTier(projectId)
                 .orElseThrow(() -> new ProjectNotFoundException(projectId));
-        return ProjectResponseDto.from(project);
+
+        List<ProjectImage> images = projectImageRepository.findImagesByProjectId(projectId);
+
+        return ProjectDetailResponseDto.from(project, images);
     }
 
     /**

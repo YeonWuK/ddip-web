@@ -3,19 +3,21 @@ package com.ddip.backend.dto.crowd;
 import com.ddip.backend.dto.enums.ProjectStatus;
 import com.ddip.backend.dto.image.ProjectImageResponseDto;
 import com.ddip.backend.entity.Project;
+import com.ddip.backend.entity.ProjectImage;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ProjectResponseDto {
+public class ProjectDetailResponseDto {
 
     private Long id;
     private String title;
@@ -31,15 +33,16 @@ public class ProjectResponseDto {
     private String summary;
     private CreatorDto creator;
     private List<RewardTierResponseDto> rewardTiers;
+    private List<ProjectImageResponseDto> images = new ArrayList<>();
     private int achievementRate;
 
-    public static ProjectResponseDto from(Project project) {
+    public static ProjectDetailResponseDto from(Project project, List<ProjectImage> images) {
         int rate = 0;
         if (project.getTargetAmount() > 0) {
             rate = (int) ((project.getCurrentAmount() * 100) / project.getTargetAmount());
         }
 
-        return ProjectResponseDto.builder()
+        return ProjectDetailResponseDto.builder()
                 .id(project.getId())
                 .title(project.getTitle())
                 .description(project.getDescription())
@@ -58,7 +61,13 @@ public class ProjectResponseDto {
                                 .map(RewardTierResponseDto::from)
                                 .toList())
                 .achievementRate(rate)
+                .images(
+                        images.stream()
+                                .map(ProjectImageResponseDto::from)
+                                .toList()
+                )
                 .build();
     }
 
 }
+
