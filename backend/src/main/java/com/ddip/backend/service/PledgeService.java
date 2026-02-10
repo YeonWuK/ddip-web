@@ -26,6 +26,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -42,34 +43,86 @@ public class PledgeService {
     private final PointService pointService;
 
     /**
-     * 후원 생성
+     * 후원 생성 (여러 리워드 티어 + 수량)
      */
-    public PledgeResponseDto createPledge(Long userId, Long projectId, PledgeCreateRequestDto requestDto) {
-        // 1. 사용자 / 프로젝트 / 리워드 조회 및 검증
+    public List<PledgeResponseDto> createPledge(Long userId, Long projectId, PledgeCreateRequestDto requestDto) {
+
         User user = getUser(userId);
         Project project = getOpenProject(projectId);
-        RewardTier rewardTier = getRewardTierBelongsToProject(requestDto.getRewardTierId(), project);
 
-        // 2. 수량 및 필요한 포인트 금액 계산
-        int quantity = validateQuantity(requestDto.getQuantity());
-        long requiredAmount = calculateRequiredAmount(rewardTier, quantity);
+        // DTO → 도메인 컨텍스트로 변환
+        List<PledgeItemContext> contexts = buildPledgeContexts(requestDto, project);
 
-        // 3. 도메인 레벨 포인트 잔액 검증
-        user.assertEnoughPoint(requiredAmount);
+        // 총 필요 포인트 계산 후 잔액 검증
+        long totalRequiredAmount = calculateTotalRequiredAmount(contexts);
+        user.assertEnoughPoint(totalRequiredAmount);
 
-        // 4. Pledge 엔티티 생성 및 저장
-        Pledge pledge = Pledge.toEntity(user, project, rewardTier, requiredAmount, quantity);
-        Pledge saved = pledgeRepository.save(pledge);
+        // Pledge 생성 + 결제 처리
+        List<Pledge> savedPledges = createAndPayPledges(userId, user, project, contexts);
 
-        // 5. 포인트 차감 + Pledge/Project/RewardTier 상태 업데이트
-        processPayment(userId, saved, quantity);
-
-        // 6. ES 인덱스 갱신 이벤트 발행
+        // ES 갱신 이벤트 발행 (프로젝트 단위로 한 번)
         publisher.publishEvent(new ProjectEsEvent(project.getId()));
 
-        log.info("성공적으로 구매 되었습니다. userId={}, pledgeId={}", userId, saved.getId());
-        return PledgeResponseDto.from(saved);
+        return savedPledges.stream()
+                .map(PledgeResponseDto::from)
+                .toList();
     }
+
+    /**
+     * DTO의 items를 RewardTier/quantity/requiredAmount를 가진 컨텍스트 리스트로 변환
+     */
+    private List<PledgeItemContext> buildPledgeContexts(PledgeCreateRequestDto requestDto, Project project) {
+
+        List<PledgeItemContext> contexts = new ArrayList<>();
+
+        for (PledgeCreateRequestDto.PledgeItemDto item : requestDto.getItems()) {
+            RewardTier rewardTier = getRewardTierBelongsToProject(item.getRewardTierId(), project);
+            int quantity = validateQuantity(item.getQuantity());
+            long requiredAmount = calculateRequiredAmount(rewardTier, quantity);
+
+            contexts.add(new PledgeItemContext(rewardTier, quantity, requiredAmount));
+        }
+
+        return contexts;
+    }
+
+    /**
+     * 컨텍스트 리스트 기준 총 필요 포인트 합산
+     */
+    private long calculateTotalRequiredAmount(List<PledgeItemContext> contexts) {
+        return contexts.stream()
+                .mapToLong(PledgeItemContext::requiredAmount)
+                .sum();
+    }
+
+    /**
+     * 컨텍스트 리스트를 바탕으로 Pledge 생성 및 결제 처리
+     */
+    private List<Pledge> createAndPayPledges(Long userId, User user, Project project, List<PledgeItemContext> contexts) {
+
+        List<Pledge> pledges = new ArrayList<>();
+
+        for (PledgeItemContext ctx : contexts) {
+            Pledge pledge = createPledgeEntity(user, project, ctx);
+            Pledge saved = pledgeRepository.save(pledge);
+
+            processPayment(userId, saved, ctx.quantity());
+            pledges.add(saved);
+        }
+
+        return pledges;
+    }
+
+    /**
+     * Pledge 엔티티 생성
+     */
+    private Pledge createPledgeEntity(User user, Project project, PledgeItemContext ctx) {
+        return Pledge.toEntity(user, project, ctx.rewardTier(), ctx.requiredAmount(), ctx.quantity());
+    }
+
+    /* =========================
+       2. 조회
+       ========================= */
 
     /**
      * 특정 사용자의 모든 Pledge 조회 (응답 DTO 변환)
@@ -79,37 +132,6 @@ public class PledgeService {
         return pledgeRepository.findByUserId(userId).stream()
                 .map(PledgeResponseDto::from)
                 .toList();
-    }
-
-    /**
-     * 사용자의 단건 후원 취소
-     */
-    public void cancelPledge(Long userId, Long pledgeId) {
-        Pledge pledge = pledgeRepository.findById(pledgeId).orElseThrow(() -> new PledgeNotFoundException(pledgeId));
-
-        // 본인의 pledge 맞는지 검증
-        pledge.assertOwnedBy(userId);
-        // 이미 취소 / 확정 / 배송 중 등 취소 불가능 상태인지 검증
-        pledge.assertCancelable();
-
-        long amount = pledge.getPaidAmount();
-
-        // 포인트 환불 및 상태/금액 롤백
-        cancelAndRefund(pledge);
-
-        log.info("성공적으로 후원이 취소되었습니다. userId={}, pledgeId={}, refundAmount={}", userId, pledgeId, amount);
-    }
-
-    /**
-     * 펀딩 실패 시, 해당 프로젝트의 결제 완료(PAID) 상태 후원 전체 환불
-     */
-    public void refundAllFailedProjects(Long projectId) {
-        // 펀딩 실패 시 환불 대상은 "결제 완료(PAID)" 상태인 후원
-        List<Pledge> pledges = pledgeRepository.findByProjectIdAndStatus(projectId, PledgeStatus.PAID);
-
-        for (Pledge pledge : pledges) {
-            cancelAndRefund(pledge);
-        }
     }
 
     /**
@@ -128,9 +150,46 @@ public class PledgeService {
         return pledgeRepository.findByUserId(userId);
     }
 
+    /* =========================
+       3. 취소 / 환불
+       ========================= */
 
     /**
-     * 공통: 포인트 환불 + Pledge 상태 변경 + 프로젝트 모금액 롤백
+     * 사용자의 단건 후원 취소
+     */
+    public void cancelPledge(Long userId, Long pledgeId) {
+        Pledge pledge = pledgeRepository.findById(pledgeId)
+                .orElseThrow(() -> new PledgeNotFoundException(pledgeId));
+
+        // 본인의 pledge 맞는지 검증
+        pledge.assertOwnedBy(userId);
+        // 이미 취소 / 확정 / 배송 중 등 취소 불가능 상태인지 검증
+        pledge.assertCancelable();
+
+        long amount = pledge.getPaidAmount();
+
+        // 포인트 환불 및 상태/금액 롤백
+        cancelAndRefund(pledge);
+
+        log.info("성공적으로 후원이 취소되었습니다. userId={}, pledgeId={}, refundAmount={}",
+                userId, pledgeId, amount);
+    }
+
+    /**
+     * 펀딩 실패 시, 해당 프로젝트의 결제 완료(PAID) 상태 후원 전체 환불
+     */
+    public void refundAllFailedProjects(Long projectId) {
+        // 펀딩 실패 시 환불 대상은 "결제 완료(PAID)" 상태인 후원
+        List<Pledge> pledges =
+                pledgeRepository.findByProjectIdAndStatus(projectId, PledgeStatus.PAID);
+
+        for (Pledge pledge : pledges) {
+            cancelAndRefund(pledge);
+        }
+    }
+
+    /**
+     * 공통: 포인트 환불 + Pledge 상태 변경 + 프로젝트/리워드 롤백
      */
     private void cancelAndRefund(Pledge pledge) {
         long amount = pledge.getPaidAmount();
@@ -146,11 +205,17 @@ public class PledgeService {
         // 프로젝트 현재 모금액 롤백
         pledge.getProject().decreaseCurrentAmount(amount);
 
-        pledge.getRewardTier().decreaseSoldQuantity(pledge.getRewardTier().getSoldQuantity());
+        // 리워드 티어 판매 수량 롤백 (이 Pledge에서 구매한 수량만큼 감소)
+        pledge.getRewardTier().decreaseSoldQuantity(pledge.getPurchasedQuantity());
     }
 
+    /* =========================
+       4. 공통 조회/검증 유틸
+       ========================= */
+
     private User getUser(Long userId) {
-        return userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
     }
 
     /**
@@ -213,8 +278,8 @@ public class PledgeService {
      * 포인트 차감 (후원 결제)
      */
     private void usePointForPledge(Long userId, long amount, Long pledgeId) {
-        pointService.changePoint(userId, -amount, PointLedgerType.USE, PointLedgerSource.PLEDGE, pledgeId,
-                "Pledge 결제 (pledgeId=" + pledgeId + ")");
+        pointService.changePoint(userId, -amount, PointLedgerType.USE, PointLedgerSource.PLEDGE,
+                pledgeId, "Pledge 결제 (pledgeId=" + pledgeId + ")");
     }
 
     /**
@@ -225,4 +290,13 @@ public class PledgeService {
                 "Pledge 환불 (pledgeId=" + pledgeId + ")");
     }
 
+
+    /**
+     * createPledge 처리용 컨텍스트
+     */
+    private record PledgeItemContext(
+            RewardTier rewardTier,
+            int quantity,
+            long requiredAmount
+    ) {}
 }

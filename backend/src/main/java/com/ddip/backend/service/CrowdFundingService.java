@@ -134,6 +134,7 @@ public class CrowdFundingService {
 
         // ES 동기화
         publisher.publishEvent(new ProjectEsEvent(projectId));
+        log.info("성공적으로 업데이트 완료 되었습니다. projectId={}", projectId);
     }
 
     /**

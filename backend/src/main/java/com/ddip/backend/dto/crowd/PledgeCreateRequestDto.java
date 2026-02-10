@@ -1,21 +1,34 @@
 package com.ddip.backend.dto.crowd;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 public class PledgeCreateRequestDto {
 
-    @NotNull
-    private Long rewardTierId;
+    @NotEmpty
+    @Valid
+    private List<PledgeItemDto> items;
 
-    @NotNull
-    @Min(1)
-    private Integer quantity;
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class PledgeItemDto {
 
+        @NotNull
+        private Long rewardTierId;
+
+        @NotNull
+        @Min(1)
+        private Integer quantity;
+    }
 }

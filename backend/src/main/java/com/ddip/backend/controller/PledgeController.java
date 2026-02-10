@@ -26,10 +26,10 @@ public class PledgeController {
      * POST /api/crowd/pledges/{projectId}
      */
     @PostMapping("{projectId}")
-    public ResponseEntity<PledgeResponseDto> createPledge(@AuthenticationPrincipal CustomUserDetails userDetails,
+    public ResponseEntity<List<PledgeResponseDto>> createPledge(@AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long projectId, @Valid @RequestBody PledgeCreateRequestDto requestDto) {
         Long userId = userDetails.getUserId();
-        PledgeResponseDto response = pledgeService.createPledge(userId, projectId, requestDto);
+        List<PledgeResponseDto> response = pledgeService.createPledge(userId, projectId, requestDto);
         return ResponseEntity.ok(response);
     }
 
