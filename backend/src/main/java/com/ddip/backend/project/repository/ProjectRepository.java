@@ -14,4 +14,5 @@ import java.util.Optional;
 public interface ProjectRepository extends JpaRepository<Project, Long>, ProjectRepositoryCustom {
     Optional<Project> findById(Long id);
     List<Project> findByStatusAndEndAtLessThanEqual(ProjectStatus status, LocalDate endAt);
+    List<Project> findByCreatorId(Long creatorId);
 }

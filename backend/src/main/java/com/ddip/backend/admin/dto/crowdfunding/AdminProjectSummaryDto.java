@@ -39,33 +39,28 @@ public class AdminProjectSummaryDto {
 
     private Long likeCount;
 
+    private Long totalPledgeCount;
+    private Double achievementRate;
+
     private LocalDateTime createdAt;
 
     public static AdminProjectSummaryDto from(Project project) {
         return AdminProjectSummaryDto.builder()
                 .id(project.getId())
-
                 .creatorId(project.getCreator().getId())
                 .creatorUsername(project.getCreator().getUsername())
                 .creatorNickname(project.getCreator().getNickname())
-
                 .title(project.getTitle())
                 .summary(project.getSummary())
-
                 .targetAmount(project.getTargetAmount())
                 .currentAmount(project.getCurrentAmount())
-
                 .status(project.getStatus().name())
-
                 .startAt(project.getStartAt())
                 .endAt(project.getEndAt())
-
                 .thumbnailUrl(project.getThumbnailUrl())
                 .categoryPath(project.getCategoryPath())
                 .tags(project.getTags())
-
                 .likeCount(project.getLikeCount())
-
                 .createdAt(project.getCreateTime())
                 .build();
     }

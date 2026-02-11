@@ -1,7 +1,5 @@
 package com.ddip.backend.user.domain;
 
-import com.ddip.backend.auction.domain.Auction;
-import com.ddip.backend.auction.domain.MyBids;
 import com.ddip.backend.common.dto.enums.AuthProvider;
 import com.ddip.backend.user.dto.enums.BankType;
 import com.ddip.backend.common.dto.enums.Role;
@@ -10,17 +8,12 @@ import com.ddip.backend.user.dto.user.ProfileRequestDto;
 import com.ddip.backend.user.dto.user.UserRequestDto;
 import com.ddip.backend.user.dto.user.UserUpdateRequestDto;
 import com.ddip.backend.common.domain.BaseTimeEntity;
-import com.ddip.backend.project.domain.Pledge;
-import com.ddip.backend.project.domain.Project;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Slf4j
 @Entity
@@ -74,26 +67,6 @@ public class User extends BaseTimeEntity {
 
     @Column(name = "point_balance")
     private Long pointBalance;
-
-    @Builder.Default
-    @OneToMany(mappedBy = "creator", orphanRemoval = true, cascade = CascadeType.ALL)
-    private List<Project> projects = new ArrayList<>();
-
-    @Builder.Default
-    @OneToMany(mappedBy = "user", orphanRemoval = true, cascade = CascadeType.ALL)
-    private List<Pledge> pledges = new ArrayList<>();
-
-    @Builder.Default
-    @OneToMany(mappedBy = "user", orphanRemoval = true, cascade = CascadeType.ALL)
-    private List<UserAddress> addresses = new ArrayList<>();
-
-    @Builder.Default
-    @OneToMany(mappedBy = "seller", orphanRemoval = true, cascade = CascadeType.ALL)
-    private List<Auction> auctions = new ArrayList<>();
-
-    @Builder.Default
-    @OneToMany(mappedBy = "user", orphanRemoval = true, cascade = CascadeType.ALL)
-    private List<MyBids> myBids = new ArrayList<>();
 
     public static User from(UserRequestDto dto) {
         return User.builder()

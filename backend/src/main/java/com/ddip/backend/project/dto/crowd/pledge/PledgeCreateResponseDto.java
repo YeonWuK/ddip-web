@@ -35,6 +35,7 @@ public class PledgeCreateResponseDto {
     }
 
     public static PledgeCreateResponseDto of(Long projectId, String orderId, List<Pledge> pledges) {
+
         long totalAmount = pledges.stream()
                 .mapToLong(Pledge::getPaidAmount)
                 .sum();
@@ -42,7 +43,7 @@ public class PledgeCreateResponseDto {
         List<PledgeItemResultDto> items = pledges.stream()
                 .map(p -> PledgeItemResultDto.builder()
                         .pledgeId(p.getId())
-                        .rewardTierId(p.getRewardTier() == null ? null : p.getRewardTier().getId())
+                        .rewardTierId(p.getRewardTierId())
                         .quantity(p.getPurchasedQuantity())
                         .amount(p.getPaidAmount())
                         .status(p.getStatus())
@@ -52,8 +53,8 @@ public class PledgeCreateResponseDto {
 
         return PledgeCreateResponseDto.builder()
                 .projectId(projectId)
-                .totalAmount(totalAmount)
                 .orderId(orderId)
+                .totalAmount(totalAmount)
                 .items(items)
                 .createdAt(LocalDateTime.now())
                 .build();

@@ -1,6 +1,9 @@
 package com.ddip.backend.admin.dto.crowdfunding;
 
 import com.ddip.backend.project.domain.Pledge;
+import com.ddip.backend.project.domain.Project;
+import com.ddip.backend.project.dto.enums.PledgeStatus;
+import com.ddip.backend.user.domain.User;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -14,44 +17,27 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class AdminPledgeSummaryDto {
 
-    private Long id;
+    private Long pledgeId;
+    private String orderId;
 
-    // 프로젝트 정보
     private Long projectId;
-    private String projectTitle;
-
-    // 후원자 정보
-    private Long userId;
-    private String username;
-    private String nickname;
-
-    // 리워드 티어(선택적)
     private Long rewardTierId;
-    private String rewardTierTitle;
 
-    // 금액 / 상태
-    private Long amount;
-    private String status;
+    private Long paidAmount;
+    private Long quantity;
+    private PledgeStatus status;
 
     private LocalDateTime createdAt;
 
     public static AdminPledgeSummaryDto from(Pledge pledge) {
         return AdminPledgeSummaryDto.builder()
-                .id(pledge.getId())
-
-                .projectId(pledge.getProject().getId())
-                .projectTitle(pledge.getProject().getTitle())
-
-                .userId(pledge.getUser().getId())
-                .username(pledge.getUser().getUsername())
-                .nickname(pledge.getUser().getNickname())
-
-                .rewardTierId(pledge.getRewardTier().getId())
-                .rewardTierTitle(pledge.getRewardTier().getTitle())
-
-                .amount(pledge.getPaidAmount())
-                .status(pledge.getStatus().name())
-
+                .pledgeId(pledge.getId())
+                .orderId(pledge.getOrderId())
+                .projectId(pledge.getProjectId())
+                .rewardTierId(pledge.getRewardTierId())
+                .paidAmount(pledge.getPaidAmount())
+                .quantity(pledge.getPurchasedQuantity())
+                .status(pledge.getStatus())
                 .createdAt(pledge.getCreateTime())
                 .build();
     }
