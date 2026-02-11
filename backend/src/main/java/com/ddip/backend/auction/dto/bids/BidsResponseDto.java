@@ -18,7 +18,7 @@ public class BidsResponseDto {
 
     private UserResponseDto user;
 
-    private AuctionSummaryDto auction;
+    private Long auctionId;
 
     private Long price;
 
@@ -26,7 +26,7 @@ public class BidsResponseDto {
         return BidsResponseDto.builder()
                 .id(bids.getId())
                 .user(UserResponseDto.from(bids.getUser()))
-                .auction(AuctionSummaryDto.from(bids.getAuction()))
+                .auctionId(bids.getAuctionId())
                 .price(bids.getPrice())
                 .build();
     }

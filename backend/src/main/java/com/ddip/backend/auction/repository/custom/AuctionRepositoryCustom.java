@@ -19,6 +19,8 @@ public interface AuctionRepositoryCustom {
 
     List<Auction> findAuctionsByUserId(Long userId);
 
+    List<Auction> findAuctionsByIdInWithSeller(List<Long> auctionIds);
+
     Page<Auction> searchAuctionsForAdmin(AdminAuctionSearchCondition condition, Pageable pageable);
 
 }

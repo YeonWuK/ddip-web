@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
-import static com.ddip.backend.auction.domain.QAuction.auction;
 import static com.ddip.backend.auction.domain.QBids.bids;
 import static com.ddip.backend.user.domain.QUser.user;
 
@@ -17,19 +16,9 @@ public class BidsRepositoryCustomImpl implements BidsRepositoryCustom {
     private final JPAQueryFactory jpaQueryFactory;
 
     @Override
-    public List<Bids> findBidsByAuctionId(Long auctionId) {
-        return jpaQueryFactory.selectFrom(bids)
-                .leftJoin(bids.user, user).fetchJoin()
-                .where(bids.auction.id.eq(auctionId))
-                .orderBy(bids.id.desc())
-                .fetch();
-    }
-
-    @Override
     public List<Bids> findBidsByUserId(Long userId) {
         return jpaQueryFactory
                 .selectFrom(bids)
-                .leftJoin(bids.auction, auction).fetchJoin()
                 .leftJoin(bids.user, user).fetchJoin()
                 .where(bids.user.id.eq(userId))
                 .orderBy(bids.createTime.desc())

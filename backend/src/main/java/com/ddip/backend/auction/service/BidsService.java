@@ -70,9 +70,9 @@ public class BidsService {
 
         auction.updateCurrentPrice(dto.getPrice());
 
-        CreateBidsDto createBidsDto = new CreateBidsDto(user, auction, dto.getPrice());
+        CreateBidsDto createBidsDto = new CreateBidsDto(user, auctionId, dto.getPrice());
 
-        CreateMyBidsDto createMyBidsDto = new CreateMyBidsDto(user, auction, dto.getPrice());
+        CreateMyBidsDto createMyBidsDto = new CreateMyBidsDto(user, auction.getId(), dto.getPrice());
 
         // 해당 유저의 MyBids 가 없으면 생성, 있으면 갱신
         MyBids myBids = myBidsRepository.findByUserIdAndAuctionId(userId, auctionId)

@@ -22,13 +22,12 @@ public class Bids extends BaseTimeEntity {
     @Column(name = "id", nullable = false)
     private Long id;
 
+    @Column(name = "auction_id", nullable = false)
+    private Long auctionId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "auction_id", nullable = false)
-    private Auction auction;
 
     @Column(name = "price", nullable = false)
     private Long price;
@@ -36,7 +35,7 @@ public class Bids extends BaseTimeEntity {
     public static Bids from(CreateBidsDto dto) {
         return Bids.builder()
                 .user(dto.getUser())
-                .auction(dto.getAuction())
+                .auctionId(dto.getAuctionId())
                 .price(dto.getPrice())
                 .build();
     }
