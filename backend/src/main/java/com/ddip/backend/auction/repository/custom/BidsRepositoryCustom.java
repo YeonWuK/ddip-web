@@ -7,8 +7,5 @@ import java.util.List;
 
 @Repository
 public interface BidsRepositoryCustom {
-
-    List<Bids> findBidsByAuctionId(Long auctionId);
-
     List<Bids> findBidsByUserId(Long userId);
 }

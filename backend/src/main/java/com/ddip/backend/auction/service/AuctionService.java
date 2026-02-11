@@ -107,7 +107,7 @@ public class AuctionService {
         Auction auction = auctionRepository.findDetailById(auctionId)
                 .orElseThrow(() -> new AuctionNotFoundException(auctionId));
 
-        List<Bids> bids = bidsRepository.findBidsByAuctionId(auction.getId());
+        List<Bids> bids = bidsRepository.findByAuctionId(auction.getId());
 
         return AuctionDetailResponseDto.from(auction, bids);
     }

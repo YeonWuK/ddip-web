@@ -13,7 +13,7 @@ public class CreateBidsDto {
 
     private User user;
 
-    private Auction auction;
+    private Long auctionId;
 
     private Long price;
 }
