@@ -1,8 +1,11 @@
 package com.ddip.backend.user.service;
 
 import com.ddip.backend.admin.dto.user.AdminUserSearchCondition;
+import com.ddip.backend.auction.domain.Auction;
+import com.ddip.backend.auction.domain.Bids;
+import com.ddip.backend.auction.domain.MyBids;
 import com.ddip.backend.auction.dto.auction.AuctionSummaryDto;
-import com.ddip.backend.auction.dto.bids.BidsResponseDto;
+import com.ddip.backend.auction.dto.bids.BidsSummaryDto;
 import com.ddip.backend.auction.dto.mybids.MyBidsSummaryDto;
 import com.ddip.backend.user.domain.User;
 import com.ddip.backend.user.dto.user.*;
@@ -20,6 +23,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -79,23 +85,24 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
-        UserResponseDto userResponseDto = UserResponseDto.from(user);
+        List<Auction> muAuctions = auctionRepository.findAuctionsByUserId(user.getId());
 
-        List<AuctionSummaryDto> auctionSummaries = auctionRepository.findAuctionsByUserId(userId).stream()
-                        .map(AuctionSummaryDto::from)
-                        .toList();
+        List<Bids> bids = bidsRepository.findBidsByUserId(user.getId());
+        List<MyBids> myBids = myBidsRepository.findMyBidsByUserId(user.getId());
 
-        List<BidsResponseDto> bidsResponseDtos = bidsRepository.findBidsByUserId(userId).stream()
-                .map(BidsResponseDto::from)
+        Map<Long, AuctionSummaryDto> auctionMap = loadAuctionSummaryMap(bids, myBids);
+
+        List<BidsSummaryDto> bidsDtos = bids.stream()
+                .map(b -> BidsSummaryDto.from(b, auctionMap.get(b.getAuctionId())))
                 .toList();
 
-        List<MyBidsSummaryDto> myBidsSummaries = myBidsRepository.findMyBidsByUserId(userId).stream()
-                .map(MyBidsSummaryDto::from)
+        List<MyBidsSummaryDto> myBidsDtos = myBids.stream()
+                .map(m -> MyBidsSummaryDto.from(m, auctionMap.get(m.getAuctionId())))
                 .toList();
 
-        log.info("User profile: {}", userResponseDto.getEmail());
+        log.info("User profile: {}", user.getEmail());
 
-        return new UserPageResponseDto(userResponseDto, auctionSummaries, bidsResponseDtos, myBidsSummaries);
+        return UserPageResponseDto.from(user, muAuctions, bidsDtos, myBidsDtos);
     }
 
     /**
@@ -159,4 +166,19 @@ public class UserService {
         return userRepository.searchUsersForAdmin(condition, pageable);
     }
 
+    /**
+     * auctionId -> AuctionSummaryDto
+     */
+    private Map<Long, AuctionSummaryDto> loadAuctionSummaryMap(List<Bids> bids, List<MyBids> myBids) {
+        List<Long> auctionIds =
+                Stream.concat(
+                        bids.stream().map(Bids::getAuctionId),
+                        myBids.stream().map(MyBids::getAuctionId)
+                ).distinct().toList();
+
+        if (auctionIds.isEmpty()) return Map.of();
+
+        return auctionRepository.findAuctionsByIdInWithSeller(auctionIds).stream()
+                .collect(Collectors.toMap(Auction::getId, AuctionSummaryDto::from));
+    }
 }

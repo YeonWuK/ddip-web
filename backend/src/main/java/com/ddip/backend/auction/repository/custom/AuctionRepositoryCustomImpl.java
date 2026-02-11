@@ -71,6 +71,16 @@ public class AuctionRepositoryCustomImpl implements AuctionRepositoryCustom {
     }
 
     @Override
+    public List<Auction> findAuctionsByIdInWithSeller(List<Long> auctionIds) {
+        return jpaQueryFactory
+                .selectFrom(auction)
+                .leftJoin(auction.seller, user).fetchJoin()
+                .where(auction.id.in(auctionIds))
+                .orderBy(auction.id.desc())
+                .fetch();
+    }
+
+    @Override
     public Page<Auction> searchAuctionsForAdmin(AdminAuctionSearchCondition condition, Pageable pageable) {
         QAuction a = auction;
         QUser s = user; // seller
