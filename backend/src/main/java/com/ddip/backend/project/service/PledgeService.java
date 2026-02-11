@@ -142,6 +142,63 @@ public class PledgeService {
         }
     }
 
+    /**
+     * 특정 사용자의 모든 Pledge 조회 (Admin 등 내부용)
+     */
+    @Transactional(readOnly = true)
+    public List<Pledge> getPledgesByUser(Long userId) {
+        return pledgeRepository.findByUserId(userId);
+    }
+
+    /**
+     * 특정 사용자의 모든 후원 이력 (orderId 기준으로 묶은 히스토리)
+     */
+    @Transactional(readOnly = true)
+    public List<PledgeCreateResponseDto> getPledgeHistory(Long userId) {
+
+        List<Pledge> pledges = pledgeRepository.findByUserId(userId);
+
+        if (pledges.isEmpty()) {
+            return List.of();
+        }
+
+        // orderId 기준으로 묶기
+        Map<String, List<Pledge>> groupedByOrder =
+                pledges.stream().collect(Collectors.groupingBy(Pledge::getOrderId));
+
+        // 각 orderId 묶음을 PledgeCreateResponseDto로 변환
+        return groupedByOrder.values().stream()
+                .map(this::toCreateResponse)
+                .toList();
+    }
+
+    private PledgeCreateResponseDto toCreateResponse(List<Pledge> group) {
+        Pledge first = group.get(0);
+        // Pledge가 이제 projectId만 가지고 있으니 그걸 사용
+        return PledgeCreateResponseDto.of(first.getProjectId(), first.getOrderId(), group);
+    }
+
+    /**
+     * 특정 프로젝트의 모든 Pledge 조회 (Admin 등 내부용)
+     */
+    @Transactional(readOnly = true)
+    public List<Pledge> getPledgesByProject(Long projectId) {
+        return pledgeRepository.findByProjectId(projectId);
+    }
+
+    /**
+     * 펀딩 실패 시, 해당 프로젝트의 결제 완료(PAID) 상태 후원 전체 환불
+     */
+    @Transactional
+    public void refundAllFailedProjects(Long projectId) {
+        List<Pledge> pledges =
+                pledgeRepository.findByProjectIdAndStatus(projectId, PledgeStatus.PAID);
+
+        for (Pledge pledge : pledges) {
+            cancelAndRefund(pledge);
+        }
+    }
+
     // ---------------------------------------------------
     // 유틸 메서드
     // ---------------------------------------------------
