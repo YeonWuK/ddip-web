@@ -1,6 +1,6 @@
 package com.ddip.backend.auction.dto.auction;
 
-import com.ddip.backend.auction.dto.bids.BidsSummaryDto;
+import com.ddip.backend.auction.dto.bids.BidsResponseDto;
 import com.ddip.backend.auction.dto.enums.AuctionStatus;
 import com.ddip.backend.user.dto.user.UserResponseDto;
 import com.ddip.backend.auction.domain.Auction;
@@ -45,7 +45,7 @@ public class AuctionDetailResponseDto {
 
     private String endAt;
 
-    private List<BidsSummaryDto> bids = new ArrayList<>();
+    private List<BidsResponseDto> bids = new ArrayList<>();
 
     public static AuctionDetailResponseDto from(Auction auction, List<Bids> bids) {
         return AuctionDetailResponseDto.builder()
@@ -64,7 +64,7 @@ public class AuctionDetailResponseDto {
                 .startAt(auction.getStartAt())
                 .endAt(String.valueOf(auction.getEndAt()))
                 .bids(bids.stream()
-                        .map(BidsSummaryDto::from)
+                        .map(BidsResponseDto::from)
                         .collect(Collectors.toList()))
                 .build();
     }

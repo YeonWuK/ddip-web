@@ -16,19 +16,21 @@ public class MyBidsSummaryDto {
 
     private Long id;
 
-    private AuctionSummaryDto auction;
+    private Long auctionId;
 
     private MyAuctionStatus myAuctionStatus;
 
-
     private long lastBidPrice;
 
-    public static MyBidsSummaryDto from(MyBids myBids) {
+    private AuctionSummaryDto auctionSummary;
+
+    public static MyBidsSummaryDto from(MyBids myBids, AuctionSummaryDto auctionSummary) {
         return MyBidsSummaryDto.builder()
                 .id(myBids.getId())
-                .auction(AuctionSummaryDto.from(myBids.getAuction()))
+                .auctionId(myBids.getAuctionId())
                 .lastBidPrice(myBids.getLastBidPrice())
                 .myAuctionStatus(myBids.getMyAuctionState())
+                .auctionSummary(auctionSummary)
                 .build();
     }
 

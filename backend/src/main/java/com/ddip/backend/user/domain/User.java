@@ -1,6 +1,7 @@
 package com.ddip.backend.user.domain;
 
 import com.ddip.backend.auction.domain.Auction;
+import com.ddip.backend.auction.domain.Bids;
 import com.ddip.backend.auction.domain.MyBids;
 import com.ddip.backend.common.dto.enums.AuthProvider;
 import com.ddip.backend.user.dto.enums.BankType;
