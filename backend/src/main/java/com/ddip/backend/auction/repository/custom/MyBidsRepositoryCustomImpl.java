@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import java.util.List;
 import java.util.Optional;
 
-import static com.ddip.backend.auction.domain.QAuction.auction;
 import static com.ddip.backend.auction.domain.QMyBids.myBids;
 import static com.ddip.backend.user.domain.QUser.user;
 
@@ -22,7 +21,6 @@ public class MyBidsRepositoryCustomImpl implements MyBidsRepositoryCustom {
     public List<MyBids> findMyBidsByUserId(Long userId) {
         return jpaQueryFactory
                 .selectFrom(myBids)
-                .leftJoin(myBids.auction, auction).fetchJoin()
                 .leftJoin(myBids.user, user).fetchJoin()
                 .where(myBids.user.id.eq(userId))
                 .orderBy(myBids.modifiedDate.desc())
@@ -36,7 +34,7 @@ public class MyBidsRepositoryCustomImpl implements MyBidsRepositoryCustom {
                         .selectFrom(myBids)
                         .leftJoin(myBids.user, user).fetchJoin()
                         .where(
-                                myBids.auction.id.eq(auctionId),
+                                myBids.auctionId.eq(auctionId),
                                 myBids.myAuctionState.eq(MyAuctionStatus.LEADING)
                         )
                         .fetchOne()
@@ -49,7 +47,7 @@ public class MyBidsRepositoryCustomImpl implements MyBidsRepositoryCustom {
                 .update(myBids)
                 .set(myBids.myAuctionState, MyAuctionStatus.WON)
                 .where(
-                        myBids.auction.id.eq(auctionId),
+                        myBids.auctionId.eq(auctionId),
                         myBids.user.id.eq(winnerUserId)
                 )
                 .execute();
@@ -61,7 +59,7 @@ public class MyBidsRepositoryCustomImpl implements MyBidsRepositoryCustom {
                 .update(myBids)
                 .set(myBids.myAuctionState, MyAuctionStatus.LOST)
                 .where(
-                        myBids.auction.id.eq(auctionId),
+                        myBids.auctionId.eq(auctionId),
                         myBids.user.id.ne(winnerUserId)
                 )
                 .execute();
