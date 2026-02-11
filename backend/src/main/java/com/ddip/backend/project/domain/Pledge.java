@@ -26,17 +26,14 @@ public class Pledge extends BaseTimeEntity {
     @Column(name = "order_id", nullable = false, length = 64)
     private String orderId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "project_id", nullable = false)
-    private Project project;
+    @Column(name = "project_id", nullable = false)
+    private Long projectId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "reward_tier_id")
-    private RewardTier rewardTier;
+    @Column(name = "reward_tier_id")
+    private Long rewardTierId;
 
     @Column(name = "paid_amount", nullable = false)
     private Long paidAmount;
@@ -45,23 +42,26 @@ public class Pledge extends BaseTimeEntity {
     private Long purchasedQuantity;
 
     @Enumerated(EnumType.STRING)
-    @Column(length = 20, nullable = false)
+    @Column(name = "status", length = 20, nullable = false)
     private PledgeStatus status;
 
-    public static Pledge toEntity(String orderId, User user, Project project, RewardTier rewardTier, long requiredAmount, long quantity) {
+    public static Pledge toEntity(String orderId, Long userId, Long projectId,
+                                  Long rewardTierId, long requiredAmount, long quantity) {
         return Pledge.builder()
                 .orderId(orderId)
-                .user(user)
-                .project(project)
-                .rewardTier(rewardTier)
+                .userId(userId)
+                .projectId(projectId)
+                .rewardTierId(rewardTierId)
                 .paidAmount(requiredAmount)
                 .purchasedQuantity(quantity)
                 .status(PledgeStatus.PENDING)
                 .build();
     }
 
-    public void assertOwnedBy(Long userId) {
-        if (!this.user.getId().equals(userId)) throw new PledgeAccessDeniedException(this.id ,userId);
+    public void assertOwnedBy(Long requestUserId) {
+        if (!this.userId.equals(requestUserId)) {
+            throw new PledgeAccessDeniedException(this.id, requestUserId);
+        }
     }
 
     public void assertCancelable() {

@@ -11,7 +11,6 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "admin_history")
@@ -42,6 +41,7 @@ public class AdminHistory extends BaseTimeEntity {
     @Column(name = "reason", length = 500)
     private String reason;
 
+    @Builder
     public static AdminHistory of(AdminTargetType targetType, Long targetId,
                                   AdminActionType actionType, Long adminId, String reason) {
 
