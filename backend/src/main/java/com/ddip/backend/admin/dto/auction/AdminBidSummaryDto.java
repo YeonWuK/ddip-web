@@ -36,7 +36,7 @@ public class AdminBidSummaryDto {
                 .userId(bids.getUser().getId())
                 .username(bids.getUser().getUsername())
 
-                .auctionId(bids.getAuction().getId())
+                .auctionId(bids.getAuctionId())
 
                 .price(bids.getPrice())
                 .createdAt(bids.getCreateTime())
