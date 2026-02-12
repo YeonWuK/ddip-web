@@ -259,22 +259,22 @@ public class CrowdFundingService {
     private String uploadNewImagesForUpdate(Long projectId, Project project, List<MultipartFile> multipartFiles) {
 
         if (multipartFiles == null || multipartFiles.isEmpty()) {
-            return null;
+            return projectImageRepository.findImagesByProjectId(projectId).stream()
+                    .map(ProjectImage::getS3Key)
+                    .findFirst()
+                    .orElse(null);
         }
 
         String prefix = s3UrlPrefixFactory.projectPrefix(projectId);
-        String thumbnailUrl = null;
 
+        String thumbnailUrl = null;
         for (MultipartFile file : multipartFiles) {
             String key = awsS3Util.uploadFile(file, prefix);
-            if (thumbnailUrl == null) {
-                thumbnailUrl = key;
-            }
+            if (thumbnailUrl == null) thumbnailUrl = key;
             projectImageRepository.save(ProjectImage.from(project, key));
         }
         return thumbnailUrl;
     }
-
     /**
      * 수정 시 기존 이미지 삭제 (DB → S3)
      */
