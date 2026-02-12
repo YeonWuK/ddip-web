@@ -24,7 +24,7 @@ public class PledgeResponseDto {
     public static PledgeResponseDto from(Pledge pledge) {
         return PledgeResponseDto.builder()
                 .pledgeId(pledge.getId())
-                .rewardTierId(pledge.getRewardTier() == null ? null : pledge.getRewardTier().getId())
+                .rewardTierId(pledge.getRewardTierId())
                 .paidAmount(pledge.getPaidAmount())
                 .status(pledge.getStatus())
                 .createdAt(pledge.getCreateTime())

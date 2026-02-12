@@ -1,6 +1,7 @@
 package com.ddip.backend.admin.service;
 
 import com.ddip.backend.admin.domain.AdminHistory;
+import com.ddip.backend.admin.dto.user.AdminSellerDetailDto;
 import com.ddip.backend.auction.domain.Auction;
 import com.ddip.backend.auction.domain.Bids;
 import com.ddip.backend.auction.service.AuctionService;
@@ -25,6 +26,7 @@ import com.ddip.backend.billing.dto.PointLedgerType;
 import com.ddip.backend.project.domain.Pledge;
 import com.ddip.backend.project.domain.Project;
 import com.ddip.backend.project.domain.RewardTier;
+import com.ddip.backend.project.service.AdminProjectQueryService;
 import com.ddip.backend.project.service.CrowdFundingService;
 import com.ddip.backend.project.service.PledgeService;
 import com.ddip.backend.admin.repository.AdminHistoryRepository;
@@ -58,6 +60,7 @@ public class AdminServiceImpl implements AdminService {
     private final SmsService smsService;
     private final TokenBlackListService tokenBlackListService;
     private final AdminHistoryRepository adminHistoryRepository;
+    private final AdminProjectQueryService adminProjectQueryService;
 
     /**
      *   1. 유저 관리
@@ -81,9 +84,6 @@ public class AdminServiceImpl implements AdminService {
 
         User user = userService.getUser(userId);
 
-        // 판매자로서 올린 경매들
-        List<Auction> sellingAuctions = auctionService.getAuctionsBySeller(userId);
-
         // 입찰 기록 (Bids 기준)
         List<Bids> bids = bidsService.getBidsByUser(userId);
 
@@ -93,8 +93,20 @@ public class AdminServiceImpl implements AdminService {
         // 포인트 원장 이력
         List<PointLedger> ledgers = pointService.getLedgersByUser(userId);
 
-        return AdminUserDetailDto.of(user, sellingAuctions, bids, pledges, ledgers);
+        return AdminUserDetailDto.of(user, bids, pledges, ledgers);
 
+    }
+
+    @Transactional(readOnly = true)
+    public AdminSellerDetailDto getSellerDetail(Long userId) {
+
+        User seller = userService.getUser(userId);
+
+        List<Auction> sellingAuctions = auctionService.getAuctionsBySeller(userId);
+
+        List<Project> sellingProjects = adminProjectQueryService.findByCreatorId(userId);
+
+        return AdminSellerDetailDto.of(seller, sellingAuctions, sellingProjects);
     }
 
     @Override
@@ -192,7 +204,7 @@ public class AdminServiceImpl implements AdminService {
     @Transactional(readOnly = true)
     public AdminProjectDetailDto getProjectDetail(Long projectId) {
 
-        Project project = crowdFundingService.getProjectWithRewardTiersAndCreator(projectId);
+        Project project = adminProjectQueryService.getProjectWithRewardTiersAndCreator(projectId);
 
         List<RewardTier> rewardTiers = project.getRewardTiers();
 

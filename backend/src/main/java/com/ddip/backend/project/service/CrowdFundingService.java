@@ -55,13 +55,6 @@ public class CrowdFundingService {
                 .orElseThrow(() -> new ProjectNotFoundException(projectId));
     }
 
-    // 어드민용
-    @Transactional(readOnly = true)
-    public Project getProjectWithRewardTiersAndCreator(Long projectId) {
-        return projectRepository.findByIdWithRewardTiersAndCreator(projectId)
-                .orElseThrow(() -> new ProjectNotFoundException(projectId));
-    }
-
     /**
      * Crowdfunding 프로젝트 단건 조회 (RewardTier 포함)
      */
