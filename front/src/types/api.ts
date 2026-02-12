@@ -514,3 +514,36 @@ export interface SmsToPhoneRequestDto {
   phoneNumber: string;
   message: string;
 }
+
+// ==================== 검색 API 타입 ====================
+
+// 자동완성 응답
+export interface SearchAutoCompleteResponse {
+  title: string;
+}
+
+// 프로젝트 검색 응답
+export interface ProjectSearchResponse {
+  id: number;
+  title: string;
+  thumbnailUrl: string;
+  targetAmount: number;
+  currentAmount: number;
+  status: string;
+  startAt: string;
+  endAt: string;
+}
+
+// 경매 검색 응답
+export interface AuctionSearchResponse {
+  id: number;
+  title: string;
+  imageKey: string;
+  seller: string;
+  description: string;
+  startPrice: number;
+  currentPrice: number;
+  status: string;
+  startAt: string;
+  endAt: string;
+}

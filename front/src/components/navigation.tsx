@@ -14,7 +14,6 @@ import {
   Sparkles,
   Rocket,
   Gavel,
-  Search,
   Shield,
   Coins,
 } from "lucide-react";
@@ -77,11 +76,6 @@ export function Navigation() {
             <Button variant="ghost" size="sm" asChild>
               <Link href="/auctions" className="flex items-center gap-2">
                 <Gavel className="size-4" />경매
-              </Link>
-            </Button>
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/search" className="flex items-center gap-2">
-                <Search className="size-4" />검색
               </Link>
             </Button>
             {/* ADMIN 전용 관리자 링크 */}
@@ -193,11 +187,6 @@ export function Navigation() {
               <DropdownMenuItem asChild>
                 <Link href="/auctions" className="flex items-center gap-2">
                   <Gavel className="size-4" />경매
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/search" className="flex items-center gap-2">
-                  <Search className="size-4" />검색
                 </Link>
               </DropdownMenuItem>
               {isAuthenticated ? (

@@ -2,18 +2,20 @@
 
 import { Button } from "@/src/components/ui/button"
 import { Input } from "@/src/components/ui/input"
-import { Search, TrendingUp, Users, Zap } from "lucide-react"
+import { Search, TrendingUp, Users, Zap, Sparkles } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import { useAuth } from "@/src/contexts/auth-context"
-import { projectApi } from "@/src/services/api"
+import { projectApi, searchApi, type SearchAutoCompleteResponse } from "@/src/services/api"
 import { formatAmountShort } from "@/src/lib/format-amount"
 
 export function HeroBanner() {
   const router = useRouter()
   const { isAuthenticated } = useAuth()
   const [searchQuery, setSearchQuery] = useState("")
+  const [suggestions, setSuggestions] = useState<SearchAutoCompleteResponse[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
   const [statistics, setStatistics] = useState({
     totalAmount: 0,
     totalParticipants: 0,
@@ -21,6 +23,7 @@ export function HeroBanner() {
   })
   const [loadingStats, setLoadingStats] = useState(true)
 
+  // 통계 로드
   useEffect(() => {
     const loadStatistics = async () => {
       try {
@@ -35,11 +38,38 @@ export function HeroBanner() {
     loadStatistics()
   }, [])
 
+  // 자동완성 로드
+  useEffect(() => {
+    const loadSuggestions = async () => {
+      if (searchQuery.trim().length >= 2) {
+        try {
+          const data = await searchApi.getSuggestions(searchQuery.trim())
+          setSuggestions(data.slice(0, 5))
+        } catch (error) {
+          console.error("자동완성 로드 실패:", error)
+          setSuggestions([])
+        }
+      } else {
+        setSuggestions([])
+      }
+    }
+
+    const timer = setTimeout(loadSuggestions, 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (searchQuery.trim()) {
+      setShowSuggestions(false)
       router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`)
     }
+  }
+
+  const handleSuggestionClick = (suggestion: string) => {
+    setSearchQuery(suggestion)
+    setShowSuggestions(false)
+    router.push(`/search?q=${encodeURIComponent(suggestion)}`)
   }
 
   const popularCategories = [
@@ -63,6 +93,8 @@ export function HeroBanner() {
                 placeholder="새로운 일상이 필요하신가요?"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                 className="h-14 rounded-full border-2 border-primary/20 bg-background pl-12 pr-4 text-base shadow-lg transition-all focus:border-primary focus:shadow-xl"
               />
               <Button
@@ -72,6 +104,31 @@ export function HeroBanner() {
               >
                 검색
               </Button>
+
+              {/* 자동완성 드롭다운 */}
+              {showSuggestions && suggestions.length > 0 && (
+                <div className="absolute top-full mt-2 w-full rounded-2xl border-2 border-primary/20 bg-background shadow-2xl z-50 overflow-hidden">
+                  <div className="p-2">
+                    <div className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground">
+                      <Sparkles className="size-4 text-primary" />
+                      <span>추천 검색어</span>
+                    </div>
+                    {suggestions.map((suggestion, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => handleSuggestionClick(suggestion.title)}
+                        className="w-full rounded-xl px-4 py-3 text-left hover:bg-primary/10 transition-colors group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Search className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                          <span className="font-medium group-hover:text-primary transition-colors">{suggestion.title}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </form>
 

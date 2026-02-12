@@ -10,18 +10,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/ta
 import { Input } from "@/src/components/ui/input"
 import { useState, useEffect, Suspense, use, useMemo } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { projectApi, auctionApi } from "@/src/services/api"
-import { ProjectResponse, AuctionResponse } from "@/src/types/api"
-import { useFilterStore, filterAndSortProjects, filterAndSortAuctions } from "@/src/stores/filterStore"
-import { Loader2, Search, Package, Gavel } from "lucide-react"
+import { searchApi, type ProjectSearchResponse, type AuctionSearchResponse, type SearchAutoCompleteResponse } from "@/src/services/api"
+import { useFilterStore } from "@/src/stores/filterStore"
+import { Loader2, Search, Package, Gavel, Sparkles } from "lucide-react"
 
 function SearchContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const query = searchParams.get("q") || ""
   const [searchQuery, setSearchQuery] = useState(query)
-  const [projects, setProjects] = useState<ProjectResponse[]>([])
-  const [auctions, setAuctions] = useState<AuctionResponse[]>([])
+  const [projects, setProjects] = useState<ProjectSearchResponse[]>([])
+  const [auctions, setAuctions] = useState<AuctionSearchResponse[]>([])
+  const [suggestions, setSuggestions] = useState<SearchAutoCompleteResponse[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<"all" | "projects" | "auctions">("all")
   
@@ -41,6 +42,26 @@ function SearchContent() {
     }
   }, [query])
 
+  // 자동완성
+  useEffect(() => {
+    const loadSuggestions = async () => {
+      if (searchQuery.trim().length >= 2) {
+        try {
+          const data = await searchApi.getSuggestions(searchQuery.trim())
+          setSuggestions(data.slice(0, 5)) // 최대 5개
+        } catch (error) {
+          console.error("자동완성 로드 실패:", error)
+          setSuggestions([])
+        }
+      } else {
+        setSuggestions([])
+      }
+    }
+
+    const timer = setTimeout(loadSuggestions, 300) // 300ms 디바운스
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
   const performSearch = async (searchTerm: string) => {
     if (!searchTerm.trim()) {
       setProjects([])
@@ -49,14 +70,16 @@ function SearchContent() {
     }
 
     setLoading(true)
+    setShowSuggestions(false)
     try {
       const [projectsData, auctionsData] = await Promise.all([
-        projectApi.searchProjects(searchTerm, { limit: 50 }),
-        auctionApi.searchAuctions(searchTerm, { limit: 50 }),
+        searchApi.searchProjects(searchTerm.trim()),
+        searchApi.searchAuctions(searchTerm.trim()),
       ])
       setProjects(projectsData)
       setAuctions(auctionsData)
-    } catch {
+    } catch (error) {
+      console.error("검색 실패:", error)
     } finally {
       setLoading(false)
     }
@@ -65,19 +88,20 @@ function SearchContent() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (searchQuery.trim()) {
+      setShowSuggestions(false)
       router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`)
     }
   }
 
-  // 필터링 및 정렬된 프로젝트
-  const filteredProjects = useMemo(() => {
-    return filterAndSortProjects(projects, projectStatus, projectSort)
-  }, [projects, projectStatus, projectSort])
-  
-  // 필터링 및 정렬된 경매
-  const filteredAuctions = useMemo(() => {
-    return filterAndSortAuctions(auctions, auctionStatus, auctionSort)
-  }, [auctions, auctionStatus, auctionSort])
+  const handleSuggestionClick = (suggestion: string) => {
+    setSearchQuery(suggestion)
+    setShowSuggestions(false)
+    router.push(`/search?q=${encodeURIComponent(suggestion)}`)
+  }
+
+  // 검색 결과는 이미 백엔드에서 필터링되어 오므로 클라이언트 필터 불필요
+  const filteredProjects = projects
+  const filteredAuctions = auctions
 
   // 프로젝트 데이터를 ProjectCard props로 변환
   const projectCards = filteredProjects.map((project) => {
@@ -86,17 +110,16 @@ function SearchContent() {
     const daysLeft = isNaN(endTime.getTime())
       ? 0
       : Math.ceil((endTime.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-    const backers = project.rewardTiers.reduce((sum, tier) => sum + tier.soldQuantity, 0)
 
     return {
       id: String(project.id),
       title: project.title,
-      description: project.description,
-      image: project.imageUrl || "/placeholder.svg",
-      category: project.categoryPath || "프로젝트",
+      description: project.title, // 검색 결과는 description 없음
+      image: project.thumbnailUrl || "/placeholder.svg",
+      category: "프로젝트",
       currentAmount: project.currentAmount,
       goalAmount: project.targetAmount,
-      backers,
+      backers: 0, // 검색 결과는 backers 없음
       daysLeft: daysLeft > 0 ? daysLeft : 0,
     }
   })
@@ -122,11 +145,16 @@ function SearchContent() {
       }
     }
 
+    // S3 이미지 URL 변환
+    const imageUrl = auction.imageKey 
+      ? `https://ddip-image.s3.ap-northeast-2.amazonaws.com/${auction.imageKey}`
+      : "/placeholder.svg"
+
     return {
       id: String(auction.id),
       title: auction.title,
       description: auction.description,
-      image: auction.imageUrl || "/placeholder.svg",
+      image: imageUrl,
       category: "경매",
       currentBid: auction.currentPrice,
       bidCount: 0,
@@ -152,6 +180,8 @@ function SearchContent() {
                 placeholder="프로젝트나 경매를 검색해보세요"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                 className="h-14 rounded-full border-2 border-primary/20 bg-background pl-12 pr-24 text-base shadow-lg transition-all focus:border-primary focus:shadow-xl"
               />
               <Button
@@ -161,6 +191,31 @@ function SearchContent() {
               >
                 검색
               </Button>
+              
+              {/* 자동완성 */}
+              {showSuggestions && suggestions.length > 0 && (
+                <div className="absolute top-full mt-2 w-full rounded-2xl border bg-background shadow-xl z-10">
+                  <div className="p-2">
+                    <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
+                      <Sparkles className="size-4" />
+                      <span>추천 검색어</span>
+                    </div>
+                    {suggestions.map((suggestion, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => handleSuggestionClick(suggestion.title)}
+                        className="w-full rounded-lg px-3 py-2 text-left hover:bg-accent transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Search className="size-4 text-muted-foreground" />
+                          <span>{suggestion.title}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </form>
         </div>
@@ -175,7 +230,7 @@ function SearchContent() {
             ) : (
               <>
                 {/* 결과 통계 */}
-                <div className="mb-6">
+                <div className="mb-6 flex items-center justify-between">
                   <p className="text-muted-foreground">
                     <span className="font-semibold text-foreground">"{query}"</span>에 대한 검색 결과{" "}
                     <span className="font-semibold text-foreground">{totalResults}개</span>
@@ -189,9 +244,11 @@ function SearchContent() {
                       전체 ({totalResults})
                     </TabsTrigger>
                     <TabsTrigger value="projects">
+                      <Package className="mr-2 size-4" />
                       프로젝트 ({filteredProjects.length})
                     </TabsTrigger>
                     <TabsTrigger value="auctions">
+                      <Gavel className="mr-2 size-4" />
                       경매 ({filteredAuctions.length})
                     </TabsTrigger>
                   </TabsList>
@@ -199,38 +256,11 @@ function SearchContent() {
                   {/* 전체 결과 */}
                   <TabsContent value="all" className="mt-6">
                     {totalResults === 0 ? (
-                      // 필터가 활성화되어 있는지 확인
-                      (projectStatus !== 'ALL' || projectSort !== 'latest' || auctionStatus !== 'ALL' || auctionSort !== 'latest') ? (
-                        <EmptyState
-                          icon={Search}
-                          title="필터 조건에 맞는 검색 결과가 없습니다"
-                          description="다른 필터 조건을 선택하거나 필터를 초기화해보세요"
-                          action={{
-                            label: "필터 초기화",
-                            onClick: () => {
-                              useFilterStore.getState().resetFilters()
-                            },
-                          }}
-                        />
-                      ) : (projects.length === 0 && auctions.length === 0) ? (
-                        <EmptyState
-                          icon={Search}
-                          title="검색 결과가 없습니다"
-                          description="다른 키워드로 검색해보세요"
-                        />
-                      ) : (
-                        <EmptyState
-                          icon={Search}
-                          title="검색 결과는 있지만 필터 조건에 맞는 항목이 없습니다"
-                          description="다른 필터 조건을 선택하거나 필터를 초기화해보세요"
-                          action={{
-                            label: "필터 초기화",
-                            onClick: () => {
-                              useFilterStore.getState().resetFilters()
-                            },
-                          }}
-                        />
-                      )
+                      <EmptyState
+                        icon={Search}
+                        title="검색 결과가 없습니다"
+                        description="다른 키워드로 검색해보세요"
+                      />
                     ) : (
                       <div className="space-y-8">
                         {/* 프로젝트 섹션 */}
@@ -269,38 +299,11 @@ function SearchContent() {
                   {/* 프로젝트만 */}
                   <TabsContent value="projects" className="mt-6">
                     {filteredProjects.length === 0 ? (
-                      // 필터가 활성화되어 있는지 확인
-                      projectStatus !== 'ALL' || projectSort !== 'latest' ? (
-                        <EmptyState
-                          icon={Package}
-                          title="필터 조건에 맞는 프로젝트가 없습니다"
-                          description="다른 필터 조건을 선택하거나 필터를 초기화해보세요"
-                          action={{
-                            label: "필터 초기화",
-                            onClick: () => {
-                              useFilterStore.getState().resetFilters()
-                            },
-                          }}
-                        />
-                      ) : projects.length === 0 ? (
-                        <EmptyState
-                          icon={Package}
-                          title="프로젝트 검색 결과가 없습니다"
-                          description="다른 키워드로 검색해보세요"
-                        />
-                      ) : (
-                        <EmptyState
-                          icon={Package}
-                          title="검색 결과는 있지만 필터 조건에 맞는 프로젝트가 없습니다"
-                          description="다른 필터 조건을 선택하거나 필터를 초기화해보세요"
-                          action={{
-                            label: "필터 초기화",
-                            onClick: () => {
-                              useFilterStore.getState().resetFilters()
-                            },
-                          }}
-                        />
-                      )
+                      <EmptyState
+                        icon={Package}
+                        title="프로젝트 검색 결과가 없습니다"
+                        description="다른 키워드로 검색해보세요"
+                      />
                     ) : (
                       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                         {projectCards.map((project) => (
@@ -313,38 +316,11 @@ function SearchContent() {
                   {/* 경매만 */}
                   <TabsContent value="auctions" className="mt-6">
                     {filteredAuctions.length === 0 ? (
-                      // 필터가 활성화되어 있는지 확인
-                      auctionStatus !== 'ALL' || auctionSort !== 'latest' ? (
-                        <EmptyState
-                          icon={Gavel}
-                          title="필터 조건에 맞는 경매가 없습니다"
-                          description="다른 필터 조건을 선택하거나 필터를 초기화해보세요"
-                          action={{
-                            label: "필터 초기화",
-                            onClick: () => {
-                              useFilterStore.getState().resetFilters()
-                            },
-                          }}
-                        />
-                      ) : auctions.length === 0 ? (
-                        <EmptyState
-                          icon={Gavel}
-                          title="경매 검색 결과가 없습니다"
-                          description="다른 키워드로 검색해보세요"
-                        />
-                      ) : (
-                        <EmptyState
-                          icon={Gavel}
-                          title="검색 결과는 있지만 필터 조건에 맞는 경매가 없습니다"
-                          description="다른 필터 조건을 선택하거나 필터를 초기화해보세요"
-                          action={{
-                            label: "필터 초기화",
-                            onClick: () => {
-                              useFilterStore.getState().resetFilters()
-                            },
-                          }}
-                        />
-                      )
+                      <EmptyState
+                        icon={Gavel}
+                        title="경매 검색 결과가 없습니다"
+                        description="다른 키워드로 검색해보세요"
+                      />
                     ) : (
                       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                         {auctionCards.map((auction) => (
