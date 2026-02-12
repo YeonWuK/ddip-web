@@ -5,6 +5,7 @@ import com.ddip.backend.admin.dto.enums.AdminTargetType;
 import com.ddip.backend.common.domain.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 

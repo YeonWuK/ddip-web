@@ -8,6 +8,7 @@ import com.ddip.backend.admin.dto.crowdfunding.AdminProjectSearchCondition;
 import com.ddip.backend.admin.dto.crowdfunding.AdminProjectSummaryDto;
 import com.ddip.backend.admin.dto.point.AdjustPointRequestDto;
 import com.ddip.backend.admin.dto.point.AdminPointHistoryRepDto;
+import com.ddip.backend.admin.dto.user.AdminSellerDetailDto;
 import com.ddip.backend.admin.dto.user.AdminUserDetailDto;
 import com.ddip.backend.admin.dto.user.AdminUserSearchCondition;
 import com.ddip.backend.admin.dto.user.AdminUserSummaryDto;
@@ -64,6 +65,21 @@ public class AdminController {
     })
     public AdminUserDetailDto getUserDetail(@PathVariable Long userId) {
         return adminService.getUserDetail(userId);
+    }
+
+    /**
+     * 판매자 상세 조회 (등록 경매/프로젝트 포함)
+     * GET /api/admin/sellers/{userId}
+     */
+    @GetMapping("/sellers/{userId}")
+    @Operation(summary = "판매자 상세 조회", description = "판매자의 기본 정보와 등록한 경매/프로젝트 목록을 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "403", description = "관리자 권한 없음"),
+            @ApiResponse(responseCode = "404", description = "유저를 찾을 수 없음")
+    })
+    public AdminSellerDetailDto getSellerDetail(@PathVariable Long userId) {
+        return adminService.getSellerDetail(userId);
     }
 
     /**
