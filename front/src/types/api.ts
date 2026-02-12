@@ -319,3 +319,198 @@ export interface AddressResponse {
   detailAddress: string; // 상세주소 (백엔드: address2)
   isDefault: boolean;
 }
+
+// ==================== 관리자 API 타입 ====================
+
+// 유저 검색 조건
+export interface AdminUserSearchCondition {
+  email?: string;
+  username?: string;
+  nickname?: string;
+  phoneNumber?: string;
+  role?: 'USER' | 'ADMIN';
+  active?: boolean;
+}
+
+// 유저 요약 정보 (목록용)
+export interface AdminUserSummaryDto {
+  id: number;
+  email: string;
+  username: string;
+  nickname: string;
+  phoneNumber: string;
+  provider?: string;
+  role: 'USER' | 'ADMIN';
+  active: boolean;
+  pointBalance: number;
+  createdAt: string;
+}
+
+// 입찰 요약 (관리자용)
+export interface AdminBidSummaryDto {
+  bidId: number;
+  userId: number;
+  username: string;
+  auctionId: number;
+  price: number;
+  createdAt: string;
+}
+
+// 후원 요약 (관리자용)
+export interface AdminPledgeSummaryDto {
+  pledgeId: number;
+  orderId: string;
+  projectId: number;
+  rewardTierId: number;
+  paidAmount: number;
+  quantity: number;
+  status: 'PENDING' | 'PAID' | 'CONFIRMED' | 'SHIPPED' | 'CANCELED';
+  createdAt: string;
+}
+
+// 포인트 히스토리
+export interface AdminPointHistoryDto {
+  id: number;
+  userId: number;
+  username: string;
+  nickname: string;
+  changeAmount: number;
+  balanceAfter: number;
+  type: string;
+  source: string;
+  referenceId?: number;
+  description?: string;
+  createdAt: string;
+}
+
+// 유저 상세 정보
+export interface AdminUserDetailDto {
+  user: AdminUserSummaryDto;
+  bids: AdminBidSummaryDto[];
+  pledges: AdminPledgeSummaryDto[];
+  pointHistories: AdminPointHistoryDto[];
+}
+
+// 프로젝트 검색 조건
+export interface AdminProjectSearchCondition {
+  title?: string;
+  creatorEmail?: string;
+  creatorUsername?: string;
+  status?: ProjectStatus;
+  categoryPath?: string;
+  startFrom?: string;
+  startTo?: string;
+}
+
+// 프로젝트 요약 (관리자용)
+export interface AdminProjectSummaryDto {
+  id: number;
+  creatorId: number;
+  creatorUsername: string;
+  creatorNickname: string;
+  title: string;
+  summary?: string;
+  targetAmount: number;
+  currentAmount: number;
+  status: ProjectStatus;
+  startAt: string;
+  endAt: string;
+  thumbnailUrl?: string;
+  categoryPath?: string;
+  tags?: string;
+  likeCount: number;
+  totalPledgeCount: number;
+  achievementRate: number;
+  createdAt: string;
+}
+
+// 리워드 티어 요약 (관리자용)
+export interface AdminRewardTierSummaryDto {
+  id: number;
+  projectId: number;
+  title: string;
+  description: string;
+  price: number;
+  limitQuantity?: number;
+  soldQuantity: number;
+  createdAt: string;
+}
+
+// 프로젝트 상세 (관리자용)
+export interface AdminProjectDetailDto {
+  project: AdminProjectSummaryDto;
+  rewardTiers: AdminRewardTierSummaryDto[];
+  pledges: AdminPledgeSummaryDto[];
+}
+
+// 경매 검색 조건
+export interface AdminAuctionSearchCondition {
+  title?: string;
+  sellerUsername?: string;
+  status?: AuctionStatus;
+  startFrom?: string;
+  startTo?: string;
+}
+
+// 경매 요약 (관리자용)
+export interface AdminAuctionSummaryDto {
+  id: number;
+  sellerId: number;
+  sellerUsername: string;
+  currentWinnerId?: number;
+  currentWinnerUsername?: string;
+  title: string;
+  startPrice: number;
+  currentPrice: number;
+  bidStep: number;
+  auctionStatus: AuctionStatus;
+  startAt: string;
+  endAt: string;
+  createdAt: string;
+}
+
+// 경매 상세 (관리자용)
+export interface AdminAuctionDetailDto {
+  id: number;
+  sellerId: number;
+  sellerUsername: string;
+  winnerId?: number;
+  winnerUsername?: string;
+  currentWinnerId?: number;
+  currentWinnerUsername?: string;
+  title: string;
+  description: string;
+  startPrice: number;
+  currentPrice: number;
+  bidStep: number;
+  auctionStatus: AuctionStatus;
+  startAt: string;
+  endAt: string;
+  createdAt: string;
+  bids: AdminBidSummaryDto[];
+}
+
+// 페이징 응답
+export interface PageResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+  first: boolean;
+  last: boolean;
+  empty: boolean;
+}
+
+// 포인트 조정 요청
+export interface AdjustPointRequestDto {
+  userId: number;
+  adjustPoint: number;
+  reason: string;
+}
+
+// SMS 전송 요청
+export interface SmsToPhoneRequestDto {
+  phoneNumber: string;
+  message: string;
+}
