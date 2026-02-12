@@ -63,7 +63,8 @@ public class SecurityConfig {
                         .requestMatchers("/error",
                                 "/oauth2/**", "/login/oauth2/**", "/login/oauth2/code/**", "/api/users/login",
                                 "/oauth2/callback/**", "/api/users/refresh-token", "/api/users/register",
-                                "/api/users/find-password","/api/users/update-profile","/api/search/**").permitAll()
+                                "/api/users/find-password","/api/users/update-profile","/api/search/**",
+                                "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 
                         .requestMatchers(HttpMethod.GET, "/api/auction", "/api/auction/{auctionId}",
                                 "/api/crowd","/api/crowd/{projectId}").permitAll()
