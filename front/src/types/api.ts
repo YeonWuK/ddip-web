@@ -79,8 +79,8 @@ export interface ProjectCreateRequest {
 }
 
 export interface ProjectUpdateRequest extends Partial<ProjectCreateRequest> {
-  /** 삭제할 이미지 URL 목록 (X 버튼으로 제거한 기존 이미지들) */
-  removedImageUrls?: string[];
+  /** 삭제할 이미지 ID 목록 (X 버튼으로 제거한 기존 이미지들, ProjectUpdateRequestDto.imageIds) */
+  imageIds?: number[];
 }
 
 // 프로젝트 상태 (백엔드 ProjectStatus enum)
@@ -112,6 +112,8 @@ export interface ProjectResponse {
   description: string;
   imageUrl: string | null; // 하위 호환성 유지 (첫 번째 이미지)
   imageUrls?: string[] | null; // 다중 이미지 (최대 3장)
+  /** 기존 이미지 id+url (Edit 시 X 버튼으로 제거할 이미지 id 추적용) */
+  imageItems?: { id: number; url: string }[];
   targetAmount: number;
   currentAmount: number;
   status: ProjectStatus;

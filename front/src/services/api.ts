@@ -355,6 +355,7 @@ export const projectApi = {
 
       // 이미지: ProjectDetailResponseDto.images (ProjectImageResponseDto: id, key)
       const images = backendResponse.images ?? [];
+      const imageItems: { id: number; url: string }[] = [];
       const imageUrlsFromS3 = images
         .map((img: any) => {
           const keyOrUrl =
@@ -371,7 +372,11 @@ export const projectApi = {
                 img?.filePath ??
                 img?.file_path ??
                 (typeof img?.image === 'string' ? img.image : img?.image?.url ?? img?.image?.imageKey ?? img?.image?.s3Key);
-          return toS3ImageUrl(keyOrUrl);
+          const url = toS3ImageUrl(keyOrUrl);
+          if (url && typeof img === 'object' && img != null && (img.id ?? img.imageId) != null) {
+            imageItems.push({ id: img.id ?? img.imageId, url });
+          }
+          return url;
         })
         .filter((url: string | null): url is string => url != null);
       const thumbnailUrl = backendResponse.thumbnailUrl ?? backendResponse.thumbnail_url ?? null;
@@ -415,6 +420,7 @@ export const projectApi = {
         categoryPath: backendResponse.categoryPath ?? backendResponse.category_path ?? null,
         tags: backendResponse.tags ?? null,
         summary: backendResponse.summary ?? null,
+        imageItems: imageItems.length > 0 ? imageItems : undefined,
       };
 
       return project;
@@ -503,9 +509,9 @@ export const projectApi = {
             limitQuantity: tier.limitQuantity,
           })),
         }),
-        ...(data.removedImageUrls !== undefined &&
-          data.removedImageUrls.length > 0 && {
-            removedImageUrls: data.removedImageUrls,
+        ...(data.imageIds !== undefined &&
+          data.imageIds.length > 0 && {
+            imageIds: data.imageIds,
           }),
       };
       formData.append('data', new Blob([JSON.stringify(dataPart)], { type: 'application/json' }));

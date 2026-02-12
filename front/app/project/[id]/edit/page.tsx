@@ -30,8 +30,8 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
   const [project, setProject] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [imageFiles, setImageFiles] = useState<File[]>([])
-  const [existingImageUrls, setExistingImageUrls] = useState<string[]>([])
-  const [removedExistingImageIndices, setRemovedExistingImageIndices] = useState<Set<number>>(new Set())
+  const [existingImageItems, setExistingImageItems] = useState<{ id: number; url: string }[]>([])
+  const [removedImageIds, setRemovedImageIds] = useState<Set<number>>(new Set())
   const [rewardTiers, setRewardTiers] = useState<RewardTierFormData[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [startDate, setStartDate] = useState<string>("")
@@ -71,11 +71,13 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
 
         setProject(projectData)
 
-        // 기존 이미지 URL 저장
-        if (projectData.imageUrls && projectData.imageUrls.length > 0) {
-          setExistingImageUrls(projectData.imageUrls)
+        // 기존 이미지 (id+url) 저장 - X 버튼으로 제거 시 imageIds 전송용
+        if (projectData.imageItems && projectData.imageItems.length > 0) {
+          setExistingImageItems(projectData.imageItems)
+        } else if (projectData.imageUrls && projectData.imageUrls.length > 0) {
+          setExistingImageItems(projectData.imageUrls.map((url, i) => ({ id: 0, url })))
         } else if (projectData.imageUrl) {
-          setExistingImageUrls([projectData.imageUrl])
+          setExistingImageItems([{ id: 0, url: projectData.imageUrl }])
         }
 
         // 날짜를 YYYY-MM-DD 형식으로 변환 (한국 시간 기준)
@@ -128,8 +130,8 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
       setIsSubmitting(true)
 
       // 유지되는 기존 이미지 + 새 이미지 최소 1개 필요
-      const keptExistingCount = existingImageUrls.filter(
-        (_, i) => !removedExistingImageIndices.has(i)
+      const keptExistingCount = existingImageItems.filter(
+        (item) => !removedImageIds.has(item.id)
       ).length
       if (keptExistingCount + imageFiles.length === 0) {
         toast.error("프로젝트 이미지를 최소 1개 이상 유지해주세요")
@@ -179,10 +181,8 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
       const startDateISO = startDateObj.toISOString()
       const endDateISO = endDateObj.toISOString()
 
-      // X 버튼으로 제거한 기존 이미지 URL 목록 (백엔드로 전달)
-      const removedImageUrls = existingImageUrls.filter((_, i) =>
-        removedExistingImageIndices.has(i)
-      )
+      // X 버튼으로 제거한 기존 이미지 ID 목록 (ProjectUpdateRequestDto.imageIds)
+      const imageIdsToRemove = Array.from(removedImageIds).filter((id) => id > 0)
 
       // 프로젝트 수정 (multipart/form-data)
       const updateData = {
@@ -200,7 +200,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
           price: tier.price,
           limitQuantity: tier.limitQuantity,
         })),
-        ...(removedImageUrls.length > 0 && { removedImageUrls }),
+        ...(imageIdsToRemove.length > 0 && { imageIds: imageIdsToRemove }),
       }
 
       const updatedProject = await projectApi.updateProject(projectId, imageFiles, updateData)
@@ -264,10 +264,10 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
                     value={imageFiles} 
                     onChange={setImageFiles} 
                     maxImages={3}
-                    existingImages={existingImageUrls}
-                    onExistingImagesChange={setRemovedExistingImageIndices}
+                    existingImageItems={existingImageItems}
+                    onRemovedIdsChange={setRemovedImageIds}
                   />
-                  {imageFiles.length === 0 && existingImageUrls.length === 0 && (
+                  {imageFiles.length === 0 && existingImageItems.length === 0 && (
                     <p className="text-sm text-muted-foreground">프로젝트를 대표할 이미지를 업로드해주세요</p>
                   )}
                 </div>

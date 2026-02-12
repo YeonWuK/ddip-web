@@ -10,8 +10,14 @@ interface MultiImageUploadProps {
   onChange?: (files: File[]) => void
   maxImages?: number
   className?: string
-  existingImages?: string[] // 기존 이미지 URL 배열 (수정 페이지용)
-  onExistingImagesChange?: (removedIndices: Set<number>) => void // 제거된 기존 이미지 인덱스
+  /** 기존 이미지 URL 배열 (레거시) */
+  existingImages?: string[]
+  /** 제거된 기존 이미지 인덱스 (existingImages 사용 시) */
+  onExistingImagesChange?: (removedIndices: Set<number>) => void
+  /** 기존 이미지 id+url (Edit 시 X 버튼 → imageIds 전송용) */
+  existingImageItems?: { id: number; url: string }[]
+  /** 제거된 기존 이미지 id (existingImageItems 사용 시) */
+  onRemovedIdsChange?: (removedIds: Set<number>) => void
 }
 
 export function MultiImageUpload({
@@ -21,18 +27,29 @@ export function MultiImageUpload({
   className,
   existingImages = [],
   onExistingImagesChange,
+  existingImageItems,
+  onRemovedIdsChange,
 }: MultiImageUploadProps) {
   const [images, setImages] = useState<File[]>(value)
   const [removedExistingIndices, setRemovedExistingIndices] = useState<Set<number>>(new Set())
+  const [removedImageIds, setRemovedImageIds] = useState<Set<number>>(new Set())
   const fileInputRef = useRef<HTMLInputElement>(null)
-  
-  // 제거되지 않은 기존 이미지만 필터링
-  const visibleExistingImages = existingImages.filter((_, index) => !removedExistingIndices.has(index))
-  
-  // 제거된 인덱스 변경 시 부모에게 알림
+
+  const useImageItems = existingImageItems && existingImageItems.length > 0
+  const visibleExistingItems = useImageItems
+    ? existingImageItems.filter((item) => !removedImageIds.has(item.id))
+    : existingImages
+        .map((url, index) => ({ url, index }))
+        .filter(({ index }) => !removedExistingIndices.has(index))
+  const visibleExistingImages = visibleExistingItems.map((x: { url: string }) => x.url)
+
   useEffect(() => {
-    onExistingImagesChange?.(removedExistingIndices)
-  }, [removedExistingIndices, onExistingImagesChange])
+    if (!useImageItems) onExistingImagesChange?.(removedExistingIndices)
+  }, [useImageItems, removedExistingIndices, onExistingImagesChange])
+
+  useEffect(() => {
+    if (useImageItems) onRemovedIdsChange?.(removedImageIds)
+  }, [useImageItems, removedImageIds, onRemovedIdsChange])
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
@@ -66,9 +83,13 @@ export function MultiImageUpload({
     onChange?.(newImages)
   }
 
-  const handleRemoveExisting = (index: number) => {
-    setRemovedExistingIndices(prev => new Set([...prev, index]))
-  }
+  const handleRemoveExisting = useImageItems
+    ? (item: { id: number; url: string }) => {
+        setRemovedImageIds((prev) => new Set([...prev, item.id]))
+      }
+    : (index: number) => {
+        setRemovedExistingIndices((prev) => new Set([...prev, index]))
+      }
 
   const handleAddMore = () => {
     fileInputRef.current?.click()
@@ -98,16 +119,17 @@ export function MultiImageUpload({
         // 이미지가 있을 때: 그리드 레이아웃으로 표시
         <div className="grid grid-cols-3 gap-4">
           {/* 기존 이미지 표시 */}
-          {visibleExistingImages.map((imageUrl, index) => {
-            const originalIndex = existingImages.indexOf(imageUrl)
+          {visibleExistingItems.map((item, index) => {
+            const imageUrl = 'url' in item ? item.url : (item as { url: string }).url
+            const key = useImageItems ? `existing-${(item as { id: number }).id}` : `existing-${(item as { index: number }).index}`
             return (
               <div
-                key={`existing-${originalIndex}`}
+                key={key}
                 className="group relative aspect-video overflow-hidden rounded-lg border bg-muted"
               >
                 <Image
                   src={imageUrl}
-                  alt={`기존 이미지 ${originalIndex + 1}`}
+                  alt={`기존 이미지 ${index + 1}`}
                   fill
                   className="object-cover"
                 />
@@ -116,7 +138,11 @@ export function MultiImageUpload({
                   variant="destructive"
                   size="icon"
                   className="absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100"
-                  onClick={() => handleRemoveExisting(originalIndex)}
+                  onClick={() =>
+                    useImageItems
+                      ? handleRemoveExisting(item as { id: number; url: string })
+                      : handleRemoveExisting((item as { index: number }).index)
+                  }
                 >
                   <X className="size-4" />
                 </Button>
