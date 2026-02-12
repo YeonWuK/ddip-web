@@ -15,6 +15,7 @@ import {
   Rocket,
   Gavel,
   Search,
+  Shield,
   Coins,
 } from "lucide-react";
 import {
@@ -83,6 +84,14 @@ export function Navigation() {
                 <Search className="size-4" />검색
               </Link>
             </Button>
+            {/* ADMIN 전용 관리자 링크 */}
+            {isAuthenticated && user?.role === 'ADMIN' && (
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/admin" className="flex items-center gap-2 text-orange-600 hover:text-orange-700">
+                  <Shield className="size-4" />관리자
+                </Link>
+              </Button>
+            )}
           </div>
         </div>
 
@@ -92,13 +101,15 @@ export function Navigation() {
           ) : isAuthenticated ? (
             <>
               {/* 포인트 잔액 */}
-              <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary">
-                <Coins className="size-4 shrink-0" />
-                <span className="tabular-nums">
-                  {(user?.pointBalance ?? 0).toLocaleString()}
-                </span>
-                <span className="text-primary/80">P</span>
-              </div>
+              {user?.pointBalance !== undefined && (
+                <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary">
+                  <Coins className="size-4 shrink-0" />
+                  <span className="tabular-nums">
+                    {(user?.pointBalance ?? 0).toLocaleString()}
+                  </span>
+                  <span className="text-primary/80">P</span>
+                </div>
+              )}
               {/* 알림 아이콘 */}
               <Button variant="ghost" size="icon" className="relative">
                 <Bell className="size-5" />
@@ -192,6 +203,15 @@ export function Navigation() {
               {isAuthenticated ? (
                 <>
                   <DropdownMenuSeparator />
+                  {/* ADMIN 전용 관리자 링크 (모바일) */}
+                  {user?.role === 'ADMIN' && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin" className="flex items-center gap-2 text-orange-600">
+                        <Shield className="size-4" />
+                        관리자
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem asChild>
                     <Link href="/profile" className="flex items-center gap-2">
                       <User className="size-4" />
