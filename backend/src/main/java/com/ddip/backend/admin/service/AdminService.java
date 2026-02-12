@@ -7,6 +7,7 @@ import com.ddip.backend.admin.dto.crowdfunding.AdminProjectDetailDto;
 import com.ddip.backend.admin.dto.crowdfunding.AdminProjectSearchCondition;
 import com.ddip.backend.admin.dto.crowdfunding.AdminProjectSummaryDto;
 import com.ddip.backend.admin.dto.point.AdminPointHistoryRepDto;
+import com.ddip.backend.admin.dto.user.AdminSellerDetailDto;
 import com.ddip.backend.admin.dto.user.AdminUserDetailDto;
 import com.ddip.backend.admin.dto.user.AdminUserSearchCondition;
 import com.ddip.backend.admin.dto.user.AdminUserSummaryDto;
@@ -19,6 +20,8 @@ public interface AdminService {
     Page<AdminUserSummaryDto> getUserList(AdminUserSearchCondition condition, Pageable pageable);
 
     AdminUserDetailDto getUserDetail(Long userId);
+
+    AdminSellerDetailDto getSellerDetail(Long userId);
 
     void banUser(Long userId, String reason);
 

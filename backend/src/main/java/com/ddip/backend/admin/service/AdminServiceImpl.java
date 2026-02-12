@@ -97,6 +97,7 @@ public class AdminServiceImpl implements AdminService {
 
     }
 
+    @Override
     @Transactional(readOnly = true)
     public AdminSellerDetailDto getSellerDetail(Long userId) {
 
