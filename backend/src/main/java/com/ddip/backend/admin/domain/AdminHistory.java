@@ -31,7 +31,7 @@ public class AdminHistory extends BaseTimeEntity {
     // 어떤 액션인지 (PROJECT_REJECT, USER_BAN, AUCTION_FORCE_CLOSE 등)
     @Enumerated(EnumType.STRING)
     @Column(name = "action_type", length = 50, nullable = false)
-    AdminActionType actionType;
+    private AdminActionType actionType;
 
     // 누가 했는지 (관리자 유저 id)
     @Column(name = "admin_id")
@@ -41,17 +41,8 @@ public class AdminHistory extends BaseTimeEntity {
     @Column(name = "reason", length = 500)
     private String reason;
 
-    @Builder
-    public static AdminHistory of(AdminTargetType targetType, Long targetId,
-                                  AdminActionType actionType, Long adminId, String reason) {
-
-        return AdminHistory.builder()
-                .targetType(targetType)
-                .targetId(targetId)
-                .actionType(actionType)
-                .adminId(adminId)
-                .reason(reason)
-                .build();
+    public static AdminHistory of(AdminTargetType targetType, Long targetId, AdminActionType actionType, Long adminId, String reason) {
+        return new AdminHistory(null, targetType, targetId, actionType, adminId, reason);
     }
 
 }

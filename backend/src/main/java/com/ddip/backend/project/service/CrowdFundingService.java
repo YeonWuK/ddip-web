@@ -111,25 +111,24 @@ public class CrowdFundingService {
     public void updateProject(List<MultipartFile> multipartFiles, Long projectId, Long userId, ProjectUpdateRequestDto requestDto) {
 
         Project project = getProjectEntity(projectId);
-        // 기본 검증 (소유자, 상태, 날짜)
         validateProjectUpdatable(project, userId, requestDto);
 
-        // 삭제 대상 이미지 조회
-        // 새 이미지 업로드, 새 이미지 없는 경우 그냥 Return.
+        // 1) 삭제 대상 확보 (썸네일이 삭제되는지 판단에 필요)
         List<ProjectImage> deleteTargets = resolveDeleteTargets(projectId, requestDto.getImageIds());
 
-        String newThumbnailUrl = uploadNewImagesForUpdate(projectId, project, multipartFiles);
+        // 2) 새 이미지 업로드 (있으면) + 새 썸네일 후보(첫 업로드 key) 리턴
+        String newThumbKey = uploadNewImagesForUpdate(projectId, project, multipartFiles);
 
-        // 기존 이미지 삭제 (DB → S3)
+        // 3) 기존 이미지 삭제 (DB -> S3)
         deleteProjectImages(deleteTargets);
 
-        // 필드 업데이트
+        // 4) 프로젝트 필드 업데이트
         project.updateFrom(requestDto);
 
-        // 썸네일 업데이트
-        updateThumbnailForUpdate(project, newThumbnailUrl, deleteTargets);
+        // 5) 썸네일 업데이트 (케이스 1~4 처리)
+        updateThumbnailForUpdate(project, newThumbKey, deleteTargets);
 
-        // ES 동기화
+        // 6) ES 동기화
         publisher.publishEvent(new ProjectEsEvent(projectId));
     }
 
@@ -259,22 +258,26 @@ public class CrowdFundingService {
     private String uploadNewImagesForUpdate(Long projectId, Project project, List<MultipartFile> multipartFiles) {
 
         if (multipartFiles == null || multipartFiles.isEmpty()) {
-            return projectImageRepository.findImagesByProjectId(projectId).stream()
-                    .map(ProjectImage::getS3Key)
-                    .findFirst()
-                    .orElse(null);
+            return null;
         }
 
         String prefix = s3UrlPrefixFactory.projectPrefix(projectId);
 
-        String thumbnailUrl = null;
+        String newThumbKey = null;
         for (MultipartFile file : multipartFiles) {
+            if (file == null || file.isEmpty())
+                continue;
+
             String key = awsS3Util.uploadFile(file, prefix);
-            if (thumbnailUrl == null) thumbnailUrl = key;
+            if (newThumbKey == null)
+                newThumbKey = key;
+
             projectImageRepository.save(ProjectImage.from(project, key));
         }
-        return thumbnailUrl;
+
+        return newThumbKey;
     }
+
     /**
      * 수정 시 기존 이미지 삭제 (DB → S3)
      */
@@ -290,27 +293,40 @@ public class CrowdFundingService {
 
     /**
      * 수정 시 썸네일 업데이트 로직
-     * - 새 이미지가 있으면 그중 첫 번째를 썸네일로
-     * - 새 이미지는 없지만 기존 썸네일이 삭제 대상에 포함된 경우 null로 초기화
      */
-    private void updateThumbnailForUpdate(Project project, String newThumbnailUrl, List<ProjectImage> deletedImages) {
+    private void updateThumbnailForUpdate(Project project,
+                                          String newThumbKey,
+                                          List<ProjectImage> deleteTargets) {
 
-        String currentThumbnail = project.getThumbnailUrl();
+        String currentThumb = project.getThumbnailUrl();
 
-        if (newThumbnailUrl != null) {
-            project.updateThumbnailUrl(newThumbnailUrl);
+        boolean thumbDeleted = currentThumb != null
+                && deleteTargets != null
+                && deleteTargets.stream().anyMatch(img -> currentThumb.equals(img.getS3Key()));
+
+        // 케이스4: 썸네일이 삭제되면 무조건 재선정
+        if (thumbDeleted) {
+            if (newThumbKey != null) {
+                project.updateThumbnailUrl(newThumbKey);
+                return;
+            }
+            project.updateThumbnailUrl(resolveFallbackThumbnailKey(project.getId()));
             return;
         }
 
-        if (currentThumbnail == null || deletedImages == null || deletedImages.isEmpty()) {
-            return;
+        // 정책: 새 업로드가 있으면 새 업로드 대표로 교체, 없으면 유지
+        if (newThumbKey != null) {
+            project.updateThumbnailUrl(newThumbKey);
         }
+    }
 
-        boolean thumbnailDeleted = deletedImages.stream()
-                .anyMatch(img -> currentThumbnail.equals(img.getS3Key()));
-
-        if (thumbnailDeleted) {
-            project.updateThumbnailUrl(null);
-        }
+    /**
+     * 첫 번째
+     */
+    private String resolveFallbackThumbnailKey(Long projectId) {
+        return projectImageRepository.findImagesByProjectId(projectId).stream()
+                .map(ProjectImage::getS3Key)
+                .findFirst()
+                .orElse(null);
     }
 }

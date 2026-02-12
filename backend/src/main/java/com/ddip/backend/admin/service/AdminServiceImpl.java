@@ -97,6 +97,7 @@ public class AdminServiceImpl implements AdminService {
 
     }
 
+    @Override
     @Transactional(readOnly = true)
     public AdminSellerDetailDto getSellerDetail(Long userId) {
 
@@ -227,9 +228,6 @@ public class AdminServiceImpl implements AdminService {
         AdminHistory adminHistory = AdminHistory.of(AdminTargetType.PROJECT, projectId, AdminActionType.PROJECT_APPROVE, adminId, "OPEN BY ADMIN");
         adminHistoryRepository.save(adminHistory);
 
-        // 필요시 크리에이터에게 알림
-        // String phone = project.getCreator().getPhoneNumber();
-        // smsService.sendSms(phone, "[프로젝트 승인] " + project.getTitle());
     }
 
     /**
