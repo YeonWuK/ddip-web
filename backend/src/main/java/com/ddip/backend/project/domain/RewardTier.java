@@ -44,10 +44,6 @@ public class RewardTier extends BaseTimeEntity {
     @Column(name = "sold_quantity", nullable = false)
     private Long soldQuantity = 0L;
 
-    @Builder.Default
-    @OneToMany(mappedBy = "rewardTier")
-    private List<Pledge> pledges = new ArrayList<>();
-
     public void increaseSoldQuantity(int quantity) {
         if (quantity <= 0) {throw new InvalidQuantityException(quantity);}
 
