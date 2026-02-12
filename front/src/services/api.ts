@@ -312,56 +312,37 @@ export const projectApi = {
   /**
    * 프로젝트 상세 조회
    * GET /api/crowd/{projectId}
+   * 백엔드 응답: ProjectDetailResponseDto
    */
   getProject: async (id: number): Promise<ProjectResponse> => {
     try {
-      // 백엔드 응답을 받아서 프론트엔드 타입으로 변환
       const backendResponse = await apiRequest<any>(`/api/crowd/${id}`, {
         method: 'GET',
       });
 
-      // 백엔드 응답을 프론트엔드 타입으로 변환
-      // 백엔드 필드명이 다를 수 있으므로 안전하게 변환
-      // 백엔드 쿼리 기준: creator_id는 있지만 creator 객체는 없을 수 있음
-      // thumbnail_url은 있지만 imageUrl/imageUrls는 없을 수 있음
-      
-      // Creator 정보 처리
+      // ProjectDetailResponseDto 변환: creator(CreatorDto), images(ProjectImageResponseDto[]), rewardTiers(RewardTierResponseDto[])
+      // startAt/endAt: LocalDate ("2025-02-12") 또는 LocalDateTime
       let creator: UserResponse;
       if (backendResponse.creator) {
-        // 백엔드에 creator 객체가 있는 경우
+        const c = backendResponse.creator;
         creator = {
-          id: backendResponse.creator.id || backendResponse.creatorId || 0,
-          email: backendResponse.creator.email || null,
-          name: backendResponse.creator.name || backendResponse.creator.username || '',
-          nickname: backendResponse.creator.nickname || '',
-          profileImageUrl: backendResponse.creator.profileImageUrl || backendResponse.creator.profile_image_url || null,
-          phone: backendResponse.creator.phone || backendResponse.creator.phoneNumber || backendResponse.creator.phone_number || null,
+          id: c.id ?? c.userId ?? 0,
+          email: c.email ?? null,
+          name: c.name ?? c.username ?? '',
+          nickname: c.nickname ?? '',
+          profileImageUrl: c.profileImageUrl ?? c.profile_image_url ?? null,
+          phone: c.phone ?? c.phoneNumber ?? c.phone_number ?? null,
         };
       } else if (backendResponse.creatorId) {
-        // 백엔드에 creatorId만 있는 경우 - 사용자 정보 조회 시도
-        try {
-          // creatorId로 사용자 정보 조회 (백엔드에 해당 API가 있다면)
-          // 일단 기본값으로 설정하고, 나중에 백엔드에서 creator 정보를 포함시키면 자동으로 사용됨
-          creator = {
-            id: backendResponse.creatorId,
-            email: null,
-            name: '',
-            nickname: `사용자 ${backendResponse.creatorId}`,
-            profileImageUrl: null,
-            phone: null,
-          };
-        } catch {
-          creator = {
-            id: backendResponse.creatorId,
-            email: null,
-            name: '',
-            nickname: `사용자 ${backendResponse.creatorId}`,
-            profileImageUrl: null,
-            phone: null,
-          };
-        }
+        creator = {
+          id: backendResponse.creatorId,
+          email: null,
+          name: '',
+          nickname: `사용자 ${backendResponse.creatorId}`,
+          profileImageUrl: null,
+          phone: null,
+        };
       } else {
-        // creatorId도 없는 경우 (에러 상황)
         creator = {
           id: 0,
           email: null,
@@ -372,18 +353,18 @@ export const projectApi = {
         };
       }
 
-      // 이미지 처리 - 경매와 동일: images[] → S3 풀 URL로 변환 (ProjectImageResponseDto)
+      // 이미지: ProjectDetailResponseDto.images (ProjectImageResponseDto: id, key)
       const images = backendResponse.images ?? [];
       const imageUrlsFromS3 = images
         .map((img: any) => {
           const keyOrUrl =
             typeof img === 'string'
               ? img
-              : img?.s3Key ??
+              : img?.key ??
+                img?.s3Key ??
                 img?.s3_key ??
                 img?.imageKey ??
                 img?.image_key ??
-                img?.key ??
                 img?.imageUrl ??
                 img?.image_url ??
                 img?.url ??
@@ -393,7 +374,7 @@ export const projectApi = {
           return toS3ImageUrl(keyOrUrl);
         })
         .filter((url: string | null): url is string => url != null);
-      const thumbnailUrl = backendResponse.thumbnailUrl || backendResponse.thumbnail_url || null;
+      const thumbnailUrl = backendResponse.thumbnailUrl ?? backendResponse.thumbnail_url ?? null;
       const firstImageUrl =
         imageUrlsFromS3[0] ??
         toS3ImageUrl(backendResponse.imageUrl ?? thumbnailUrl) ??
@@ -401,38 +382,39 @@ export const projectApi = {
       const imageUrls = imageUrlsFromS3.length > 0 ? imageUrlsFromS3 : (firstImageUrl ? [firstImageUrl] : null);
       const imageUrl = firstImageUrl;
 
-      // 날짜 필드 처리 (백엔드 필드명이 다를 수 있음)
-      const startAt = backendResponse.startAt || backendResponse.start_at || '';
-      const endAt = backendResponse.endAt || backendResponse.end_at || '';
-      const createdAt = backendResponse.createdAt || backendResponse.created_date || backendResponse.createdDate || '';
+      // 날짜: LocalDate "2025-02-12" 또는 LocalDateTime ISO
+      const startAt = backendResponse.startAt ?? backendResponse.start_at ?? '';
+      const endAt = backendResponse.endAt ?? backendResponse.end_at ?? '';
+      const createdAt = backendResponse.createdAt ?? backendResponse.created_date ?? backendResponse.createdDate ?? '';
 
       const project: ProjectResponse = {
         id: backendResponse.id,
         creator,
-        title: backendResponse.title || '',
-        description: backendResponse.description || '',
+        title: backendResponse.title ?? '',
+        description: backendResponse.description ?? '',
         imageUrl,
         imageUrls,
-        targetAmount: backendResponse.targetAmount || backendResponse.target_amount || 0,
-        currentAmount: backendResponse.currentAmount || backendResponse.current_amount || 0,
-        status: backendResponse.status || 'DRAFT',
+        targetAmount: backendResponse.targetAmount ?? backendResponse.target_amount ?? 0,
+        currentAmount: backendResponse.currentAmount ?? backendResponse.current_amount ?? 0,
+        status: backendResponse.status ?? 'DRAFT',
         startAt,
         endAt,
-        rewardTiers: (backendResponse.rewardTiers || backendResponse.reward_tiers || []).map((tier: any) => ({
+        rewardTiers: (backendResponse.rewardTiers ?? backendResponse.reward_tiers ?? []).map((tier: any) => ({
           id: tier.rewardTierId ?? tier.id ?? 0,
           rewardTierId: tier.rewardTierId ?? tier.id,
-          title: tier.title || '',
-          description: tier.description || '',
-          price: tier.price || 0,
+          title: tier.title ?? '',
+          description: tier.description ?? '',
+          price: tier.price ?? 0,
           limitQuantity: tier.limitQuantity !== undefined ? tier.limitQuantity : (tier.limit_quantity !== undefined ? tier.limit_quantity : null),
           soldQuantity: tier.soldQuantity ?? tier.sold_quantity ?? 0,
           soldOut: tier.soldOut ?? false,
         })),
         backerCount: backendResponse.backerCount ?? backendResponse.backer_count,
+        achievementRate: backendResponse.achievementRate,
         createdAt,
-        categoryPath: backendResponse.categoryPath || backendResponse.category_path || null,
-        tags: backendResponse.tags || null,
-        summary: backendResponse.summary || null,
+        categoryPath: backendResponse.categoryPath ?? backendResponse.category_path ?? null,
+        tags: backendResponse.tags ?? null,
+        summary: backendResponse.summary ?? null,
       };
 
       return project;

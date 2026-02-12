@@ -124,6 +124,8 @@ export interface ProjectResponse {
   summary?: string | null;
   /** 참여자 수 (pledge 건수, 백엔드 제공 시) */
   backerCount?: number;
+  /** 달성률 (0~100, 백엔드 ProjectDetailResponseDto.achievementRate) */
+  achievementRate?: number;
 }
 
 // 경매 상태 타입
