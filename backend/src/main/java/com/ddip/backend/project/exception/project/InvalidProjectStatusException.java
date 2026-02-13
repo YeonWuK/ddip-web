@@ -1,4 +1,4 @@
-package com.ddip.backend.project.validation.project;
+package com.ddip.backend.project.exception.project;
 
 import com.ddip.backend.project.dto.enums.ProjectStatus;
 import com.ddip.backend.common.exception.BusinessException;

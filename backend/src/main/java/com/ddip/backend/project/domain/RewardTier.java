@@ -1,16 +1,13 @@
 package com.ddip.backend.project.domain;
 
 import com.ddip.backend.common.domain.BaseTimeEntity;
-import com.ddip.backend.project.validation.reward.InvalidQuantityException;
-import com.ddip.backend.project.validation.reward.RewardMismatchException;
+import com.ddip.backend.project.exception.reward.InvalidQuantityException;
+import com.ddip.backend.project.exception.reward.RewardMismatchException;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Getter

@@ -1,4 +1,4 @@
-package com.ddip.backend.project.validation.pledge;
+package com.ddip.backend.project.exception.pledge;
 
 import com.ddip.backend.common.exception.BusinessException;
 import com.ddip.backend.common.exception.ErrorCode;

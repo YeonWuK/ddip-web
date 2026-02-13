@@ -2,7 +2,7 @@ package com.ddip.backend.project.service;
 
 import com.ddip.backend.project.domain.Project;
 import com.ddip.backend.project.repository.ProjectRepository;
-import com.ddip.backend.project.validation.project.ProjectNotFoundException;
+import com.ddip.backend.project.exception.project.ProjectNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

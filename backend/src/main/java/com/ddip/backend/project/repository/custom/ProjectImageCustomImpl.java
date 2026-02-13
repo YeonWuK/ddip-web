@@ -37,4 +37,23 @@ public class ProjectImageCustomImpl implements ProjectImageCustom {
                 )
                 .fetch();
     }
+
+    @Override
+    public Long clearMainByProjectId(Long projectId) {
+        return jpaQueryFactory
+                .update(projectImage)
+                .set(projectImage.isMain, false)
+                .where(projectImage.project.id.eq(projectId))
+                .execute();
+
+    }
+
+    @Override
+    public Long setMainById(Long imageId) {
+        return jpaQueryFactory
+                .update(projectImage)
+                .set(projectImage.isMain, true)
+                .where(projectImage.id.eq(imageId))
+                .execute();
+    }
 }
