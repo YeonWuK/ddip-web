@@ -1,20 +1,20 @@
 package com.ddip.backend.project.service;
 
-import com.ddip.backend.admin.dto.crowdfunding.AdminProjectSearchCondition;
-import com.ddip.backend.project.dto.crowd.project.ProjectDetailResponseDto;
-import com.ddip.backend.project.dto.crowd.project.ProjectResponseDto;
-import com.ddip.backend.project.dto.crowd.project.ProjectRequestDto;
-import com.ddip.backend.project.dto.crowd.project.ProjectUpdateRequestDto;
+import com.ddip.backend.pledge.service.PledgeService;
+import com.ddip.backend.project.dto.project.ProjectDetailResponseDto;
+import com.ddip.backend.project.dto.project.ProjectResponseDto;
+import com.ddip.backend.project.dto.project.ProjectRequestDto;
+import com.ddip.backend.project.dto.project.ProjectUpdateRequestDto;
 import com.ddip.backend.project.dto.enums.ProjectStatus;
 import com.ddip.backend.project.domain.Project;
 import com.ddip.backend.project.domain.ProjectImage;
-import com.ddip.backend.project.exception.image.InvalidProjectImageException;
-import com.ddip.backend.user.domain.User;
 import com.ddip.backend.common.es.document.ProjectDocument;
 import com.ddip.backend.common.es.repository.ProjectElasticsearchRepository;
 import com.ddip.backend.project.event.ProjectEsEvent;
+import com.ddip.backend.project.exception.image.InvalidProjectImageException;
 import com.ddip.backend.project.exception.project.ProjectNotFoundException;
 import com.ddip.backend.project.exception.reward.RewardTierRequiredException;
+import com.ddip.backend.user.domain.User;
 import com.ddip.backend.user.validation.user.UserNotFoundException;
 import com.ddip.backend.project.repository.ProjectImageRepository;
 import com.ddip.backend.project.repository.ProjectRepository;
@@ -24,16 +24,17 @@ import com.ddip.backend.common.utils.S3UrlPrefixFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
+import java.util.Map;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @Slf4j
@@ -53,22 +54,24 @@ public class CrowdFundingService {
     private final PledgeService pledgeService;
 
     @Transactional(readOnly = true)
-    public Project getProjectEntity(Long projectId) {
+    public Project getProject(Long projectId) {
         return projectRepository.findById(projectId)
                 .orElseThrow(() -> new ProjectNotFoundException(projectId));
     }
 
     /**
-     * Crowdfunding 프로젝트 단건 조회 (RewardTier 포함)
+     * Crowdfunding 프로젝트 단건 상세 조회 (RewardTier 포함)
      */
     @Transactional(readOnly = true)
-    public ProjectDetailResponseDto getProject(Long projectId) {
-        Project project = projectRepository.findByIdWithCreatorAndRewardTier(projectId)
+    public ProjectDetailResponseDto findProjectDetail(Long projectId) {
+        Project project = projectRepository.findByIdWithRewardTiers(projectId)
                 .orElseThrow(() -> new ProjectNotFoundException(projectId));
+
+        User creator = getUserOrThrow(project.getCreatorId());
 
         List<ProjectImage> images = projectImageRepository.findImagesByProjectId(projectId);
 
-        return ProjectDetailResponseDto.from(project, images);
+        return ProjectDetailResponseDto.from(project, creator, images);
     }
 
     /**
@@ -76,14 +79,24 @@ public class CrowdFundingService {
      */
     @Transactional(readOnly = true)
     public List<ProjectResponseDto> getAllProjects() {
-        return projectRepository.findAll().stream()
-                .map(ProjectResponseDto::from)
-                .toList();
-    }
+        List<Project> projects = projectRepository.findAll();
 
-    @Transactional(readOnly = true)
-    public Page<Project> searchProjectsForAdmin(AdminProjectSearchCondition condition, Pageable pageable) {
-        return projectRepository.searchProjectsForAdmin(condition, pageable);
+        Set<Long> creatorIds = projects.stream()
+                .map(Project::getCreatorId)
+                .collect(Collectors.toSet());
+
+        Map<Long, User> creatorById = userRepository.findAllById(creatorIds).stream()
+                .collect(Collectors.toMap(User::getId, user -> user));
+
+        return projects.stream()
+                .map(project -> {
+                    User creator = creatorById.get(project.getCreatorId());
+                    if (creator == null) {
+                        throw new UserNotFoundException(project.getCreatorId());
+                    }
+                    return ProjectResponseDto.from(project, creator);
+                })
+                .toList();
     }
 
     /**
@@ -94,7 +107,7 @@ public class CrowdFundingService {
         validateRewardTiers(requestDto);
 
         User user = getUserOrThrow(userId);
-        Project project = createAndSaveProject(requestDto, user);
+        Project project = createAndSaveProject(requestDto, userId);
 
         uploadProjectImagesAndSaveEntities(project, multipartFiles, requestDto.getMainIndex());
         syncProjectThumbnailFromMainOrThrow(project);
@@ -106,12 +119,14 @@ public class CrowdFundingService {
         return project.getId();
     }
 
+
     /**
      * Crowdfunding 프로젝트 수정
      */
     public void updateProject(List<MultipartFile> multipartFiles, Long projectId, Long userId, ProjectUpdateRequestDto requestDto) {
 
-        Project project = getProjectEntity(projectId);
+        Project project = getProject(projectId);
+        // 기본 검증 (소유자, 상태, 날짜)
         validateProjectUpdatable(project, userId, requestDto);
 
         // 1) 삭제 대상 확보 (썸네일이 삭제되는지 판단에 필요)
@@ -126,13 +141,10 @@ public class CrowdFundingService {
         // 4) 프로젝트 필드 업데이트
         project.updateFrom(requestDto);
 
-        // 5) 썸네일 업데이트 (케이스 1~3 처리)
+        // 5) 썸네일 업데이트 (케이스 1~4 처리)
         applyMainImageOrThrow(project.getId(), requestDto, projectImages);
 
-        // 6) 썸네일 url 업데이트
-        syncProjectThumbnailFromMainOrThrow(project);
-
-        // 7) ES 동기화
+        // 6) ES 동기화
         publisher.publishEvent(new ProjectEsEvent(projectId));
     }
 
@@ -140,7 +152,7 @@ public class CrowdFundingService {
      * Crowdfunding 프로젝트 삭제
      */
     public void deleteProject(Long projectId, Long userId) {
-        Project project = getProjectEntity(projectId);
+        Project project = getProject(projectId);
 
         project.assertOwnedBy(userId);
 
@@ -164,29 +176,10 @@ public class CrowdFundingService {
         for (Project project : expired) {
             boolean success = project.closeProject();
             if (!success) {
-                pledgeService.refundAllFailedProjects(project.getId());
+                pledgeService.refundAllPaidPledges(project);
             }
             publisher.publishEvent(new ProjectEsEvent(project.getId()));
         }
-    }
-
-    public void rejectProjectByAdmin(Long projectId) {
-        Project project = getProjectEntity(projectId);
-        project.rejectByAdmin();
-        publisher.publishEvent(new ProjectEsEvent(projectId));
-    }
-
-    public void forceStopByAdmin(Long projectId) {
-        Project project = getProjectEntity(projectId);
-        project.stopProject();
-        publisher.publishEvent(new ProjectEsEvent(projectId));
-    }
-
-    public void forceCancelProjectByAdmin(Long projectId) {
-        Project project = getProjectEntity(projectId);
-        project.cancel();
-        pledgeService.refundAllFailedProjects(projectId);
-        publisher.publishEvent(new ProjectEsEvent(projectId));
     }
 
     private void validateRewardTiers(ProjectRequestDto requestDto) {
@@ -199,8 +192,8 @@ public class CrowdFundingService {
         return userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
     }
 
-    private Project createAndSaveProject(ProjectRequestDto requestDto, User user) {
-        Project project = Project.toEntity(requestDto, user);
+    private Project createAndSaveProject(ProjectRequestDto requestDto, Long creatorId) {
+        Project project = Project.toEntity(requestDto, creatorId);
         return projectRepository.save(project);
     }
 
@@ -270,7 +263,7 @@ public class CrowdFundingService {
     /**
      * 수정 시 새 이미지 업로드 처리 (없으면 null 반환)
      */
-    private List<ProjectImage>  uploadNewImagesForUpdate(Long projectId, Project project, List<MultipartFile> multipartFiles) {
+    private List<ProjectImage> uploadNewImagesForUpdate(Long projectId, Project project, List<MultipartFile> multipartFiles) {
 
         if (multipartFiles == null || multipartFiles.isEmpty()) {
             return null;
