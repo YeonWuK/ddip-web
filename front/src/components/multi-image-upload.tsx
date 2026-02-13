@@ -83,13 +83,13 @@ export function MultiImageUpload({
     onChange?.(newImages)
   }
 
-  const handleRemoveExisting = useImageItems
-    ? (item: { id: number; url: string }) => {
-        setRemovedImageIds((prev) => new Set([...prev, item.id]))
-      }
-    : (index: number) => {
-        setRemovedExistingIndices((prev) => new Set([...prev, index]))
-      }
+  const handleRemoveExisting = (itemOrIndex: { id: number; url: string } | number) => {
+    if (useImageItems && typeof itemOrIndex !== 'number') {
+      setRemovedImageIds((prev) => new Set([...prev, itemOrIndex.id]))
+    } else if (!useImageItems && typeof itemOrIndex === 'number') {
+      setRemovedExistingIndices((prev) => new Set([...prev, itemOrIndex]))
+    }
+  }
 
   const handleAddMore = () => {
     fileInputRef.current?.click()
