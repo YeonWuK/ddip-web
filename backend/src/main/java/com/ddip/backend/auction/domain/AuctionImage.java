@@ -26,10 +26,14 @@ public class AuctionImage extends BaseTimeEntity {
     @Column(name = "s3_key", nullable = false)
     private String s3Key;
 
-    public static AuctionImage from(Auction auction, String s3Keys) {
+    @Column(name = "is_main", nullable = false)
+    private boolean isMain;
+
+    public static AuctionImage from(Auction auction, String s3Keys, boolean isMain) {
         return AuctionImage.builder()
                 .auction(auction)
                 .s3Key(s3Keys)
+                .isMain(isMain)
                 .build();
     }
 }

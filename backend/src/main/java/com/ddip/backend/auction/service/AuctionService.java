@@ -61,43 +61,43 @@ public class AuctionService {
     private final AuctionElasticsearchRepository auctionEsRepository;
 
 
-    /**
-     * 경매 생성
-     */
-    public AuctionResponseDto createAuction(List<MultipartFile> auctionFiles,
-                                            Long userId, AuctionRequestDto dto) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
-
-        validateBidStep(dto.getStartPrice(), dto.getBidStep());
-
-        Auction auction = Auction.from(user, dto);
-        auctionRepository.save(auction);
-
-        String prefix = s3UrlPrefixFactory.auctionPrefix(auction.getId());
-
-        String mainImageKey = null;
-
-        // 이미지 다중 저장
-        for (MultipartFile multipartFile : auctionFiles) {
-            String key = awsS3Util.uploadFile(multipartFile, prefix);
-
-            if (mainImageKey == null) {
-                mainImageKey = key;
-            }
-
-            AuctionImage auctionImage = AuctionImage.from(auction, key);
-            auctionImageRepository.save(auctionImage);
-        }
-
-        auction.updateMainImageKey(mainImageKey);
-
-        // Es 인덱스 생성
-        AuctionDocument auctionDocument = AuctionDocument.from(auction, mainImageKey);
-        auctionEsRepository.save(auctionDocument);
-
-        return AuctionResponseDto.from(auction);
-    }
+//    /**
+//     * 경매 생성
+//     */
+//    public AuctionResponseDto createAuction(List<MultipartFile> auctionFiles,
+//                                            Long userId, AuctionRequestDto dto) {
+//        User user = userRepository.findById(userId)
+//                .orElseThrow(() -> new UserNotFoundException(userId));
+//
+//        validateBidStep(dto.getStartPrice(), dto.getBidStep());
+//
+//        Auction auction = Auction.from(user, dto);
+//        auctionRepository.save(auction);
+//
+//        String prefix = s3UrlPrefixFactory.auctionPrefix(auction.getId());
+//
+//        String mainImageKey = null;
+//
+//        // 이미지 다중 저장
+//        for (MultipartFile multipartFile : auctionFiles) {
+//            String key = awsS3Util.uploadFile(multipartFile, prefix);
+//
+//            if (mainImageKey == null) {
+//                mainImageKey = key;
+//            }
+//
+//            AuctionImage auctionImage = AuctionImage.from(auction, key);
+//            auctionImageRepository.save(auctionImage);
+//        }
+//
+//        auction.updateMainImageKey(mainImageKey);
+//
+//        // Es 인덱스 생성
+//        AuctionDocument auctionDocument = AuctionDocument.from(auction, mainImageKey);
+//        auctionEsRepository.save(auctionDocument);
+//
+//        return AuctionResponseDto.from(auction);
+//    }
 
     /**
      * 경매 상세 조회

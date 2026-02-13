@@ -9,6 +9,5 @@ import java.util.Optional;
 
 @Repository
 public interface ProjectImageRepository extends JpaRepository<ProjectImage, Long>, ProjectImageCustom {
-    Optional<ProjectImage> findMainByProjectId(Long projectId);
     boolean existsByIdAndProjectId(Long id, Long project_id);
 }

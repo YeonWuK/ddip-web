@@ -5,6 +5,7 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
+import java.util.Optional;
 
 import static com.ddip.backend.project.domain.QProject.project;
 import static com.ddip.backend.project.domain.QProjectImage.projectImage;
@@ -39,8 +40,20 @@ public class ProjectImageCustomImpl implements ProjectImageCustom {
     }
 
     @Override
-    public Long clearMainByProjectId(Long projectId) {
-        return jpaQueryFactory
+    public Optional<ProjectImage> findMainByProjectId(Long projectId) {
+        return Optional.ofNullable(
+                jpaQueryFactory
+                .selectFrom(projectImage)
+                        .where(
+                                projectImage.project.id.eq(projectId),
+                                projectImage.isMain.isTrue()
+                        )
+                        .fetchFirst());
+    }
+
+    @Override
+    public void clearMainByProjectId(Long projectId) {
+        jpaQueryFactory
                 .update(projectImage)
                 .set(projectImage.isMain, false)
                 .where(projectImage.project.id.eq(projectId))
@@ -49,8 +62,8 @@ public class ProjectImageCustomImpl implements ProjectImageCustom {
     }
 
     @Override
-    public Long setMainById(Long imageId) {
-        return jpaQueryFactory
+    public void setMainById(Long imageId) {
+        jpaQueryFactory
                 .update(projectImage)
                 .set(projectImage.isMain, true)
                 .where(projectImage.id.eq(imageId))
