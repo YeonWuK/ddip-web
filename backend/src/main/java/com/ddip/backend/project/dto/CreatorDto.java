@@ -1,4 +1,4 @@
-package com.ddip.backend.project.dto.crowd;
+package com.ddip.backend.project.dto;
 
 import com.ddip.backend.user.domain.User;
 import lombok.AllArgsConstructor;
@@ -12,13 +12,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CreatorDto {
 
-    private Long id;
+    private Long creatorId;
     private String email;
     private String nickname;
 
     public static CreatorDto from(User user) {
         return CreatorDto.builder()
-                .id(user.getId())
+                .creatorId(user.getId())
                 .email(user.getEmail())
                 .nickname(user.getNickname())
                 .build();

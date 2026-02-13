@@ -1,10 +1,10 @@
 package com.ddip.backend.project.service;
 
 import com.ddip.backend.pledge.service.PledgeService;
-import com.ddip.backend.project.dto.crowd.project.ProjectDetailResponseDto;
-import com.ddip.backend.project.dto.crowd.project.ProjectResponseDto;
-import com.ddip.backend.project.dto.crowd.project.ProjectRequestDto;
-import com.ddip.backend.project.dto.crowd.project.ProjectUpdateRequestDto;
+import com.ddip.backend.project.dto.project.ProjectDetailResponseDto;
+import com.ddip.backend.project.dto.project.ProjectResponseDto;
+import com.ddip.backend.project.dto.project.ProjectRequestDto;
+import com.ddip.backend.project.dto.project.ProjectUpdateRequestDto;
 import com.ddip.backend.project.dto.enums.ProjectStatus;
 import com.ddip.backend.project.domain.Project;
 import com.ddip.backend.project.domain.ProjectImage;
@@ -13,6 +13,7 @@ import com.ddip.backend.common.es.repository.ProjectElasticsearchRepository;
 import com.ddip.backend.project.event.ProjectEsEvent;
 import com.ddip.backend.project.validation.project.ProjectNotFoundException;
 import com.ddip.backend.project.validation.reward.RewardTierRequiredException;
+import com.ddip.backend.user.domain.User;
 import com.ddip.backend.user.validation.user.UserNotFoundException;
 import com.ddip.backend.project.repository.ProjectImageRepository;
 import com.ddip.backend.project.repository.ProjectRepository;
@@ -28,7 +29,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
+import java.util.Map;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -53,16 +57,18 @@ public class CrowdFundingService {
     }
 
     /**
-     * Crowdfunding 프로젝트 단건 조회 (RewardTier 포함)
+     * Crowdfunding 프로젝트 단건 상세 조회 (RewardTier 포함)
      */
     @Transactional(readOnly = true)
     public ProjectDetailResponseDto findProjectDetail(Long projectId) {
-        Project project = projectRepository.findByIdWithCreatorAndRewardTier(projectId)
+        Project project = projectRepository.findByIdWithRewardTiers(projectId)
                 .orElseThrow(() -> new ProjectNotFoundException(projectId));
+
+        User creator = getUserOrThrow(project.getCreatorId());
 
         List<ProjectImage> images = projectImageRepository.findImagesByProjectId(projectId);
 
-        return ProjectDetailResponseDto.from(project, images);
+        return ProjectDetailResponseDto.from(project, creator, images);
     }
 
     /**
@@ -70,8 +76,23 @@ public class CrowdFundingService {
      */
     @Transactional(readOnly = true)
     public List<ProjectResponseDto> getAllProjects() {
-        return projectRepository.findAll().stream()
-                .map(ProjectResponseDto::from)
+        List<Project> projects = projectRepository.findAll();
+
+        Set<Long> creatorIds = projects.stream()
+                .map(Project::getCreatorId)
+                .collect(Collectors.toSet());
+
+        Map<Long, User> creatorById = userRepository.findAllById(creatorIds).stream()
+                .collect(Collectors.toMap(User::getId, user -> user));
+
+        return projects.stream()
+                .map(project -> {
+                    User creator = creatorById.get(project.getCreatorId());
+                    if (creator == null) {
+                        throw new UserNotFoundException(project.getCreatorId());
+                    }
+                    return ProjectResponseDto.from(project, creator);
+                })
                 .toList();
     }
 
@@ -165,8 +186,8 @@ public class CrowdFundingService {
         }
     }
 
-    private void getUserOrThrow(Long userId) {
-        userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+    private User getUserOrThrow(Long userId) {
+        return userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
     }
 
     private Project createAndSaveProject(ProjectRequestDto requestDto, Long creatorId) {

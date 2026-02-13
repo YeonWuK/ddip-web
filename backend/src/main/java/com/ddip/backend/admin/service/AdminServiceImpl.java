@@ -33,7 +33,6 @@ import com.ddip.backend.admin.repository.AdminHistoryRepository;
 import com.ddip.backend.user.domain.User;
 import com.ddip.backend.user.service.UserService;
 import com.ddip.backend.common.service.SmsService;
-import com.ddip.backend.common.security.service.TokenBlackListService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -58,7 +57,6 @@ public class AdminServiceImpl implements AdminService {
     private final PledgeService pledgeService;
     private final PointService pointService;
     private final SmsService smsService;
-    private final TokenBlackListService tokenBlackListService;
     private final AdminHistoryRepository adminHistoryRepository;
     private final AdminProjectQueryService adminProjectQueryService;
 
@@ -189,13 +187,13 @@ public class AdminServiceImpl implements AdminService {
      */
 
     /**
-    *   Project 조회
+    *  Project 조회
     */
     @Override
     @Transactional(readOnly = true)
     public Page<AdminProjectSummaryDto> getProjectList(AdminProjectSearchCondition condition, Pageable pageable) {
-        Page<Project> projects = crowdFundingByAdminService.searchProjectsForAdmin(condition, pageable);
-        return projects.map(AdminProjectSummaryDto::from);
+        Page<AdminProjectSummaryDto> adminProjectSummaryDtos = crowdFundingByAdminService.searchProjectsForAdmin(condition, pageable);
+        return adminProjectSummaryDtos;
     }
 
     /**
@@ -205,7 +203,7 @@ public class AdminServiceImpl implements AdminService {
     @Transactional(readOnly = true)
     public AdminProjectDetailDto getProjectDetail(Long projectId) {
 
-        Project project = adminProjectQueryService.getProjectWithRewardTiersAndCreator(projectId);
+        Project project = adminProjectQueryService.getProjectWithRewardTiers(projectId);
 
         List<RewardTier> rewardTiers = project.getRewardTiers();
 

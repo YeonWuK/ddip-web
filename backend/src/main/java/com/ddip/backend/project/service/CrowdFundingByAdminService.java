@@ -1,6 +1,7 @@
 package com.ddip.backend.project.service;
 
 import com.ddip.backend.admin.dto.crowdfunding.AdminProjectSearchCondition;
+import com.ddip.backend.admin.dto.crowdfunding.AdminProjectSummaryDto;
 import com.ddip.backend.pledge.service.PledgeService;
 import com.ddip.backend.project.domain.Project;
 import com.ddip.backend.project.event.ProjectEsEvent;
@@ -25,8 +26,9 @@ public class CrowdFundingByAdminService {
     private final ApplicationEventPublisher publisher;
 
     @Transactional(readOnly = true)
-    public Page<Project> searchProjectsForAdmin(AdminProjectSearchCondition condition, Pageable pageable) {
-        return projectRepository.searchProjectsForAdmin(condition, pageable);
+    public Page<AdminProjectSummaryDto> searchProjectsForAdmin(AdminProjectSearchCondition condition, Pageable pageable) {
+        Page<Project> projects = projectRepository.searchProjectsForAdmin(condition, pageable);
+        return projects.map(AdminProjectSummaryDto::from);
     }
 
     public void approveProjectByAdmin(Long projectId) {

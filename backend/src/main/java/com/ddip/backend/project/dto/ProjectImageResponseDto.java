@@ -1,4 +1,4 @@
-package com.ddip.backend.project.dto.crowd;
+package com.ddip.backend.project.dto;
 
 import com.ddip.backend.project.domain.ProjectImage;
 import lombok.AllArgsConstructor;

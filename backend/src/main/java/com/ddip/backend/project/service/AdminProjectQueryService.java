@@ -18,8 +18,8 @@ public class AdminProjectQueryService {
 
     private final ProjectRepository projectRepository;
 
-    public Project getProjectWithRewardTiersAndCreator(Long projectId) {
-        return projectRepository.findByIdWithRewardTiersAndCreator(projectId)
+    public Project getProjectWithRewardTiers(Long projectId) {
+        return projectRepository.findByIdWithRewardTiers(projectId)
                 .orElseThrow(() -> new ProjectNotFoundException(projectId));
     }
 

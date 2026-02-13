@@ -1,4 +1,4 @@
-package com.ddip.backend.project.dto.crowd.es;
+package com.ddip.backend.project.dto.es;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -1,4 +1,4 @@
-package com.ddip.backend.project.controller;
+package com.ddip.backend.pledge.controller;
 
 import com.ddip.backend.pledge.dto.PledgeCreateResponseDto;
 import com.ddip.backend.pledge.dto.PledgeCreateRequestDto;

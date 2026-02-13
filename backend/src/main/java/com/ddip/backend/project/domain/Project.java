@@ -1,11 +1,10 @@
 package com.ddip.backend.project.domain;
 
-import com.ddip.backend.project.dto.crowd.project.ProjectRequestDto;
-import com.ddip.backend.project.dto.crowd.project.ProjectUpdateRequestDto;
-import com.ddip.backend.project.dto.crowd.reward.RewardTierRequestDto;
+import com.ddip.backend.project.dto.project.ProjectRequestDto;
+import com.ddip.backend.project.dto.project.ProjectUpdateRequestDto;
+import com.ddip.backend.project.dto.reward.RewardTierRequestDto;
 import com.ddip.backend.project.dto.enums.ProjectStatus;
 import com.ddip.backend.common.domain.BaseTimeEntity;
-import com.ddip.backend.user.domain.User;
 import com.ddip.backend.project.validation.project.InvalidProjectStatusException;
 import com.ddip.backend.project.validation.project.ProjectAccessDeniedException;
 import jakarta.persistence.*;

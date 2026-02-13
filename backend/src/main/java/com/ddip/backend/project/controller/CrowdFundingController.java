@@ -1,9 +1,9 @@
 package com.ddip.backend.project.controller;
 
-import com.ddip.backend.project.dto.crowd.project.ProjectDetailResponseDto;
-import com.ddip.backend.project.dto.crowd.project.ProjectResponseDto;
-import com.ddip.backend.project.dto.crowd.project.ProjectRequestDto;
-import com.ddip.backend.project.dto.crowd.project.ProjectUpdateRequestDto;
+import com.ddip.backend.project.dto.project.ProjectDetailResponseDto;
+import com.ddip.backend.project.dto.project.ProjectResponseDto;
+import com.ddip.backend.project.dto.project.ProjectRequestDto;
+import com.ddip.backend.project.dto.project.ProjectUpdateRequestDto;
 import com.ddip.backend.common.security.auth.CustomUserDetails;
 import com.ddip.backend.project.service.CrowdFundingService;
 import io.swagger.v3.oas.annotations.Operation;
