@@ -8,7 +8,6 @@ import org.springframework.data.domain.Pageable;
 import java.util.Optional;
 
 public interface ProjectRepositoryCustom {
-    Optional<Project> findByIdWithCreatorAndRewardTier(Long projectId);
-    Optional<Project> findByIdWithRewardTiersAndCreator(Long projectId);
+    Optional<Project> findByIdWithRewardTiers(Long projectId);
     Page<Project> searchProjectsForAdmin(AdminProjectSearchCondition condition, Pageable pageable);
 }

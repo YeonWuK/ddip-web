@@ -1,7 +1,7 @@
 package com.ddip.backend.service;
 
 import com.ddip.backend.project.service.CrowdFundingService;
-import com.ddip.backend.project.service.PledgeService;
+import com.ddip.backend.pledge.service.PledgeService;
 import com.ddip.backend.project.repository.ProjectRepository;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

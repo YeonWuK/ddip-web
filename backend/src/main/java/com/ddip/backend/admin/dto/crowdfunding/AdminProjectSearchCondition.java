@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 
 @Getter
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class AdminProjectSearchCondition {

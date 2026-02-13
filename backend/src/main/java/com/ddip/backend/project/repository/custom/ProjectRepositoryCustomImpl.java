@@ -24,33 +24,14 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Optional<Project> findByIdWithCreatorAndRewardTier(Long projectId) {
-        QProject p = QProject.project;
-        QRewardTier rt = QRewardTier.rewardTier;
-
-        Project result = queryFactory
-                .selectFrom(p)
-                .join(p.creator).fetchJoin()
-                .leftJoin(p.rewardTiers, rt).fetchJoin()
-                .where(p.id.eq(projectId))
-                .distinct()
-                .fetchOne();
-
-        return Optional.ofNullable(result);
-    }
-
-    @Override
-    public Optional<Project> findByIdWithRewardTiersAndCreator(Long projectId) {
+    public Optional<Project> findByIdWithRewardTiers(Long projectId) {
         QProject project = QProject.project;
         QRewardTier rewardTier = QRewardTier.rewardTier;
-        QUser user = QUser.user;
 
         Project result = queryFactory
                 .selectFrom(project)
-                .leftJoin(project.creator, user).fetchJoin()
                 .leftJoin(project.rewardTiers, rewardTier).fetchJoin()
                 .where(project.id.eq(projectId))
-                .distinct()
                 .fetchOne();
 
         return Optional.ofNullable(result);
@@ -59,15 +40,16 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
     @Override
     public Page<Project> searchProjectsForAdmin(AdminProjectSearchCondition condition, Pageable pageable) {
         QProject project = QProject.project;
-        QUser creator = QUser.user;
+        QUser user = QUser.user;
 
+        // content
         List<Project> content = queryFactory
                 .selectFrom(project)
-                .leftJoin(project.creator, creator).fetchJoin()
+                .leftJoin(user).on(user.id.eq(project.creatorId))
                 .where(
                         titleContains(condition.getTitle()),
-                        creatorEmailContains(condition.getCreatorEmail()),
-                        creatorUsernameContains(condition.getCreatorUsername()),
+                        creatorEmailContains(user, condition.getCreatorEmail()),
+                        creatorUsernameContains(user, condition.getCreatorUsername()),
                         statusEq(condition.getStatus()),
                         categoryPathContains(condition.getCategoryPath()),
                         startAtFrom(condition.getStartFrom()),
@@ -75,18 +57,18 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
                 )
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .orderBy(project.id.desc()) // 필요하면 pageable.getSort() 반영 가능
+                .orderBy(project.id.desc())
                 .fetch();
 
-        // count 조회
+        // count (join 동일하게 맞추는 게 안전)
         Long total = queryFactory
                 .select(project.count())
                 .from(project)
-                .leftJoin(project.creator, creator)
+                .leftJoin(user).on(user.id.eq(project.creatorId))
                 .where(
                         titleContains(condition.getTitle()),
-                        creatorEmailContains(condition.getCreatorEmail()),
-                        creatorUsernameContains(condition.getCreatorUsername()),
+                        creatorEmailContains(user, condition.getCreatorEmail()),
+                        creatorUsernameContains(user, condition.getCreatorUsername()),
                         statusEq(condition.getStatus()),
                         categoryPathContains(condition.getCategoryPath()),
                         startAtFrom(condition.getStartFrom()),
@@ -94,9 +76,7 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
                 )
                 .fetchOne();
 
-        long totalCount = (total == null) ? 0L : total;
-
-        return new PageImpl<>(content, pageable, totalCount);
+        return new PageImpl<>(content, pageable, total == null ? 0L : total);
     }
 
     private BooleanExpression titleContains(String title) {
@@ -104,14 +84,14 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
         return QProject.project.title.containsIgnoreCase(title);
     }
 
-    private BooleanExpression creatorEmailContains(String email) {
+    private BooleanExpression creatorEmailContains(QUser user, String email) {
         if (!StringUtils.hasText(email)) return null;
-        return QProject.project.creator.email.containsIgnoreCase(email);
+        return user.email.containsIgnoreCase(email);
     }
 
-    private BooleanExpression creatorUsernameContains(String username) {
+    private BooleanExpression creatorUsernameContains(QUser user, String username) {
         if (!StringUtils.hasText(username)) return null;
-        return QProject.project.creator.username.containsIgnoreCase(username);
+        return user.username.containsIgnoreCase(username);
     }
 
     /**

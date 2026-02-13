@@ -1,9 +1,7 @@
 package com.ddip.backend.admin.dto.crowdfunding;
 
-import com.ddip.backend.project.domain.Pledge;
-import com.ddip.backend.project.domain.Project;
-import com.ddip.backend.project.dto.enums.PledgeStatus;
-import com.ddip.backend.user.domain.User;
+import com.ddip.backend.pledge.domain.Pledge;
+import com.ddip.backend.pledge.dto.enums.PledgeStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

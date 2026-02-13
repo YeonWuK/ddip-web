@@ -1,11 +1,10 @@
 package com.ddip.backend.project.domain;
 
-import com.ddip.backend.project.dto.crowd.project.ProjectRequestDto;
-import com.ddip.backend.project.dto.crowd.project.ProjectUpdateRequestDto;
-import com.ddip.backend.project.dto.crowd.reward.RewardTierRequestDto;
+import com.ddip.backend.project.dto.project.ProjectRequestDto;
+import com.ddip.backend.project.dto.project.ProjectUpdateRequestDto;
+import com.ddip.backend.project.dto.reward.RewardTierRequestDto;
 import com.ddip.backend.project.dto.enums.ProjectStatus;
 import com.ddip.backend.common.domain.BaseTimeEntity;
-import com.ddip.backend.user.domain.User;
 import com.ddip.backend.project.validation.project.InvalidProjectStatusException;
 import com.ddip.backend.project.validation.project.ProjectAccessDeniedException;
 import jakarta.persistence.*;
@@ -33,9 +32,8 @@ public class Project extends BaseTimeEntity {
     private Long id;
 
     // 프로젝트 만든 사람(판매자)
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "creator_id", nullable = false)
-    private User creator;
+    @Column(name = "creator_id", nullable = false)
+    private Long creatorId;
 
     @Column(length = 200, nullable = false)
     private String title;
@@ -87,13 +85,13 @@ public class Project extends BaseTimeEntity {
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProjectImage> images = new ArrayList<>();
 
-    public static Project toEntity(ProjectRequestDto requestDto, User creator) {
+    public static Project toEntity(ProjectRequestDto requestDto, Long creatorId) {
         Project project = Project.builder()
                 //Not null
                 .title(requestDto.getTitle())
                 .description(requestDto.getDescription())
                 .targetAmount(requestDto.getTargetAmount())
-                .creator(creator)
+                .creatorId(creatorId)
                 // 일정
                 .startAt(requestDto.getStartAt())
                 .endAt(requestDto.getEndAt())
@@ -140,7 +138,12 @@ public class Project extends BaseTimeEntity {
     }
 
     public void cancel() {
-        this.status = ProjectStatus.CANCELED;
+        if (this.status == ProjectStatus.OPEN || this.status == ProjectStatus.DRAFT) {
+            this.status = ProjectStatus.CANCELED;
+        }
+        else{
+            throw new InvalidProjectStatusException(this.status);
+        }
     }
 
     public void openFunding() {
@@ -148,7 +151,7 @@ public class Project extends BaseTimeEntity {
     }
 
     public void assertOwnedBy(Long userId) {
-        if (!this.getCreator().getId().equals(userId)) throw new ProjectAccessDeniedException(this.id ,userId);
+        if (!this.creatorId.equals(userId)) throw new ProjectAccessDeniedException(this.id ,userId);
     }
 
     public void assertStatus(ProjectStatus expected) {

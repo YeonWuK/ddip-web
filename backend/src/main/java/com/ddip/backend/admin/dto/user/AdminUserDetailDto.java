@@ -4,7 +4,7 @@ import com.ddip.backend.admin.dto.auction.AdminBidSummaryDto;
 import com.ddip.backend.admin.dto.crowdfunding.AdminPledgeSummaryDto;
 import com.ddip.backend.admin.dto.point.AdminPointHistoryRepDto;
 import com.ddip.backend.auction.domain.Bids;
-import com.ddip.backend.project.domain.Pledge;
+import com.ddip.backend.pledge.domain.Pledge;
 import com.ddip.backend.billing.domain.PointLedger;
 import com.ddip.backend.user.domain.User;
 import lombok.*;

@@ -23,17 +23,16 @@ import com.ddip.backend.admin.dto.enums.AdminActionType;
 import com.ddip.backend.admin.dto.enums.AdminTargetType;
 import com.ddip.backend.billing.dto.PointLedgerSource;
 import com.ddip.backend.billing.dto.PointLedgerType;
-import com.ddip.backend.project.domain.Pledge;
+import com.ddip.backend.pledge.domain.Pledge;
 import com.ddip.backend.project.domain.Project;
 import com.ddip.backend.project.domain.RewardTier;
 import com.ddip.backend.project.service.AdminProjectQueryService;
-import com.ddip.backend.project.service.CrowdFundingService;
-import com.ddip.backend.project.service.PledgeService;
+import com.ddip.backend.project.service.CrowdFundingByAdminService;
+import com.ddip.backend.pledge.service.PledgeService;
 import com.ddip.backend.admin.repository.AdminHistoryRepository;
 import com.ddip.backend.user.domain.User;
 import com.ddip.backend.user.service.UserService;
 import com.ddip.backend.common.service.SmsService;
-import com.ddip.backend.common.security.service.TokenBlackListService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -54,11 +53,10 @@ public class AdminServiceImpl implements AdminService {
     private final UserService userService;
     private final AuctionService auctionService;
     private final BidsService bidsService;
-    private final CrowdFundingService crowdFundingService;
+    private final CrowdFundingByAdminService crowdFundingByAdminService;
     private final PledgeService pledgeService;
     private final PointService pointService;
     private final SmsService smsService;
-    private final TokenBlackListService tokenBlackListService;
     private final AdminHistoryRepository adminHistoryRepository;
     private final AdminProjectQueryService adminProjectQueryService;
 
@@ -189,13 +187,13 @@ public class AdminServiceImpl implements AdminService {
      */
 
     /**
-    *   Project 조회
+    *  Project 조회
     */
     @Override
     @Transactional(readOnly = true)
     public Page<AdminProjectSummaryDto> getProjectList(AdminProjectSearchCondition condition, Pageable pageable) {
-        Page<Project> projects = crowdFundingService.searchProjectsForAdmin(condition, pageable);
-        return projects.map(AdminProjectSummaryDto::from);
+        Page<AdminProjectSummaryDto> adminProjectSummaryDtos = crowdFundingByAdminService.searchProjectsForAdmin(condition, pageable);
+        return adminProjectSummaryDtos;
     }
 
     /**
@@ -205,7 +203,7 @@ public class AdminServiceImpl implements AdminService {
     @Transactional(readOnly = true)
     public AdminProjectDetailDto getProjectDetail(Long projectId) {
 
-        Project project = adminProjectQueryService.getProjectWithRewardTiersAndCreator(projectId);
+        Project project = adminProjectQueryService.getProjectWithRewardTiers(projectId);
 
         List<RewardTier> rewardTiers = project.getRewardTiers();
 
@@ -220,8 +218,7 @@ public class AdminServiceImpl implements AdminService {
      */
     @Override
     public void approveProject(Long projectId, Long adminId) {
-        Project project = crowdFundingService.getProjectEntity(projectId);
-        project.openFunding();
+        crowdFundingByAdminService.approveProjectByAdmin(projectId);
 
         log.info("Approving project By Admin projectId = {}, adminId = {} ", projectId, adminId);
 
@@ -236,7 +233,7 @@ public class AdminServiceImpl implements AdminService {
     @Override
     public void rejectProject(Long projectId, String reason, Long adminId) {
 
-        crowdFundingService.rejectProjectByAdmin(projectId);
+        crowdFundingByAdminService.rejectProjectByAdmin(projectId);
         AdminHistory adminHistory = AdminHistory.of(AdminTargetType.PROJECT, projectId, AdminActionType.PROJECT_REJECT, adminId, reason);
         adminHistoryRepository.save(adminHistory);
 
@@ -252,7 +249,7 @@ public class AdminServiceImpl implements AdminService {
     @Override
     public void forceStopProject(Long projectId, String reason, Long adminId) {
 
-        crowdFundingService.forceStopByAdmin(projectId);
+        crowdFundingByAdminService.forceStopByAdmin(projectId);
 
         AdminHistory adminHistory = AdminHistory.of(AdminTargetType.PROJECT, projectId, AdminActionType.PROJECT_FORCE_STOP, adminId, reason);
         adminHistoryRepository.save(adminHistory);
@@ -265,7 +262,7 @@ public class AdminServiceImpl implements AdminService {
     @Override
     public void forceCancelProject(Long projectId, String reason, Long adminId){
 
-        crowdFundingService.forceCancelProjectByAdmin(projectId);
+        crowdFundingByAdminService.forceCancelProjectByAdmin(projectId);
 
         AdminHistory adminHistory = AdminHistory.of(AdminTargetType.PROJECT, projectId, AdminActionType.PROJECT_FORCE_CANCEL, adminId, reason);
         adminHistoryRepository.save(adminHistory);

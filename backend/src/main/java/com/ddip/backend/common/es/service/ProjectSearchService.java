@@ -7,7 +7,7 @@ import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import com.ddip.backend.common.es.util.BuildSearchQueryUtil;
 import com.ddip.backend.common.exception.es.SearchResponseNotFoundException;
-import com.ddip.backend.project.dto.crowd.es.ProjectSearchResponse;
+import com.ddip.backend.project.dto.es.ProjectSearchResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;

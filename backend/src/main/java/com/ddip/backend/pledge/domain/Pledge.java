@@ -1,8 +1,7 @@
-package com.ddip.backend.project.domain;
+package com.ddip.backend.pledge.domain;
 
-import com.ddip.backend.project.dto.enums.PledgeStatus;
+import com.ddip.backend.pledge.dto.enums.PledgeStatus;
 import com.ddip.backend.common.domain.BaseTimeEntity;
-import com.ddip.backend.user.domain.User;
 import com.ddip.backend.project.validation.pledge.PledgeAccessDeniedException;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -65,7 +64,7 @@ public class Pledge extends BaseTimeEntity {
     }
 
     public void assertCancelable() {
-        if (this.status == PledgeStatus.CANCELED) {
+        if (this.status == PledgeStatus.CANCELED || this.status == PledgeStatus.REFUND) {
             throw new IllegalStateException("이미 취소된 후원입니다.");
         }
         // 결제 완료(PAID)까지만 취소 허용
@@ -74,12 +73,19 @@ public class Pledge extends BaseTimeEntity {
         }
     }
 
+    public void assertRefundable() {
+        if (this.status != PledgeStatus.PAID) {
+            throw new IllegalStateException("환불은 PAID 상태에서만 가능합니다. current=" + this.status);
+        }
+    }
+
+
     public void confirmedFunding(){
         this.status = PledgeStatus.CONFIRMED;
     }
 
-    public void canceledFunding(){
-        this.status = PledgeStatus.CANCELED;
+    public void refundPledgeStatus(){
+        this.status = PledgeStatus.REFUND;
     }
 
     public void shippedFunding(){

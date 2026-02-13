@@ -1,7 +1,7 @@
-package com.ddip.backend.project.dto.crowd.pledge;
+package com.ddip.backend.pledge.dto;
 
-import com.ddip.backend.project.dto.enums.PledgeStatus;
-import com.ddip.backend.project.domain.Pledge;
+import com.ddip.backend.pledge.dto.enums.PledgeStatus;
+import com.ddip.backend.pledge.domain.Pledge;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

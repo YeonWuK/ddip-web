@@ -4,7 +4,7 @@ import com.ddip.backend.auction.dto.es.AuctionSearchResponse;
 import com.ddip.backend.common.dto.es.SearchAutoCompleteResponse;
 import com.ddip.backend.common.es.service.AuctionSearchService;
 import com.ddip.backend.common.es.service.SearchAddOnService;
-import com.ddip.backend.project.dto.crowd.es.ProjectSearchResponse;
+import com.ddip.backend.project.dto.es.ProjectSearchResponse;
 import com.ddip.backend.common.es.service.ProjectSearchService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

@@ -19,8 +19,6 @@ public class AdminProjectSummaryDto {
 
     // 크리에이터 정보
     private Long creatorId;
-    private String creatorUsername;
-    private String creatorNickname;
 
     private String title;
     private String summary;         // 카드/리스트용 소개
@@ -47,9 +45,7 @@ public class AdminProjectSummaryDto {
     public static AdminProjectSummaryDto from(Project project) {
         return AdminProjectSummaryDto.builder()
                 .id(project.getId())
-                .creatorId(project.getCreator().getId())
-                .creatorUsername(project.getCreator().getUsername())
-                .creatorNickname(project.getCreator().getNickname())
+                .creatorId(project.getCreatorId())
                 .title(project.getTitle())
                 .summary(project.getSummary())
                 .targetAmount(project.getTargetAmount())

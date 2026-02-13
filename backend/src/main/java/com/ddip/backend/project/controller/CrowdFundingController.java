@@ -1,9 +1,9 @@
 package com.ddip.backend.project.controller;
 
-import com.ddip.backend.project.dto.crowd.project.ProjectDetailResponseDto;
-import com.ddip.backend.project.dto.crowd.project.ProjectResponseDto;
-import com.ddip.backend.project.dto.crowd.project.ProjectRequestDto;
-import com.ddip.backend.project.dto.crowd.project.ProjectUpdateRequestDto;
+import com.ddip.backend.project.dto.project.ProjectDetailResponseDto;
+import com.ddip.backend.project.dto.project.ProjectResponseDto;
+import com.ddip.backend.project.dto.project.ProjectRequestDto;
+import com.ddip.backend.project.dto.project.ProjectUpdateRequestDto;
 import com.ddip.backend.common.security.auth.CustomUserDetails;
 import com.ddip.backend.project.service.CrowdFundingService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -64,7 +64,7 @@ public class CrowdFundingController {
             @ApiResponse(responseCode = "404", description = "프로젝트를 찾을 수 없음")
     })
     public ResponseEntity<ProjectDetailResponseDto> getCrowdFunding(@PathVariable Long projectId ){
-        ProjectDetailResponseDto response = crowdFundingService.getProject(projectId);
+        ProjectDetailResponseDto response = crowdFundingService.findProjectDetail(projectId);
         return ResponseEntity.ok(response);
     }
 
