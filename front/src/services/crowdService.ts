@@ -39,7 +39,7 @@ export const projectApi = {
         let creator: UserResponse;
         if (backendProject.creator) {
           creator = {
-            id: backendProject.creator.id || backendProject.creatorId || 0,
+            id: backendProject.creator.creatorId || backendProject.creator.id || backendProject.creatorId || 0,
             email: backendProject.creator.email || null,
             name: backendProject.creator.name || backendProject.creator.username || '',
             nickname: backendProject.creator.nickname || '',
@@ -101,6 +101,7 @@ export const projectApi = {
 
         return {
           id: backendProject.id,
+          creatorId: backendProject.creatorId ?? backendProject.creator?.creatorId ?? creator.id ?? 0,
           creator,
           title: backendProject.title || '',
           description: backendProject.description || '',
@@ -180,7 +181,7 @@ export const projectApi = {
       if (backendResponse.creator) {
         const c = backendResponse.creator;
         creator = {
-          id: c.id ?? c.userId ?? 0,
+          id: c.creatorId ?? c.id ?? c.userId ?? 0,
           email: c.email ?? null,
           name: c.name ?? c.username ?? '',
           nickname: c.nickname ?? '',
@@ -248,6 +249,7 @@ export const projectApi = {
 
       const project: ProjectResponse = {
         id: backendResponse.id,
+        creatorId: backendResponse.creatorId ?? backendResponse.creator?.creatorId ?? creator.id ?? 0,
         creator,
         title: backendResponse.title ?? '',
         description: backendResponse.description ?? '',

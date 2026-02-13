@@ -446,10 +446,100 @@ export const authApi = {
 
   /**
    * 토큰 갱신
-   * TODO: 백엔드 API 연동 필요
+   * POST /api/users/refresh-token
+   * 
+   * 백엔드 동작:
+   * - 쿠키에서 refresh_token 읽음 (credentials: 'include' 필수)
+   * - 새로운 access_token 발급
+   * - 응답 본문: { "access_token": "..." }
+   * 
+   * @param refreshToken - 사용하지 않음 (쿠키에서 자동으로 읽음)
+   * @returns 새로운 액세스 토큰과 사용자 정보
    */
   refreshToken: async (refreshToken: string): Promise<AuthResponse> => {
-    throw new Error('토큰 갱신 API가 아직 구현되지 않았습니다');
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/users/refresh-token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // refreshToken 쿠키 전송을 위해 필수
+      });
+
+      if (!response.ok) {
+        // 401: 리프레시 토큰이 만료되었거나 유효하지 않음
+        if (response.status === 401) {
+          // 토큰 삭제 후 재로그인 필요
+          tokenStorage.clearAll();
+          throw new Error('로그인이 만료되었습니다. 다시 로그인해주세요.');
+        }
+        
+        const errorText = await response.text();
+        let errorMessage = '토큰 갱신에 실패했습니다';
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.message || errorJson.error || errorMessage;
+        } catch {
+          // JSON 파싱 실패 시 기본 메시지 사용
+        }
+        throw new Error(errorMessage);
+      }
+
+      // 응답에서 새로운 액세스 토큰 추출
+      const responseData = await response.json();
+      const newAccessToken = responseData.access_token || responseData.accessToken;
+      
+      if (!newAccessToken) {
+        throw new Error('토큰 갱신 응답에 액세스 토큰이 없습니다');
+      }
+
+      // 새로운 액세스 토큰 저장
+      tokenStorage.setAccessToken(newAccessToken);
+
+      // 사용자 정보는 기존 정보 유지 또는 새로 조회
+      let user = tokenStorage.getUser();
+      
+      // 응답에 사용자 정보가 포함되어 있는 경우 업데이트
+      if (responseData.user) {
+        user = responseData.user;
+        tokenStorage.setUser(responseData.user);
+      } else if (!user) {
+        // 사용자 정보가 없으면 새로 조회
+        try {
+          user = await authApi.getCurrentUser();
+        } catch {
+          // 사용자 정보 조회 실패 시 임시 사용자 정보
+          user = {
+            id: 0,
+            email: null,
+            name: '',
+            nickname: '',
+            profileImageUrl: null,
+            phone: null,
+          };
+        }
+      }
+
+      return {
+        accessToken: newAccessToken,
+        refreshToken: '', // refreshToken은 쿠키에 저장되므로 빈 문자열
+        user: user || {
+          id: 0,
+          email: null,
+          name: '',
+          nickname: '',
+          profileImageUrl: null,
+          phone: null,
+        },
+      };
+    } catch (error) {
+      // 네트워크 오류 처리
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        throw new Error('백엔드 서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.');
+      }
+      
+      throw error instanceof Error ? error : new Error('토큰 갱신에 실패했습니다');
+    }
   },
 
   /**

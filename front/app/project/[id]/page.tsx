@@ -52,7 +52,7 @@ function canViewProject(project: ProjectResponse, user: UserResponse | null): bo
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
-  const { isAuthenticated, user } = useAuth()
+  const { isAuthenticated, user, refreshUser } = useAuth()
   const [project, setProject] = useState<ProjectResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -244,8 +244,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       setSelectedAddressId(null)
       setShowAddressForm(false)
 
+      // 프로젝트 정보 업데이트
       const updatedProject = await projectApi.getProject(project.id)
       setProject(updatedProject)
+
+      // 사용자 포인트 정보 업데이트 (네비게이션 바의 포인트 잔액 즉시 반영)
+      await refreshUser()
 
       if (updatedProject.status === "SUCCESS" && project.status === "OPEN") {
         toast.success("축하합니다! 프로젝트가 목표 금액을 달성했습니다!")

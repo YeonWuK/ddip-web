@@ -28,7 +28,18 @@ export function isProjectCreator(
   user: UserResponse | null
 ): boolean {
   if (!user || !project) return false
-  return project.creator.id === user.id
+  
+  // creatorId가 있으면 우선적으로 사용 (더 안전)
+  if (project.creatorId !== undefined && project.creatorId !== null) {
+    return project.creatorId === user.id
+  }
+  
+  // creator 객체가 있으면 사용
+  if (project.creator && project.creator.id !== undefined) {
+    return project.creator.id === user.id
+  }
+  
+  return false
 }
 
 /**
@@ -38,7 +49,7 @@ export function isAuctionSeller(
   auction: AuctionResponse,
   user: UserResponse | null
 ): boolean {
-  if (!user || !auction) return false
+  if (!user || !auction || !auction.seller) return false
   return auction.seller.id === user.id
 }
 

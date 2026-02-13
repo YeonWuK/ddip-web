@@ -107,6 +107,7 @@ export interface RewardTierResponse {
 
 export interface ProjectResponse {
   id: number;
+  creatorId?: number; // 백엔드에서 creatorId를 별도로 제공하는 경우 대비
   creator: UserResponse;
   title: string;
   description: string;
