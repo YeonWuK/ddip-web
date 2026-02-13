@@ -1,19 +1,20 @@
 package com.ddip.backend.project.service;
 
-import com.ddip.backend.pledge.service.PledgeService;
-import com.ddip.backend.project.dto.project.ProjectDetailResponseDto;
-import com.ddip.backend.project.dto.project.ProjectResponseDto;
-import com.ddip.backend.project.dto.project.ProjectRequestDto;
-import com.ddip.backend.project.dto.project.ProjectUpdateRequestDto;
+import com.ddip.backend.admin.dto.crowdfunding.AdminProjectSearchCondition;
+import com.ddip.backend.project.dto.crowd.project.ProjectDetailResponseDto;
+import com.ddip.backend.project.dto.crowd.project.ProjectResponseDto;
+import com.ddip.backend.project.dto.crowd.project.ProjectRequestDto;
+import com.ddip.backend.project.dto.crowd.project.ProjectUpdateRequestDto;
 import com.ddip.backend.project.dto.enums.ProjectStatus;
 import com.ddip.backend.project.domain.Project;
 import com.ddip.backend.project.domain.ProjectImage;
+import com.ddip.backend.project.exception.image.InvalidProjectImageException;
+import com.ddip.backend.user.domain.User;
 import com.ddip.backend.common.es.document.ProjectDocument;
 import com.ddip.backend.common.es.repository.ProjectElasticsearchRepository;
 import com.ddip.backend.project.event.ProjectEsEvent;
-import com.ddip.backend.project.validation.project.ProjectNotFoundException;
-import com.ddip.backend.project.validation.reward.RewardTierRequiredException;
-import com.ddip.backend.user.domain.User;
+import com.ddip.backend.project.exception.project.ProjectNotFoundException;
+import com.ddip.backend.project.exception.reward.RewardTierRequiredException;
 import com.ddip.backend.user.validation.user.UserNotFoundException;
 import com.ddip.backend.project.repository.ProjectImageRepository;
 import com.ddip.backend.project.repository.ProjectRepository;
@@ -23,16 +24,17 @@ import com.ddip.backend.common.utils.S3UrlPrefixFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
-import java.util.Map;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.Objects;
+import java.util.stream.IntStream;
 
 @Slf4j
 @Service
@@ -51,24 +53,22 @@ public class CrowdFundingService {
     private final PledgeService pledgeService;
 
     @Transactional(readOnly = true)
-    public Project getProject(Long projectId) {
+    public Project getProjectEntity(Long projectId) {
         return projectRepository.findById(projectId)
                 .orElseThrow(() -> new ProjectNotFoundException(projectId));
     }
 
     /**
-     * Crowdfunding 프로젝트 단건 상세 조회 (RewardTier 포함)
+     * Crowdfunding 프로젝트 단건 조회 (RewardTier 포함)
      */
     @Transactional(readOnly = true)
-    public ProjectDetailResponseDto findProjectDetail(Long projectId) {
-        Project project = projectRepository.findByIdWithRewardTiers(projectId)
+    public ProjectDetailResponseDto getProject(Long projectId) {
+        Project project = projectRepository.findByIdWithCreatorAndRewardTier(projectId)
                 .orElseThrow(() -> new ProjectNotFoundException(projectId));
-
-        User creator = getUserOrThrow(project.getCreatorId());
 
         List<ProjectImage> images = projectImageRepository.findImagesByProjectId(projectId);
 
-        return ProjectDetailResponseDto.from(project, creator, images);
+        return ProjectDetailResponseDto.from(project, images);
     }
 
     /**
@@ -76,43 +76,31 @@ public class CrowdFundingService {
      */
     @Transactional(readOnly = true)
     public List<ProjectResponseDto> getAllProjects() {
-        List<Project> projects = projectRepository.findAll();
-
-        Set<Long> creatorIds = projects.stream()
-                .map(Project::getCreatorId)
-                .collect(Collectors.toSet());
-
-        Map<Long, User> creatorById = userRepository.findAllById(creatorIds).stream()
-                .collect(Collectors.toMap(User::getId, user -> user));
-
-        return projects.stream()
-                .map(project -> {
-                    User creator = creatorById.get(project.getCreatorId());
-                    if (creator == null) {
-                        throw new UserNotFoundException(project.getCreatorId());
-                    }
-                    return ProjectResponseDto.from(project, creator);
-                })
+        return projectRepository.findAll().stream()
+                .map(ProjectResponseDto::from)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Project> searchProjectsForAdmin(AdminProjectSearchCondition condition, Pageable pageable) {
+        return projectRepository.searchProjectsForAdmin(condition, pageable);
     }
 
     /**
      * Crowdfunding 프로젝트 생성
      */
-    public long createProject(List<MultipartFile> multipartFiles, ProjectRequestDto requestDto, Long creatorId) {
+    public long createProject(List<MultipartFile> multipartFiles, ProjectRequestDto requestDto, Long userId) {
 
         validateRewardTiers(requestDto);
 
-        getUserOrThrow(creatorId);
-        Project project = createAndSaveProject(requestDto, creatorId);
+        User user = getUserOrThrow(userId);
+        Project project = createAndSaveProject(requestDto, user);
 
-        String thumbnailUrl = uploadProjectImagesAndSaveEntities(project, multipartFiles);
-        if (thumbnailUrl != null) {
-            project.updateThumbnailUrl(thumbnailUrl);
-        }
+        uploadProjectImagesAndSaveEntities(project, multipartFiles, requestDto.getMainIndex());
+        syncProjectThumbnailFromMainOrThrow(project);
 
         // ES 인덱싱 (초기 생성은 바로 저장)
-        indexProjectToElasticsearch(project, thumbnailUrl);
+        indexProjectToElasticsearch(project, project.getThumbnailUrl());
 
         log.info("프로젝트 생성 완료 projectId={}", project.getId());
         return project.getId();
@@ -123,15 +111,14 @@ public class CrowdFundingService {
      */
     public void updateProject(List<MultipartFile> multipartFiles, Long projectId, Long userId, ProjectUpdateRequestDto requestDto) {
 
-        Project project = getProject(projectId);
-        // 기본 검증 (소유자, 상태, 날짜)
+        Project project = getProjectEntity(projectId);
         validateProjectUpdatable(project, userId, requestDto);
 
         // 1) 삭제 대상 확보 (썸네일이 삭제되는지 판단에 필요)
-        List<ProjectImage> deleteTargets = resolveDeleteTargets(projectId, requestDto.getImageIds());
+        List<ProjectImage> deleteTargets = resolveDeleteTargets(projectId, requestDto.getDeleteImageIds());
 
         // 2) 새 이미지 업로드 (있으면) + 새 썸네일 후보(첫 업로드 key) 리턴
-        String newThumbKey = uploadNewImagesForUpdate(projectId, project, multipartFiles);
+        List<ProjectImage> projectImages = uploadNewImagesForUpdate(projectId, project, multipartFiles);
 
         // 3) 기존 이미지 삭제 (DB -> S3)
         deleteProjectImages(deleteTargets);
@@ -139,10 +126,13 @@ public class CrowdFundingService {
         // 4) 프로젝트 필드 업데이트
         project.updateFrom(requestDto);
 
-        // 5) 썸네일 업데이트 (케이스 1~4 처리)
-        updateThumbnailForUpdate(project, newThumbKey, deleteTargets);
+        // 5) 썸네일 업데이트 (케이스 1~3 처리)
+        applyMainImageOrThrow(project.getId(), requestDto, projectImages);
 
-        // 6) ES 동기화
+        // 6) 썸네일 url 업데이트
+        syncProjectThumbnailFromMainOrThrow(project);
+
+        // 7) ES 동기화
         publisher.publishEvent(new ProjectEsEvent(projectId));
     }
 
@@ -150,7 +140,7 @@ public class CrowdFundingService {
      * Crowdfunding 프로젝트 삭제
      */
     public void deleteProject(Long projectId, Long userId) {
-        Project project = getProject(projectId);
+        Project project = getProjectEntity(projectId);
 
         project.assertOwnedBy(userId);
 
@@ -174,10 +164,29 @@ public class CrowdFundingService {
         for (Project project : expired) {
             boolean success = project.closeProject();
             if (!success) {
-                pledgeService.refundAllPaidPledges(project);
+                pledgeService.refundAllFailedProjects(project.getId());
             }
             publisher.publishEvent(new ProjectEsEvent(project.getId()));
         }
+    }
+
+    public void rejectProjectByAdmin(Long projectId) {
+        Project project = getProjectEntity(projectId);
+        project.rejectByAdmin();
+        publisher.publishEvent(new ProjectEsEvent(projectId));
+    }
+
+    public void forceStopByAdmin(Long projectId) {
+        Project project = getProjectEntity(projectId);
+        project.stopProject();
+        publisher.publishEvent(new ProjectEsEvent(projectId));
+    }
+
+    public void forceCancelProjectByAdmin(Long projectId) {
+        Project project = getProjectEntity(projectId);
+        project.cancel();
+        pledgeService.refundAllFailedProjects(projectId);
+        publisher.publishEvent(new ProjectEsEvent(projectId));
     }
 
     private void validateRewardTiers(ProjectRequestDto requestDto) {
@@ -190,30 +199,41 @@ public class CrowdFundingService {
         return userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
     }
 
-    private Project createAndSaveProject(ProjectRequestDto requestDto, Long creatorId) {
-        Project project = Project.toEntity(requestDto, creatorId);
+    private Project createAndSaveProject(ProjectRequestDto requestDto, User user) {
+        Project project = Project.toEntity(requestDto, user);
         return projectRepository.save(project);
     }
 
     /**
-     * S3 업로드 + ProjectImage 저장 + 썸네일 key 반환
+     * S3 업로드 + ProjectImage 저장
      */
-    private String uploadProjectImagesAndSaveEntities(Project project, List<MultipartFile> multipartFiles) {
-        if (multipartFiles == null || multipartFiles.isEmpty()) {
-            return null;
+    private void uploadProjectImagesAndSaveEntities(Project project, List<MultipartFile> files,
+                                                    int mainIndex) {
+        if (files == null || files.isEmpty()) return;
+
+        if (mainIndex < 0 || mainIndex >= files.size()) {
+            throw new IllegalArgumentException("mainIndex 가 유효하지 않습니다.");
         }
 
         String prefix = s3UrlPrefixFactory.projectPrefix(project.getId());
-        String thumbnailUrl = null;
 
-        for (MultipartFile file : multipartFiles) {
-            String key = awsS3Util.uploadFile(file, prefix);
-            if (thumbnailUrl == null) {
-                thumbnailUrl = key;
-            }
-            projectImageRepository.save(ProjectImage.from(project, key));
-        }
-        return thumbnailUrl;
+        List<ProjectImage> projectImages =
+                IntStream.range(0, files.size())
+                        .mapToObj(i -> {
+                            MultipartFile file = files.get(i);
+                            if (file == null || file.isEmpty()) {
+                                throw new InvalidProjectImageException("사진은 하나 이상 등록되야합니다.");
+                            }
+
+                            String key = awsS3Util.uploadFile(file, prefix);
+                            boolean isMain = (i == mainIndex);
+
+                            return ProjectImage.from(project, key, isMain);
+                        })
+                        .filter(Objects::nonNull)
+                        .toList();
+
+        projectImageRepository.saveAll(projectImages);
     }
 
     private void indexProjectToElasticsearch(Project project, String thumbnailUrl) {
@@ -250,7 +270,7 @@ public class CrowdFundingService {
     /**
      * 수정 시 새 이미지 업로드 처리 (없으면 null 반환)
      */
-    private String uploadNewImagesForUpdate(Long projectId, Project project, List<MultipartFile> multipartFiles) {
+    private List<ProjectImage>  uploadNewImagesForUpdate(Long projectId, Project project, List<MultipartFile> multipartFiles) {
 
         if (multipartFiles == null || multipartFiles.isEmpty()) {
             return null;
@@ -258,19 +278,15 @@ public class CrowdFundingService {
 
         String prefix = s3UrlPrefixFactory.projectPrefix(projectId);
 
-        String newThumbKey = null;
-        for (MultipartFile file : multipartFiles) {
-            if (file == null || file.isEmpty())
-                continue;
+        List<ProjectImage> projectImages = multipartFiles.stream()
+                .filter(file -> file != null && !file.isEmpty())
+                .map(file -> {
+                    String key = awsS3Util.uploadFile(file, prefix);
+                    return ProjectImage.from(project, key, false);
+                })
+                .toList();
 
-            String key = awsS3Util.uploadFile(file, prefix);
-            if (newThumbKey == null)
-                newThumbKey = key;
-
-            projectImageRepository.save(ProjectImage.from(project, key));
-        }
-
-        return newThumbKey;
+        return projectImageRepository.saveAll(projectImages);
     }
 
     /**
@@ -289,29 +305,50 @@ public class CrowdFundingService {
     /**
      * 수정 시 썸네일 업데이트 로직
      */
-    private void updateThumbnailForUpdate(Project project,
-                                          String newThumbKey,
-                                          List<ProjectImage> deleteTargets) {
+    private void applyMainImageOrThrow(Long projectId, ProjectUpdateRequestDto dto, List<ProjectImage> uploaded) {
 
-        String currentThumb = project.getThumbnailUrl();
+        boolean isUploaded = uploaded != null && !uploaded.isEmpty();
 
-        boolean thumbDeleted = currentThumb != null
-                && deleteTargets != null
-                && deleteTargets.stream().anyMatch(img -> currentThumb.equals(img.getS3Key()));
+        // 둘 다 보내면 예외
+        if (dto.getMainIndex() != null && dto.getMainImageId() != null) {
+            throw new InvalidProjectImageException("mainIndex와 mainImageId는 동시에 보낼 수 없습니다.");
+        }
 
-        // 케이스4: 썸네일이 삭제되면 무조건 재선정
-        if (thumbDeleted) {
-            if (newThumbKey != null) {
-                project.updateThumbnailUrl(newThumbKey);
-                return;
+        // 케이스 1,2: 새 업로드가 있으면 mainIndex 필수 (삭제 여부는 상관 없음)
+        if (isUploaded) {
+            Integer mainIndex = dto.getMainIndex();
+            if (mainIndex == null) {
+                throw new InvalidProjectImageException("새 이미지를 업로드하면 mainIndex는 필수입니다.");
             }
-            project.updateThumbnailUrl(resolveFallbackThumbnailKey(project.getId()));
+            if (mainIndex < 0 || mainIndex >= uploaded.size()) {
+                throw new InvalidProjectImageException("mainIndex가 업로드 파일 범위를 벗어났습니다.");
+            }
+
+            projectImageRepository.clearMainByProjectId(projectId);
+            projectImageRepository.setMainById(uploaded.get(mainIndex).getId());
             return;
         }
 
-        // 정책: 새 업로드가 있으면 새 업로드 대표로 교체, 없으면 유지
-        if (newThumbKey != null) {
-            project.updateThumbnailUrl(newThumbKey);
+        // 케이스 3: 업로드가 없으면 mainImageId 필수
+        Long mainImageId = dto.getMainImageId();
+        if (mainImageId == null) {
+            throw new InvalidProjectImageException("이미지를 업로드하지 않으면 mainImageId는 필수입니다.");
         }
+
+        boolean isExisted = projectImageRepository.existsByIdAndProjectId(mainImageId, projectId);
+        if (!isExisted) {
+            throw new InvalidProjectImageException("해당 프로젝트의 이미지가 아닙니다.");
+        }
+
+        projectImageRepository.clearMainByProjectId(projectId);
+        projectImageRepository.setMainById(mainImageId);
+    }
+
+    private void syncProjectThumbnailFromMainOrThrow(Project project) {
+        String key = projectImageRepository.findMainByProjectId(project.getId())
+                .map(ProjectImage::getS3Key)
+                .orElseThrow(() -> new InvalidProjectImageException("대표 이미지(isMain)를 찾을 수 없습니다."));
+
+        project.updateThumbnailUrl(key);
     }
 }

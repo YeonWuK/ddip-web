@@ -1,4 +1,4 @@
-package com.ddip.backend.project.validation.reward;
+package com.ddip.backend.project.exception.reward;
 
 import com.ddip.backend.common.exception.BusinessException;
 import com.ddip.backend.common.exception.ErrorCode;

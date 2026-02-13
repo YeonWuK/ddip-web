@@ -51,4 +51,6 @@ public class ProjectRequestDto {
     @Valid
     private List<RewardTierRequestDto> rewardTiers;
 
+    @Min(0)
+    private int mainIndex;
 }
