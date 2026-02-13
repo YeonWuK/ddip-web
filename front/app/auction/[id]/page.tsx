@@ -861,7 +861,7 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
                     <div className="max-h-[400px] space-y-2 overflow-y-auto">
                       {bidHistory.map((bid, index) => {
                         const isMyBid = user?.id === bid.bidder.id
-                        const isHighest = index === 0 && bid.amount === auction.currentPrice
+                        const isHighest = index === 0 && bid.bidPrice === auction.currentPrice
                         
                         return (
                           <div
@@ -898,7 +898,7 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
                                   )}
                                 </div>
                                 <div className="text-xs text-muted-foreground">
-                                  {new Date(bid.createdAt).toLocaleString("ko-KR", {
+                                  {new Date(bid.bidAt).toLocaleString("ko-KR", {
                                     month: "short",
                                     day: "numeric",
                                     hour: "2-digit",
@@ -910,14 +910,14 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
                             </div>
                             <div className="text-right">
                               <div className="font-semibold text-lg">
-                                {bid.amount.toLocaleString()}원
+                                {bid.bidPrice.toLocaleString()}원
                               </div>
                               {index < bidHistory.length - 1 && (() => {
                                 // 다음 입찰가 (더 오래된 입찰, index가 클수록 오래됨)
                                 // 입찰 내역이 최신순으로 정렬되어 있으므로, index가 큰 것이 더 오래된 입찰
                                 const nextBid = bidHistory[index + 1]
                                 // 증가액 계산 (현재 입찰가 - 다음 입찰가(더 오래된 입찰))
-                                const increase = bid.amount - nextBid.amount
+                                const increase = bid.bidPrice - nextBid.bidPrice
                                 // 입찰은 항상 증가해야 하므로 양수만 표시
                                 if (increase > 0) {
                                   return (

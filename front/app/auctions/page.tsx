@@ -172,7 +172,7 @@ export default function AuctionsPage() {
     return {
       id: String(auction.id),
       title: auction.title,
-      description: auction.description,
+      description: auction.summary || "",
       image: auction.imageUrl || "/placeholder.svg",
       category: "경매",
       currentBid: auction.currentPrice,

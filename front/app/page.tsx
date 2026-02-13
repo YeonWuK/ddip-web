@@ -9,14 +9,14 @@ import { Button } from "@/src/components/ui/button"
 import Link from "next/link"
 import { useState, useEffect, useMemo } from "react"
 import { projectApi, auctionApi } from "@/src/services/api"
-import { ProjectResponse, AuctionSummary } from "@/src/types/api"
+import { ProjectResponse, AuctionSummary, AuctionResponse } from "@/src/types/api"
 import { Loader2, Package, Gavel, Clock, ArrowRight, Sparkles } from "lucide-react"
 
 export default function HomePage() {
   const [popularProjects, setPopularProjects] = useState<ProjectResponse[]>([])
-  const [popularAuctions, setPopularAuctions] = useState<AuctionResponse[]>([])
+  const [popularAuctions, setPopularAuctions] = useState<AuctionSummary[]>([])
   const [urgentProjects, setUrgentProjects] = useState<ProjectResponse[]>([])
-  const [urgentAuctions, setUrgentAuctions] = useState<AuctionResponse[]>([])
+  const [urgentAuctions, setUrgentAuctions] = useState<AuctionSummary[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -208,7 +208,7 @@ export default function HomePage() {
     return {
       id: String(auction.id),
       title: auction.title,
-      description: auction.description,
+      description: auction.summary || "",
       image: auction.imageUrl || "/placeholder.svg",
       category: "경매",
       currentBid: auction.currentPrice,
@@ -287,7 +287,7 @@ export default function HomePage() {
                             key={auction.id}
                             id={String(auction.id)}
                             title={auction.title}
-                            description={auction.description}
+                            description={auction.summary || ""}
                             image={auction.imageUrl || "/placeholder.svg"}
                             category="경매"
                             currentBid={auction.currentPrice}

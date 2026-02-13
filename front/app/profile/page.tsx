@@ -19,7 +19,7 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { useAuth } from "@/src/contexts/auth-context"
 import { ProtectedRoute } from "@/src/components/protected-route"
 import { projectApi, auctionApi, userApi, addressApi } from "@/src/services/api"
-import { ProjectResponse, AuctionResponse, SupportResponse, MyBidsSummary, UserPageResponse, AddressResponse, AddressCreateRequest, AddressUpdateRequest } from "@/src/types/api"
+import { ProjectResponse, AuctionResponse, AuctionSummary, SupportResponse, MyBidsSummary, UserPageResponse, AddressResponse, AddressCreateRequest, AddressUpdateRequest } from "@/src/types/api"
 import { getWishlist } from "@/src/lib/wishlist"
 import { canEditProject, canCancelProject, canEditAuction, canCancelAuction } from "@/src/lib/permissions"
 import Link from "next/link"
@@ -30,11 +30,11 @@ function ProfileTabs({ defaultTab }: { defaultTab: string }) {
   const router = useRouter()
   const { user, isAuthenticated, isLoading: authLoading } = useAuth()
   const [myProjects, setMyProjects] = useState<ProjectResponse[]>([])
-  const [myAuctions, setMyAuctions] = useState<AuctionResponse[]>([])
+  const [myAuctions, setMyAuctions] = useState<AuctionSummary[]>([])
   const [mySupports, setMySupports] = useState<SupportResponse[]>([])
   const [myBids, setMyBids] = useState<MyBidsSummary[]>([])
   const [favoriteProjects, setFavoriteProjects] = useState<ProjectResponse[]>([])
-  const [favoriteAuctions, setFavoriteAuctions] = useState<AuctionResponse[]>([])
+  const [favoriteAuctions, setFavoriteAuctions] = useState<AuctionSummary[]>([])
   const [addresses, setAddresses] = useState<AddressResponse[]>([])
   const [defaultAddress, setDefaultAddress] = useState<AddressResponse | null>(null)
   const [addressDialogOpen, setAddressDialogOpen] = useState(false)
@@ -61,15 +61,8 @@ function ProfileTabs({ defaultTab }: { defaultTab: string }) {
       // 마이페이지 데이터 조회
       const myPageData: UserPageResponse = await userApi.getMyPage()
       
-      // 경매 상세 정보로 변환 (AuctionSummary -> AuctionResponse)
-      const myAuctionsList: AuctionResponse[] = []
-      for (const auctionSummary of myPageData.auctions) {
-        try {
-          const auctionDetail = await auctionApi.getAuction(auctionSummary.id)
-          myAuctionsList.push(auctionDetail)
-        } catch {
-        }
-      }
+      // 경매 목록 정보 사용 (AuctionSummary)
+      const myAuctionsList: AuctionSummary[] = myPageData.auctions
       
       setMyAuctions(myAuctionsList)
       
@@ -268,10 +261,8 @@ function ProfileTabs({ defaultTab }: { defaultTab: string }) {
                       }
 
                       try {
-                        await projectApi.updateProject(project.id, {
-                          status: "CANCELED" as const,
-                        })
-                        toast.success("프로젝트가 취소되었습니다")
+                        await projectApi.deleteProject(project.id)
+                        toast.success("프로젝트가 삭제되었습니다")
                         // 프로젝트 목록 새로고침
                         const allProjects = await projectApi.getProjects()
                         const myProjectsList = allProjects.filter(p => p.creator.id === user?.id)
@@ -388,14 +379,11 @@ function ProfileTabs({ defaultTab }: { defaultTab: string }) {
                       }
 
                       try {
-                        await auctionApi.updateAuction(auction.id, {
-                          status: "CANCELED" as const,
-                        })
-                        toast.success("경매가 취소되었습니다")
-                        // 경매 목록 새로고침
-                        const allAuctions = await auctionApi.getAuctions()
-                        const myAuctionsList = allAuctions.filter(a => a.seller.id === user?.id)
-                        setMyAuctions(myAuctionsList)
+                        await auctionApi.deleteAuction(auction.id)
+                        toast.success("경매가 삭제되었습니다")
+                        // 경매 목록 새로고침 (마이페이지 API 사용)
+                        const myPageData = await userApi.getMyPage()
+                        setMyAuctions(myPageData.auctions)
                       } catch (error) {
                         toast.error(error instanceof Error ? error.message : "경매 취소에 실패했습니다")
                       }
@@ -420,7 +408,7 @@ function ProfileTabs({ defaultTab }: { defaultTab: string }) {
                                     <div className="flex-1 min-w-0">
                                       <h3 className="font-semibold text-lg mb-1 truncate">{auction.title}</h3>
                                       <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-                                        {auction.description}
+                                        {auction.summary || ""}
                                       </p>
                                       <div className="flex items-center gap-4 text-sm">
                                         <span className="text-muted-foreground">
@@ -453,7 +441,8 @@ function ProfileTabs({ defaultTab }: { defaultTab: string }) {
                               </div>
                             </Link>
                             <div className="flex flex-col gap-2">
-                              {canEditAuction(auction, user) && (
+                              {/* 내 경매에서는 상태에 따라 수정/삭제 가능 */}
+                              {auction.status === "SCHEDULED" && (
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -464,7 +453,7 @@ function ProfileTabs({ defaultTab }: { defaultTab: string }) {
                                   <Edit className="size-4" />
                                 </Button>
                               )}
-                              {canCancelAuction(auction, user) && (
+                              {(auction.status === "SCHEDULED" || auction.status === "RUNNING") && (
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -664,7 +653,7 @@ function ProfileTabs({ defaultTab }: { defaultTab: string }) {
                   />
                 ) : (
                   myBids.map((bid) => (
-                    <Card key={bid.id}>
+                    <Card key={bid.auctionId}>
                       <CardContent className="pt-6">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
@@ -672,7 +661,7 @@ function ProfileTabs({ defaultTab }: { defaultTab: string }) {
                             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                               <Calendar className="size-4" />
                               <span>
-                                {new Date(bid.createdAt).toLocaleDateString("ko-KR", {
+                                {new Date(bid.lastBidAt).toLocaleDateString("ko-KR", {
                                   year: "numeric",
                                   month: "long",
                                   day: "numeric",
@@ -682,7 +671,7 @@ function ProfileTabs({ defaultTab }: { defaultTab: string }) {
                           </div>
                           <div className="text-right">
                             <p className="text-lg font-semibold text-primary">
-                              {bid.amount.toLocaleString()}원
+                              {bid.lastBidPrice.toLocaleString()}원
                             </p>
                             <Link href={`/auction/${bid.auctionId}`}>
                               <Button variant="link" size="sm" className="mt-2">
@@ -722,8 +711,8 @@ function ProfileTabs({ defaultTab }: { defaultTab: string }) {
                       <AddressForm
                         address={editingAddress}
                         onSubmit={editingAddress 
-                          ? (data) => handleUpdateAddress(editingAddress.id, data)
-                          : handleCreateAddress
+                          ? (data) => handleUpdateAddress(editingAddress.id, data as AddressUpdateRequest)
+                          : (data) => handleCreateAddress(data as AddressCreateRequest)
                         }
                         onCancel={() => {
                           setAddressDialogOpen(false)

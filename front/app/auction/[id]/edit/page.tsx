@@ -83,16 +83,16 @@ export default function EditAuctionPage({ params }: { params: Promise<{ id: stri
         const startDateStr = isoToDatetimeLocal(auctionData.startAt)
         const endDateStr = isoToDatetimeLocal(auctionData.endAt)
 
+        // startDateTime은 종료일의 최소값 계산에 사용 (경매 시작 시간은 수정 불가)
         setStartDateTime(startDateStr)
 
-        // 폼에 데이터 채우기
+        // 폼에 데이터 채우기 (startAt은 수정 불가이므로 제외)
         reset({
           title: auctionData.title,
           description: auctionData.description,
           startPrice: auctionData.startPrice,
           bidStep: auctionData.bidStep,
           buyoutPrice: auctionData.buyoutPrice,
-          startAt: startDateStr,
           endAt: endDateStr,
         })
       } catch {
@@ -112,93 +112,58 @@ export default function EditAuctionPage({ params }: { params: Promise<{ id: stri
     try {
       setIsSubmitting(true)
 
-      // 이미지 처리: 제거되지 않은 기존 이미지 + 새로 업로드한 이미지
-      const visibleExistingImages = existingImageUrls.filter((_, index) => !removedExistingImageIndices.has(index))
-
-      let imageUrls: string[] | null = null
-      
-      if (imageFiles.length > 0) {
-        // 새 이미지를 base64로 변환
-        const newImageUrls = await Promise.all(
-          imageFiles.map(
-            (file) =>
-              new Promise<string>((resolve, reject) => {
-                if (file.size > 5 * 1024 * 1024) {
-                  toast.error(`이미지 크기가 너무 큽니다: ${file.name} (최대 5MB)`)
-                  reject(new Error(`이미지 크기 초과: ${file.name}`))
-                  return
-                }
-                
-                const reader = new FileReader()
-                reader.onload = () => {
-                  const result = reader.result as string
-                  if (result.length > 2 * 1024 * 1024) {
-                    toast.warning(`이미지 ${file.name}의 크기가 큽니다. 저장 시 문제가 발생할 수 있습니다.`)
-                  }
-                  resolve(result)
-                }
-                reader.onerror = reject
-                reader.readAsDataURL(file)
-              })
-          )
-        )
-        // 기존 이미지 + 새 이미지 합치기
-        imageUrls = [...visibleExistingImages, ...newImageUrls]
-      } else if (visibleExistingImages.length > 0) {
-        // 기존 이미지만 유지
-        imageUrls = visibleExistingImages
+      // 이미지 파일 크기 검증
+      for (const file of imageFiles) {
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error(`이미지 크기가 너무 큽니다: ${file.name} (최대 5MB)`)
+          setIsSubmitting(false)
+          return
+        }
       }
-
-      const imageUrl = imageUrls && imageUrls.length > 0 ? imageUrls[0] : null
 
       // 날짜 유효성 검사 및 ISO 형식으로 변환
-      if (!data.startAt || !data.endAt || data.startAt.trim() === "" || data.endAt.trim() === "") {
-        toast.error("시작일과 종료일을 모두 선택해주세요")
+      if (!data.endAt || data.endAt.trim() === "") {
+        toast.error("종료일을 선택해주세요")
         return
       }
 
-      const startDateTimeStr = data.startAt.trim()
       const endDateTimeStr = data.endAt.trim()
-
-      const startDateTimeObj = new Date(startDateTimeStr)
       const endDateTimeObj = new Date(endDateTimeStr)
-
-      if (isNaN(startDateTimeObj.getTime())) {
-        toast.error(`유효하지 않은 시작일입니다: ${startDateTimeStr}`)
-        return
-      }
 
       if (isNaN(endDateTimeObj.getTime())) {
         toast.error(`유효하지 않은 종료일입니다: ${endDateTimeStr}`)
         return
       }
 
-      // 시작일이 과거인지 확인 (수정 시에는 현재 시간 이후만 가능)
+      // 종료일이 현재 경매 시작일 이후인지 확인
+      const auctionStartDate = new Date(auction.startAt)
+      if (endDateTimeObj <= auctionStartDate) {
+        toast.error("종료일은 경매 시작일 이후여야 합니다")
+        return
+      }
+
+      // 종료일이 현재 시간 이후인지 확인
       const now = new Date()
-      if (startDateTimeObj < now) {
-        toast.error("경매 시작일은 현재 시간 이후여야 합니다")
+      if (endDateTimeObj <= now) {
+        toast.error("종료일은 현재 시간 이후여야 합니다")
         return
       }
 
-      if (endDateTimeObj <= startDateTimeObj) {
-        toast.error("종료일은 시작일 이후여야 합니다")
-        return
-      }
-
-      const startDateTimeISO = startDateTimeObj.toISOString()
       const endDateTimeISO = endDateTimeObj.toISOString()
 
-      // 경매 수정
-      const updatedAuction = await auctionApi.updateAuction(auctionId, {
-        ...data,
-        startAt: startDateTimeISO,
-        endAt: endDateTimeISO,
-        imageUrl,
-        imageUrls,
-        // currentPrice는 수정하지 않음 (입찰이 시작된 경우)
-        // status는 수정하지 않음
-        // winner는 수정하지 않음
-      })
+      // 경매 수정 (multipart/form-data로 파일과 함께 전송)
+      // startAt은 수정 불가 (백엔드에서 자동 처리)
+      const updatedAuction = await auctionApi.updateAuction(
+        auctionId,
+        imageFiles, // 새로 업로드한 이미지 파일들
+        {
+          title: data.title,
+          description: data.description,
+          startPrice: data.startPrice,
+          bidStep: data.bidStep,
+          endAt: endDateTimeISO,
+        }
+      )
 
       toast.success("경매가 수정되었습니다!")
       router.push(`/auction/${auctionId}`)
@@ -375,26 +340,20 @@ export default function EditAuctionPage({ params }: { params: Promise<{ id: stri
 
                 {/* 기간 */}
                 <div className="grid grid-cols-2 gap-4">
+                  {/* 시작일 (읽기 전용) */}
                   <div className="space-y-2">
-                    <Label htmlFor="startAt">경매 시작일 *</Label>
+                    <Label htmlFor="startAt">경매 시작일</Label>
                     <Input
                       id="startAt"
                       type="datetime-local"
-                      min={today}
-                      {...register("startAt", {
-                        onChange: (e) => {
-                          setStartDateTime(e.target.value)
-                        },
-                      })}
+                      value={startDateTime}
+                      disabled
+                      className="bg-muted"
                     />
-                    {errors.startAt && (
-                      <Alert variant="destructive">
-                        <AlertCircle className="size-4" />
-                        <AlertDescription>{errors.startAt.message}</AlertDescription>
-                      </Alert>
-                    )}
+                    <p className="text-xs text-muted-foreground">시작 시간은 수정할 수 없습니다</p>
                   </div>
 
+                  {/* 종료일 (수정 가능) */}
                   <div className="space-y-2">
                     <Label htmlFor="endAt">경매 종료일 *</Label>
                     <Input
@@ -405,12 +364,8 @@ export default function EditAuctionPage({ params }: { params: Promise<{ id: stri
                         const minEndDate = new Date(startDate.getTime() + 60000)
                         return minEndDate.toISOString().slice(0, 16)
                       })() : today}
-                      disabled={!startDateTime}
                       {...register("endAt")}
                     />
-                    {!startDateTime && (
-                      <p className="text-xs text-muted-foreground">시작일을 먼저 선택해주세요</p>
-                    )}
                     {errors.endAt && (
                       <Alert variant="destructive">
                         <AlertCircle className="size-4" />
