@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import Image from "next/image"
 import { Button } from "@/src/components/ui/button"
-import { X, Upload, GripVertical } from "lucide-react"
+import { X, Upload, GripVertical, Star } from "lucide-react"
 
 interface MultiImageUploadProps {
   value?: File[]
@@ -18,17 +18,29 @@ interface MultiImageUploadProps {
   existingImageItems?: { id: number; url: string }[]
   /** 제거된 기존 이미지 id (existingImageItems 사용 시) */
   onRemovedIdsChange?: (removedIds: Set<number>) => void
+  /** 대표 이미지 선택 활성화 */
+  enableMainImageSelection?: boolean
+  /** 선택된 대표 이미지 (기존 이미지의 ID) */
+  selectedMainImageId?: number
+  /** 선택된 대표 이미지 (새 이미지의 인덱스) */
+  selectedMainIndex?: number
+  /** 대표 이미지 변경 콜백 */
+  onMainImageChange?: (type: 'existing' | 'new', idOrIndex: number) => void
 }
 
 export function MultiImageUpload({
   value = [],
   onChange,
-  maxImages = 3,
+  maxImages,
   className,
   existingImages = [],
   onExistingImagesChange,
   existingImageItems,
   onRemovedIdsChange,
+  enableMainImageSelection = false,
+  selectedMainImageId,
+  selectedMainIndex,
+  onMainImageChange,
 }: MultiImageUploadProps) {
   const [images, setImages] = useState<File[]>(value)
   const [removedExistingIndices, setRemovedExistingIndices] = useState<Set<number>>(new Set())
@@ -60,11 +72,14 @@ export function MultiImageUpload({
       return
     }
 
-    const totalImages = images.length + visibleExistingImages.length
-    const remainingSlots = maxImages - totalImages
-    if (imageFiles.length > remainingSlots) {
-      alert(`최대 ${maxImages}장까지 업로드 가능합니다. ${remainingSlots}장만 추가됩니다.`)
-      imageFiles.splice(remainingSlots)
+    // maxImages 제한이 있는 경우에만 체크
+    if (maxImages) {
+      const totalImages = images.length + visibleExistingImages.length
+      const remainingSlots = maxImages - totalImages
+      if (imageFiles.length > remainingSlots) {
+        alert(`최대 ${maxImages}장까지 업로드 가능합니다. ${remainingSlots}장만 추가됩니다.`)
+        imageFiles.splice(remainingSlots)
+      }
     }
 
     const newImages = [...images, ...imageFiles]
@@ -101,15 +116,19 @@ export function MultiImageUpload({
     <div className={className}>
       {totalDisplayImages === 0 ? (
         // 이미지가 없을 때: 큰 업로드 영역만 표시
-        <div className="flex aspect-video w-full items-center justify-center rounded-lg border border-dashed bg-muted">
+        <div className="flex aspect-video w-full items-center justify-center rounded-lg border-2 border-dashed bg-muted/50 hover:bg-muted/80 transition-colors cursor-pointer" onClick={handleAddMore}>
           <div className="flex flex-col items-center gap-2">
-            <Upload className="size-8 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">이미지를 업로드하세요 (최대 {maxImages}장)</p>
+            <Upload className="size-10 text-muted-foreground" />
+            <p className="text-sm font-medium text-muted-foreground">이미지를 업로드하세요</p>
+            {maxImages && <p className="text-xs text-muted-foreground">(최대 {maxImages}장)</p>}
             <Button
               type="button"
               variant="outline"
               size="sm"
-              onClick={handleAddMore}
+              onClick={(e) => {
+                e.stopPropagation()
+                handleAddMore()
+              }}
             >
               파일 선택
             </Button>
@@ -121,11 +140,15 @@ export function MultiImageUpload({
           {/* 기존 이미지 표시 */}
           {visibleExistingItems.map((item, index) => {
             const imageUrl = 'url' in item ? item.url : (item as { url: string }).url
+            const imageId = useImageItems ? (item as { id: number }).id : undefined
             const key = useImageItems ? `existing-${(item as { id: number }).id}` : `existing-${(item as { index: number }).index}`
+            const isMainImage = enableMainImageSelection && useImageItems && imageId === selectedMainImageId
             return (
               <div
                 key={key}
-                className="group relative aspect-video overflow-hidden rounded-lg border bg-muted"
+                className={`group relative aspect-video overflow-hidden rounded-lg border bg-muted ${
+                  isMainImage ? 'ring-2 ring-yellow-500 ring-offset-2' : ''
+                }`}
               >
                 <Image
                   src={imageUrl}
@@ -146,9 +169,21 @@ export function MultiImageUpload({
                 >
                   <X className="size-4" />
                 </Button>
-                <div className="absolute left-2 top-2 rounded bg-blue-500/80 px-2 py-1 text-xs text-white">
+                <div className="absolute left-2 top-2 rounded bg-blue-600 px-2 py-1 text-xs font-semibold text-white shadow-sm">
                   기존
                 </div>
+                {enableMainImageSelection && useImageItems && imageId !== undefined && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={isMainImage ? "default" : "secondary"}
+                    className="absolute bottom-2 left-2 h-8"
+                    onClick={() => onMainImageChange?.('existing', imageId)}
+                  >
+                    <Star className={`size-3 mr-1 ${isMainImage ? 'fill-yellow-400' : ''}`} />
+                    {isMainImage ? '대표' : '대표로'}
+                  </Button>
+                )}
               </div>
             )
           })}
@@ -156,10 +191,13 @@ export function MultiImageUpload({
           {/* 새로 업로드한 이미지 */}
           {images.map((image, index) => {
             const previewUrl = URL.createObjectURL(image)
+            const isMainImage = enableMainImageSelection && index === selectedMainIndex
             return (
               <div
                 key={`new-${index}`}
-                className="group relative aspect-video overflow-hidden rounded-lg border bg-muted"
+                className={`group relative aspect-video overflow-hidden rounded-lg border bg-muted ${
+                  isMainImage ? 'ring-2 ring-yellow-500 ring-offset-2' : ''
+                }`}
               >
                 <Image
                   src={previewUrl}
@@ -177,23 +215,39 @@ export function MultiImageUpload({
                 >
                   <X className="size-4" />
                 </Button>
-                <div className="absolute left-2 top-2 rounded bg-black/50 px-2 py-1 text-xs text-white">
-                  {visibleExistingImages.length + index + 1}
-                </div>
+                {enableMainImageSelection && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={isMainImage ? "default" : "secondary"}
+                    className="absolute bottom-2 left-2 h-8"
+                    onClick={() => onMainImageChange?.('new', index)}
+                  >
+                    <Star className={`size-3 mr-1 ${isMainImage ? 'fill-yellow-400' : ''}`} />
+                    {isMainImage ? '대표' : '대표로'}
+                  </Button>
+                )}
               </div>
             )
           })}
 
-          {totalDisplayImages < maxImages && (
+          {(!maxImages || totalDisplayImages < maxImages) && (
             <div
-              className="flex aspect-video cursor-pointer items-center justify-center rounded-lg border border-dashed bg-muted transition-colors hover:bg-muted/80"
+              className="flex aspect-video cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 transition-all hover:border-primary/50 hover:bg-primary/10"
               onClick={handleAddMore}
             >
               <div className="flex flex-col items-center gap-2">
-                <Upload className="size-8 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">
-                  이미지 추가 ({totalDisplayImages}/{maxImages})
+                <div className="rounded-full bg-primary/10 p-3">
+                  <Upload className="size-6 text-primary" />
+                </div>
+                <p className="text-sm font-medium text-primary">
+                  이미지 추가
                 </p>
+                {maxImages && (
+                  <p className="text-xs text-muted-foreground">
+                    ({totalDisplayImages}/{maxImages})
+                  </p>
+                )}
               </div>
             </div>
           )}

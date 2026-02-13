@@ -968,6 +968,8 @@ export interface components {
             tags?: string;
             summary?: string;
             rewardTiers: components["schemas"]["RewardTierRequestDto"][];
+            /** Format: int32 */
+            mainIndex?: number;
         };
         RewardTierRequestDto: {
             title: string;
@@ -1006,7 +1008,7 @@ export interface components {
             /** Format: int64 */
             amount?: number;
             /** @enum {string} */
-            status?: "PENDING" | "PAID" | "CONFIRMED" | "SHIPPED" | "CANCELED";
+            status?: "PENDING" | "PAID" | "REFUND" | "CONFIRMED" | "SHIPPED" | "CANCELED";
         };
         BidsRequestDto: {
             /** Format: int64 */
@@ -1070,7 +1072,11 @@ export interface components {
             tags?: string;
             summary?: string;
             rewardTiers?: components["schemas"]["RewardTierRequestDto"][];
-            imageIds?: number[];
+            deleteImageIds?: number[];
+            /** Format: int32 */
+            mainIndex?: number;
+            /** Format: int64 */
+            mainImageId?: number;
         };
         AddressUpdateRequestDto: {
             label?: string;
@@ -1110,9 +1116,9 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"];
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             empty?: boolean;
@@ -1121,11 +1127,11 @@ export interface components {
             /** Format: int64 */
             offset?: number;
             sort?: components["schemas"]["SortObject"];
-            /** Format: int32 */
-            pageSize?: number;
             paged?: boolean;
             /** Format: int32 */
             pageNumber?: number;
+            /** Format: int32 */
+            pageSize?: number;
             unpaged?: boolean;
         };
         SortObject: {
@@ -1161,16 +1167,16 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"];
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             empty?: boolean;
         };
         CreatorDto: {
             /** Format: int64 */
-            id?: number;
+            creatorId?: number;
             email?: string;
             nickname?: string;
         };
@@ -1194,26 +1200,13 @@ export interface components {
             tags?: string;
             summary?: string;
             creator?: components["schemas"]["CreatorDto"];
-            rewardTiers?: components["schemas"]["RewardTierResponseDto"][];
             /** Format: int32 */
             achievementRate?: number;
-        };
-        RewardTierResponseDto: {
-            /** Format: int64 */
-            rewardTierId?: number;
-            title?: string;
-            description?: string;
-            /** Format: int64 */
-            price?: number;
-            /** Format: int64 */
-            limitQuantity?: number;
-            /** Format: int64 */
-            soldQuantity?: number;
-            soldOut?: boolean;
         };
         ProjectDetailResponseDto: {
             /** Format: int64 */
             id?: number;
+            creator?: components["schemas"]["CreatorDto"];
             title?: string;
             description?: string;
             thumbnailUrl?: string;
@@ -1230,7 +1223,6 @@ export interface components {
             categoryPath?: string;
             tags?: string;
             summary?: string;
-            creator?: components["schemas"]["CreatorDto"];
             rewardTiers?: components["schemas"]["RewardTierResponseDto"][];
             images?: components["schemas"]["ProjectImageResponseDto"][];
             /** Format: int32 */
@@ -1240,6 +1232,19 @@ export interface components {
             /** Format: int64 */
             id?: number;
             key?: string;
+        };
+        RewardTierResponseDto: {
+            /** Format: int64 */
+            rewardTierId?: number;
+            title?: string;
+            description?: string;
+            /** Format: int64 */
+            price?: number;
+            /** Format: int64 */
+            limitQuantity?: number;
+            /** Format: int64 */
+            soldQuantity?: number;
+            soldOut?: boolean;
         };
         AuctionImageResponseDto: {
             /** Format: int64 */
@@ -1356,9 +1361,9 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"];
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             empty?: boolean;
@@ -1389,7 +1394,7 @@ export interface components {
             /** Format: int64 */
             quantity?: number;
             /** @enum {string} */
-            status?: "PENDING" | "PAID" | "CONFIRMED" | "SHIPPED" | "CANCELED";
+            status?: "PENDING" | "PAID" | "REFUND" | "CONFIRMED" | "SHIPPED" | "CANCELED";
             /** Format: date-time */
             createdAt?: string;
         };
@@ -1429,9 +1434,9 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"];
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             empty?: boolean;
@@ -1465,8 +1470,6 @@ export interface components {
             id?: number;
             /** Format: int64 */
             creatorId?: number;
-            creatorUsername?: string;
-            creatorNickname?: string;
             title?: string;
             summary?: string;
             /** Format: int64 */
@@ -1517,9 +1520,9 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"];
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             empty?: boolean;
@@ -1565,9 +1568,9 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"];
-            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             empty?: boolean;

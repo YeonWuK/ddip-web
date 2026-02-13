@@ -10,7 +10,7 @@ import { Input } from "@/src/components/ui/input"
 import { Label } from "@/src/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card"
 import { Alert, AlertDescription } from "@/src/components/ui/alert"
-import { AlertCircle, Loader2 } from "lucide-react"
+import { AlertCircle, Loader2, Star } from "lucide-react"
 import { ProtectedRoute } from "@/src/components/protected-route"
 import { MultiImageUpload } from "@/src/components/multi-image-upload"
 import { RewardTierForm, RewardTierFormData } from "@/src/components/reward-tier-form"
@@ -35,6 +35,10 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
   const [rewardTiers, setRewardTiers] = useState<RewardTierFormData[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [startDate, setStartDate] = useState<string>("")
+  
+  // 대표 이미지 선택 상태
+  const [mainImageId, setMainImageId] = useState<number | undefined>(undefined) // 기존 이미지
+  const [mainIndex, setMainIndex] = useState<number | undefined>(undefined) // 새 이미지
 
   // 오늘 날짜를 YYYY-MM-DD 형식으로 가져오기
   const today = new Date().toISOString().split("T")[0]
@@ -74,6 +78,10 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
         // 기존 이미지 (id+url) 저장 - X 버튼으로 제거 시 imageIds 전송용
         if (projectData.imageItems && projectData.imageItems.length > 0) {
           setExistingImageItems(projectData.imageItems)
+          // 첫 번째 이미지를 기본 대표 이미지로 설정
+          if (projectData.imageItems[0]?.id) {
+            setMainImageId(projectData.imageItems[0].id)
+          }
         } else if (projectData.imageUrls && projectData.imageUrls.length > 0) {
           setExistingImageItems(projectData.imageUrls.map((url, i) => ({ id: 0, url })))
         } else if (projectData.imageUrl) {
@@ -122,6 +130,56 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
   useEffect(() => {
     setValue("rewardTiers", rewardTiers as any)
   }, [rewardTiers, setValue])
+
+  // 이미지 삭제 시 대표 이미지 상태 조정
+  useEffect(() => {
+    // 기존 이미지 중 대표 이미지가 삭제된 경우
+    if (mainImageId !== undefined && removedImageIds.has(mainImageId)) {
+      // 남아있는 첫 번째 기존 이미지를 대표로 설정
+      const remainingExisting = existingImageItems.find(item => !removedImageIds.has(item.id))
+      if (remainingExisting) {
+        setMainImageId(remainingExisting.id)
+      } else if (imageFiles.length > 0) {
+        // 기존 이미지가 모두 삭제되었고 새 이미지가 있으면 첫 번째 새 이미지를 대표로
+        setMainImageId(undefined)
+        setMainIndex(0)
+      } else {
+        // 모든 이미지가 삭제된 경우
+        setMainImageId(undefined)
+        setMainIndex(undefined)
+      }
+    }
+  }, [removedImageIds, mainImageId, existingImageItems, imageFiles])
+
+  // 새 이미지 삭제 시 대표 이미지 인덱스 조정
+  useEffect(() => {
+    if (mainIndex !== undefined && mainIndex >= imageFiles.length) {
+      // 대표 이미지로 선택된 새 이미지가 삭제된 경우
+      if (imageFiles.length > 0) {
+        setMainIndex(0) // 첫 번째 새 이미지를 대표로
+      } else {
+        // 새 이미지가 모두 삭제되고 기존 이미지가 있으면 첫 번째 기존 이미지를 대표로
+        const remainingExisting = existingImageItems.find(item => !removedImageIds.has(item.id))
+        if (remainingExisting) {
+          setMainIndex(undefined)
+          setMainImageId(remainingExisting.id)
+        } else {
+          setMainIndex(undefined)
+        }
+      }
+    }
+  }, [imageFiles, mainIndex, existingImageItems, removedImageIds])
+
+  // 대표 이미지 변경 핸들러
+  const handleMainImageChange = (type: 'existing' | 'new', idOrIndex: number) => {
+    if (type === 'existing') {
+      setMainImageId(idOrIndex)
+      setMainIndex(undefined) // 새 이미지 선택 해제
+    } else {
+      setMainIndex(idOrIndex)
+      setMainImageId(undefined) // 기존 이미지 선택 해제
+    }
+  }
 
   const onSubmit = async (data: ProjectCreateFormData) => {
     if (!project) return
@@ -181,11 +239,11 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
       const startDateISO = startDateObj.toISOString()
       const endDateISO = endDateObj.toISOString()
 
-      // X 버튼으로 제거한 기존 이미지 ID 목록 (ProjectUpdateRequestDto.imageIds)
-      const imageIdsToRemove = Array.from(removedImageIds).filter((id) => id > 0)
+      // X 버튼으로 제거한 기존 이미지 ID 목록
+      const deleteImageIds = Array.from(removedImageIds).filter((id) => id > 0)
 
       // 프로젝트 수정 (multipart/form-data)
-      const updateData = {
+      const updateData: any = {
         title: data.title,
         description: data.description,
         targetAmount: data.targetAmount,
@@ -200,7 +258,20 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
           price: tier.price,
           limitQuantity: tier.limitQuantity,
         })),
-        ...(imageIdsToRemove.length > 0 && { imageIds: imageIdsToRemove }),
+      }
+
+      // 삭제할 이미지 ID 목록
+      if (deleteImageIds.length > 0) {
+        updateData.deleteImageIds = deleteImageIds
+      }
+
+      // 대표 이미지 지정
+      if (mainImageId !== undefined) {
+        // 기존 이미지 중 하나를 대표로 선택
+        updateData.mainImageId = mainImageId
+      } else if (mainIndex !== undefined) {
+        // 새로 업로드하는 이미지 중 하나를 대표로 선택
+        updateData.mainIndex = mainIndex
       }
 
       const updatedProject = await projectApi.updateProject(projectId, imageFiles, updateData)
@@ -262,13 +333,22 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
                   <Label>프로젝트 이미지 *</Label>
                   <MultiImageUpload 
                     value={imageFiles} 
-                    onChange={setImageFiles} 
-                    maxImages={3}
+                    onChange={setImageFiles}
                     existingImageItems={existingImageItems}
                     onRemovedIdsChange={setRemovedImageIds}
+                    enableMainImageSelection={true}
+                    selectedMainImageId={mainImageId}
+                    selectedMainIndex={mainIndex}
+                    onMainImageChange={handleMainImageChange}
                   />
                   {imageFiles.length === 0 && existingImageItems.length === 0 && (
                     <p className="text-sm text-muted-foreground">프로젝트를 대표할 이미지를 업로드해주세요</p>
+                  )}
+                  {(mainImageId !== undefined || mainIndex !== undefined) && (
+                    <p className="text-sm text-green-600 flex items-center gap-1">
+                      <Star className="size-3 fill-yellow-400" />
+                      대표 이미지가 선택되었습니다
+                    </p>
                   )}
                 </div>
 

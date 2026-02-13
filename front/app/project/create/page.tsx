@@ -10,7 +10,7 @@ import { Input } from "@/src/components/ui/input"
 import { Label } from "@/src/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card"
 import { Alert, AlertDescription } from "@/src/components/ui/alert"
-import { AlertCircle, Loader2 } from "lucide-react"
+import { AlertCircle, Loader2, Star } from "lucide-react"
 import { ProtectedRoute } from "@/src/components/protected-route"
 import { MultiImageUpload } from "@/src/components/multi-image-upload"
 import { RewardTierForm, RewardTierFormData } from "@/src/components/reward-tier-form"
@@ -24,6 +24,7 @@ export default function CreateProjectPage() {
   const [rewardTiers, setRewardTiers] = useState<RewardTierFormData[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [startDate, setStartDate] = useState<string>("")
+  const [mainImageIndex, setMainImageIndex] = useState<number | undefined>(0) // 기본값: 첫 번째 이미지
 
   // 오늘 날짜를 YYYY-MM-DD 형식으로 가져오기
   const today = new Date().toISOString().split("T")[0]
@@ -52,6 +53,24 @@ export default function CreateProjectPage() {
   useEffect(() => {
     setValue("rewardTiers", rewardTiers as any)
   }, [rewardTiers, setValue])
+
+  // 이미지 변경 시 대표 이미지 인덱스 조정
+  useEffect(() => {
+    if (imageFiles.length === 0) {
+      setMainImageIndex(undefined)
+    } else if (mainImageIndex === undefined) {
+      setMainImageIndex(0) // 이미지가 추가되면 첫 번째를 대표로
+    } else if (mainImageIndex >= imageFiles.length) {
+      setMainImageIndex(imageFiles.length - 1) // 인덱스가 범위를 벗어나면 마지막 이미지로
+    }
+  }, [imageFiles, mainImageIndex])
+
+  // 대표 이미지 변경 핸들러
+  const handleMainImageChange = (type: 'existing' | 'new', idOrIndex: number) => {
+    if (type === 'new') {
+      setMainImageIndex(idOrIndex)
+    }
+  }
 
   const onSubmit = async (data: ProjectCreateFormData) => {
     try {
@@ -107,7 +126,7 @@ export default function CreateProjectPage() {
       const endDateISO = endDateObj.toISOString()
 
       // 백엔드 ProjectRequestDto 형식
-      const projectRequest = {
+      const projectRequest: any = {
         title: data.title,
         description: data.description,
         targetAmount: data.targetAmount,
@@ -123,6 +142,17 @@ export default function CreateProjectPage() {
           limitQuantity: tier.limitQuantity,
         })),
       }
+
+      // 대표 이미지 인덱스 지정
+      if (mainImageIndex !== undefined) {
+        projectRequest.mainImageIndex = mainImageIndex
+      }
+
+      // 검증용 로그: 전송 데이터 확인
+      console.log('[프로젝트 생성] 이미지 파일 목록:', imageFiles.map((f, i) => `[${i}] ${f.name}`))
+      console.log('[프로젝트 생성] mainImageIndex:', mainImageIndex)
+      console.log('[프로젝트 생성] 대표 이미지로 선택된 파일:', mainImageIndex !== undefined ? imageFiles[mainImageIndex]?.name : '없음')
+      console.log('[프로젝트 생성] projectRequest:', JSON.stringify(projectRequest, null, 2))
 
       const createdProject = await projectApi.createProject(imageFiles, projectRequest)
       toast.success("프로젝트가 생성되었습니다!")
@@ -149,9 +179,21 @@ export default function CreateProjectPage() {
                 {/* 프로젝트 이미지 */}
                 <div className="space-y-2">
                   <Label>프로젝트 이미지 *</Label>
-                  <MultiImageUpload value={imageFiles} onChange={setImageFiles} maxImages={3} />
+                  <MultiImageUpload 
+                    value={imageFiles} 
+                    onChange={setImageFiles}
+                    enableMainImageSelection={true}
+                    selectedMainIndex={mainImageIndex}
+                    onMainImageChange={handleMainImageChange}
+                  />
                   {imageFiles.length === 0 && (
                     <p className="text-sm text-muted-foreground">프로젝트를 대표할 이미지를 업로드해주세요</p>
+                  )}
+                  {mainImageIndex !== undefined && imageFiles.length > 0 && (
+                    <p className="text-sm text-green-600 flex items-center gap-1">
+                      <Star className="size-3 fill-yellow-400" />
+                      대표 이미지: {mainImageIndex + 1}번째 이미지
+                    </p>
                   )}
                 </div>
 

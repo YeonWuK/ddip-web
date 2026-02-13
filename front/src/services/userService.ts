@@ -386,29 +386,11 @@ export const authApi = {
       }
       
       // 백엔드가 UserResponseDto만 반환하는 경우, 자동 로그인 처리
-      try {
-        const loginResponse = await authApi.login({
-          email: data.email,
-          password: data.password,
-        });
-        return loginResponse;
-      } catch {
-        // 자동 로그인 실패해도 회원가입은 성공한 것으로 처리, 사용자 정보만 반환
-        const user: UserResponse = {
-          id: userData.id,
-          email: userData.email,
-          name: userData.name || userData.username || '',
-          nickname: userData.nickname || '',
-          profileImageUrl: userData.profileImageUrl || null,
-          phone: userData.phoneNumber || userData.phone || null,
-          pointBalance: userData.pointBalance ?? userData.point_balance ?? 0,
-        };
-        return {
-          accessToken: '',
-          refreshToken: '',
-          user,
-        };
-      }
+      const loginResponse = await authApi.login({
+        email: data.email,
+        password: data.password,
+      });
+      return loginResponse;
     } catch (error) {
       // 네트워크 오류인 경우 더 명확한 메시지 제공
       if (error instanceof TypeError && error.message === 'Failed to fetch') {

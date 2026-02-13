@@ -76,11 +76,19 @@ export interface ProjectCreateRequest {
   tags?: string | null;
   summary?: string | null;
   rewardTiers: RewardTierRequest[];
+  /** 새로 업로드하는 file 배열 중 대표 이미지 인덱스 (0부터 시작) */
+  mainImageIndex?: number;
 }
 
 export interface ProjectUpdateRequest extends Partial<ProjectCreateRequest> {
   /** 삭제할 이미지 ID 목록 (X 버튼으로 제거한 기존 이미지들, ProjectUpdateRequestDto.imageIds) */
   imageIds?: number[];
+  /** 삭제할 기존 이미지의 ID 배열 */
+  deleteImageIds?: number[];
+  /** 기존 이미지 중 대표 이미지로 지정할 이미지 ID */
+  mainImageId?: number;
+  /** 새로 업로드하는 file 배열 중 대표 이미지 인덱스 (0부터 시작) */
+  mainIndex?: number;
 }
 
 // 프로젝트 상태 (백엔드 ProjectStatus enum)

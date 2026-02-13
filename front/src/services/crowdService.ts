@@ -302,7 +302,7 @@ export const projectApi = {
       }
 
       const formData = new FormData();
-      const dataPart = {
+      const dataPart: Record<string, any> = {
         title: data.title,
         description: data.description,
         targetAmount: data.targetAmount,
@@ -318,10 +318,20 @@ export const projectApi = {
           limitQuantity: tier.limitQuantity,
         })),
       };
+      
+      // 대표 이미지 인덱스 지정
+      if (data.mainImageIndex !== undefined) {
+        dataPart.mainImageIndex = data.mainImageIndex;
+      }
+      
       formData.append('data', new Blob([JSON.stringify(dataPart)], { type: 'application/json' }));
       for (const file of files) {
         formData.append('file', file);
       }
+
+      // 검증용 로그: 백엔드 전송 직전
+      console.log('[crowdService.createProject] files:', files.map((f, i) => `[${i}] ${f.name}`));
+      console.log('[crowdService.createProject] dataPart.mainImageIndex:', dataPart.mainImageIndex);
 
       const projectId = await apiRequest<number>('/api/crowd', {
         method: 'POST',
@@ -348,7 +358,7 @@ export const projectApi = {
   ): Promise<ProjectResponse> => {
     try {
       const formData = new FormData();
-      const dataPart = {
+      const dataPart: Record<string, any> = {
         ...(data.title !== undefined && { title: data.title }),
         ...(data.description !== undefined && { description: data.description }),
         ...(data.targetAmount !== undefined && { targetAmount: data.targetAmount }),
@@ -370,6 +380,22 @@ export const projectApi = {
             imageIds: data.imageIds,
           }),
       };
+
+      // 이미지 삭제 목록
+      if (data.deleteImageIds !== undefined && data.deleteImageIds.length > 0) {
+        dataPart.deleteImageIds = data.deleteImageIds;
+      }
+
+      // 대표 이미지 지정 (기존 이미지)
+      if (data.mainImageId !== undefined) {
+        dataPart.mainImageId = data.mainImageId;
+      }
+
+      // 대표 이미지 지정 (새 이미지)
+      if (data.mainIndex !== undefined) {
+        dataPart.mainIndex = data.mainIndex;
+      }
+
       formData.append('data', new Blob([JSON.stringify(dataPart)], { type: 'application/json' }));
 
       for (const file of files) {

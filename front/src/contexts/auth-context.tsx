@@ -102,6 +102,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (data: RegisterRequest) => {
     try {
+      // OAuth와 동일하게 기존 세션 정리 (로그아웃)
+      tokenStorage.clearAll()
+      setIsAuthenticated(false)
+      setUser(null)
+      
+      // 회원가입 후 자동 로그인
       const response: AuthResponse = await authApi.register(data)
       
       tokenStorage.setAccessToken(response.accessToken)
@@ -110,13 +116,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       setIsAuthenticated(true)
       
-      // 사용자 정보가 있으면 저장, 없어도 토큰만 있으면 회원가입 성공
+      // 로그인 응답에 사용자 정보가 있으면 사용
       if (response.user && response.user.id !== 0) {
         tokenStorage.setUser(response.user)
         setUser(response.user)
       } else {
-        // 사용자 정보가 없으면 null로 설정 (토큰은 저장됨)
-        setUser(null)
+        // 로그인 응답에 사용자 정보가 없으면 백엔드에서 가져오기 시도
+        try {
+          // 토큰이 저장된 후 약간의 지연을 두고 호출 (백엔드 토큰 검증 대기)
+          await new Promise(resolve => setTimeout(resolve, 300)) // 300ms 지연
+          const currentUser = await authApi.getCurrentUser()
+          tokenStorage.setUser(currentUser)
+          setUser(currentUser)
+        } catch {
+          setUser(null)
+          tokenStorage.removeUser()
+        }
       }
     } catch (error) {
       throw error
