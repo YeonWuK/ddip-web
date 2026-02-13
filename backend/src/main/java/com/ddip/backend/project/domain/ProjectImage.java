@@ -26,10 +26,15 @@ public class ProjectImage extends BaseTimeEntity {
     @Column(name = "s3_key", nullable = false)
     private String s3Key;
 
-    public static ProjectImage from(Project project, String key) {
+    @Column(name = "is_main", nullable = false)
+    private boolean isMain;
+
+    public static ProjectImage from(Project project, String key, boolean isMain) {
         return ProjectImage.builder()
                 .project(project)
                 .s3Key(key)
+                .isMain(isMain)
                 .build();
     }
+
 }

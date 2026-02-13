@@ -2,7 +2,7 @@ package com.ddip.backend.pledge.domain;
 
 import com.ddip.backend.pledge.dto.enums.PledgeStatus;
 import com.ddip.backend.common.domain.BaseTimeEntity;
-import com.ddip.backend.project.validation.pledge.PledgeAccessDeniedException;
+import com.ddip.backend.project.exception.pledge.PledgeAccessDeniedException;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

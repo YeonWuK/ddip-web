@@ -8,4 +8,8 @@ public interface ProjectImageCustom {
     List<ProjectImage> findImagesByProjectId(Long projectId);
 
     List<ProjectImage> findImageIdsByProjectIdAndIds(Long projectId, List<Long> imageIds);
+
+    Long clearMainByProjectId(Long projectId);
+
+    Long setMainById(Long imageId);
 }

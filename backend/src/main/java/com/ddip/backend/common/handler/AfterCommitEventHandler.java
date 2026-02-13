@@ -11,7 +11,7 @@ import com.ddip.backend.auction.event.AuctionEndEvent;
 import com.ddip.backend.auction.event.AuctionEsEvent;
 import com.ddip.backend.project.event.ProjectEsEvent;
 import com.ddip.backend.auction.validation.auction.AuctionNotFoundException;
-import com.ddip.backend.project.validation.project.ProjectNotFoundException;
+import com.ddip.backend.project.exception.project.ProjectNotFoundException;
 import com.ddip.backend.auction.repository.AuctionRepository;
 import com.ddip.backend.project.repository.ProjectRepository;
 import lombok.RequiredArgsConstructor;

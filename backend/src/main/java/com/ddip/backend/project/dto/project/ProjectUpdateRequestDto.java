@@ -13,7 +13,6 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Getter
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProjectUpdateRequestDto {
@@ -40,6 +39,9 @@ public class ProjectUpdateRequestDto {
 
     private List<RewardTierRequestDto> rewardTiers;
 
-    private List<Long> imageIds;
+    private List<Long> deleteImageIds;
 
+    private Integer mainIndex;
+
+    private Long mainImageId;
 }
