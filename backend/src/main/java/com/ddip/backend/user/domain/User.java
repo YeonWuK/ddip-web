@@ -1,5 +1,7 @@
 package com.ddip.backend.user.domain;
 
+import com.ddip.backend.auction.domain.Auction;
+import com.ddip.backend.auction.domain.MyBids;
 import com.ddip.backend.common.dto.enums.AuthProvider;
 import com.ddip.backend.user.dto.enums.BankType;
 import com.ddip.backend.common.dto.enums.Role;
@@ -8,12 +10,17 @@ import com.ddip.backend.user.dto.user.ProfileRequestDto;
 import com.ddip.backend.user.dto.user.UserRequestDto;
 import com.ddip.backend.user.dto.user.UserUpdateRequestDto;
 import com.ddip.backend.common.domain.BaseTimeEntity;
+import com.ddip.backend.project.domain.Pledge;
+import com.ddip.backend.project.domain.Project;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 @Entity
