@@ -44,6 +44,9 @@ front/
 │   │   └── create/             # 경매 생성 페이지
 │   │       └── page.tsx
 │   │
+│   ├── admin/                   # 관리자 페이지
+│   │   └── page.tsx            # 사용자/프로젝트/경매 관리 (탭 UI)
+│   │
 │   ├── oauth/                   # OAuth 콜백 (백엔드 리다이렉트 대상)
 │   │   └── callback/
 │   │       └── page.tsx        # OAuth 콜백 (access_token 등 쿼리 처리)
@@ -69,6 +72,7 @@ front/
 │   │   │   ├── input.tsx
 │   │   │   ├── label.tsx
 │   │   │   ├── progress.tsx
+│   │   │   ├── select.tsx      # Select 드롭다운 (Radix UI 기반)
 │   │   │   ├── separator.tsx
 │   │   │   ├── sonner.tsx      # Toast 알림
 │   │   │   └── tabs.tsx
@@ -104,10 +108,16 @@ front/
 │   │   ├── validations.ts      # Zod 스키마 (폼 검증)
 │   │   └── wishlist.ts         # 위시리스트 관리 (localStorage)
 │   │
-│   ├── services/               # API 서비스
-│   │   └── api.ts              # 백엔드 API 연동 (fetch, tokenStorage)
-│   │                           # projectApi, auctionApi, userApi, authApi, addressApi
-│   │                           # 페이지네이션(page, limit), S3 이미지 URL 변환
+│   ├── services/               # API 서비스 (Domain-Driven Design)
+│   │   ├── api.ts              # 중앙 Re-export Hub (74줄)
+│   │   ├── apiClient.ts        # HTTP 클라이언트 (apiRequest, API_BASE_URL)
+│   │   ├── crowdService.ts     # 크라우드펀딩 도메인 (projectApi)
+│   │   ├── auctionService.ts   # 경매 도메인 (auctionApi)
+│   │   ├── userService.ts      # 사용자/인증 도메인 (userApi, authApi, addressApi)
+│   │   ├── adminService.ts     # 관리자 도메인 (adminApi)
+│   │   ├── searchService.ts    # 검색 도메인 (searchApi)
+│   │   └── utils/
+│   │       └── imageUtils.ts   # 이미지 처리 유틸리티 (toS3ImageUrl)
 │   │
 │   ├── stores/                  # 전역 상태 관리 (Zustand)
 │   │   └── filterStore.ts      # 필터/정렬 상태 관리 (localStorage persist)
@@ -122,6 +132,7 @@ front/
 ├── public/                      # 정적 파일
 │
 ├── docs/                        # 프로젝트 문서
+│   ├── API_REFACTORING_JOURNEY.md     # API 서비스 대규모 리팩토링 기술 문서
 │   ├── BACKEND_MIGRATION_CHECKLIST.md # 백엔드 연동 전/후 체크리스트
 │   ├── FEATURE_SUMMARY.md             # 기능 및 API 엔드포인트 정리
 │   ├── GEMINI_FEEDBACK_ANALYSIS.md    # Gemini 피드백 분석
@@ -338,17 +349,64 @@ front/
 
 ---
 
-### 11. **데이터 관리** (`services/api.ts`)
-- **백엔드 API 연동**: `fetch` + `API_BASE_URL` (환경 변수: `NEXT_PUBLIC_API_BASE_URL`)
-- **인증**: `tokenStorage.getAccessToken()`으로 Bearer 토큰 자동 첨부, `credentials: 'include'` (쿠키)
-- **이미지**: S3 키 → 풀 URL 변환 (`toS3ImageUrl`, `NEXT_PUBLIC_S3_IMAGE_BASE_URL`)
+### 11. **데이터 관리** (`services/`)
 
-- **API 그룹**:
-  - `projectApi`: 프로젝트/후원 (`/api/crowd`, `/api/crowd/pledges`)
-  - `auctionApi`: 경매/입찰 (`/api/auction`, `/api/auction/{id}/bids`, `/api/auction/my-bids`, `/api/auction/search`)
-  - `userApi`: 마이페이지/프로필 (`/api/users/my-page`, `/api/users/{id}/profile`, `PUT /api/users/me`)
-  - `authApi`: 로그인/회원가입/로그아웃/OAuth (`/api/users/login`, `/api/users/register`, `/api/users/profile`, `PATCH /api/users/update-profile`)
-  - `addressApi`: 배송지 (`/api/addresses`, `/api/addresses/default` 등)
+#### **Domain-Driven Design 아키텍처**
+
+프로젝트는 **도메인별로 분리된 서비스 레이어**를 채택하고 있습니다:
+
+```
+src/services/
+├─ api.ts (Re-export Hub)           # 중앙 집중식 허브 (74줄)
+│  ├─ 타입 re-export (30+ types)
+│  ├─ 서비스 re-export (5 domains)
+│  └─ 유틸리티 re-export
+│
+├─ apiClient.ts                      # HTTP 클라이언트
+│  ├─ apiRequest() (인증, 에러 처리)
+│  └─ API_BASE_URL (환경 변수)
+│
+├─ utils/imageUtils.ts               # 이미지 처리
+│  ├─ toS3ImageUrl()
+│  └─ getProjectImageUrls()
+│
+├─ crowdService.ts                   # 크라우드펀딩 도메인
+│  └─ projectApi { 10+ methods }
+│
+├─ auctionService.ts                 # 경매 도메인
+│  └─ auctionApi { 12+ methods }
+│
+├─ userService.ts                    # 사용자/인증 도메인
+│  ├─ userApi { 5+ methods }
+│  ├─ authApi { 6+ methods }
+│  └─ addressApi { 7+ methods }
+│
+├─ adminService.ts                   # 관리자 도메인
+│  └─ adminApi { 10+ methods }
+│
+└─ searchService.ts                  # 검색 도메인
+   └─ searchApi { 3+ methods }
+```
+
+- **백엔드 API 연동**: `fetch` + `API_BASE_URL` (환경 변수: `NEXT_PUBLIC_API_BASE_URL`)
+- **인증**: `apiRequest()`가 자동으로 Bearer 토큰 첨부, `credentials: 'include'` (쿠키)
+- **이미지**: S3 키 → 풀 URL 변환 (`toS3ImageUrl`, `NEXT_PUBLIC_S3_IMAGE_BASE_URL`)
+- **타입 안전성**: Swagger 명세와 100% 일치하는 TypeScript 타입
+
+#### **API 그룹별 엔드포인트**:
+  - `projectApi` (crowdService): 프로젝트/후원 (`/api/crowd`, `/api/crowd/pledges`)
+  - `auctionApi` (auctionService): 경매/입찰 (`/api/auction`, `/api/auction/{id}/bids`, `/api/auction/my-bids`, `/api/auction/search`)
+  - `userApi` (userService): 마이페이지/프로필 (`/api/users/my-page`, `/api/users/{id}/profile`, `PUT /api/users/me`)
+  - `authApi` (userService): 로그인/회원가입/로그아웃/OAuth (`/api/users/login`, `/api/users/register`, `/api/users/profile`, `PATCH /api/users/update-profile`)
+  - `addressApi` (userService): 배송지 (`/api/addresses`, `/api/addresses/default` 등)
+  - `adminApi` (adminService): 관리자 기능 (`/api/admin/users`, `/api/admin/projects`, `/api/admin/auctions` 등)
+  - `searchApi` (searchService): 통합 검색 (`/api/search/suggestions`, `/api/search/projects`, `/api/search/auctions`)
+
+#### **리팩토링 성과**:
+- **Before**: 단일 `api.ts` 파일 (2,300줄)
+- **After**: 7개 도메인별 모듈 (평균 330줄)
+- **개선율**: 97% 라인 수 감소 (허브 파일 기준)
+- **상세 문서**: `docs/API_REFACTORING_JOURNEY.md` 참조
 
 ---
 
@@ -441,6 +499,7 @@ WishlistMonitor (전역) → useWishlistAuctionMonitor → 1분마다 찜한 경
 ## 📝 참고 문서
 
 - `WEBSOCKET_SETUP.md`: 웹소켓 설정 가이드
+- `docs/API_REFACTORING_JOURNEY.md`: **API 서비스 대규모 리팩토링 기술 문서** ⭐ NEW
 - `docs/FEATURE_SUMMARY.md`: 기능 및 API 엔드포인트 정리
 - `docs/OAUTH_API_SPEC.md`: OAuth API 명세
 - `docs/BACKEND_MIGRATION_CHECKLIST.md`: 백엔드 연동 전/후 체크리스트
@@ -461,8 +520,16 @@ WishlistMonitor (전역) → useWishlistAuctionMonitor → 1분마다 찜한 경
 | 프로젝트 상세 | `app/project/[id]/page.tsx` |
 | 경매 상세 | `app/auction/[id]/page.tsx` |
 | 마이페이지 | `app/profile/page.tsx` |
+| 관리자 페이지 | `app/admin/page.tsx` |
 | 검색 | `app/search/page.tsx` |
-| API 서비스 | `src/services/api.ts` |
+| API Re-export Hub | `src/services/api.ts` |
+| HTTP 클라이언트 | `src/services/apiClient.ts` |
+| 크라우드펀딩 API | `src/services/crowdService.ts` |
+| 경매 API | `src/services/auctionService.ts` |
+| 사용자/인증 API | `src/services/userService.ts` |
+| 관리자 API | `src/services/adminService.ts` |
+| 검색 API | `src/services/searchService.ts` |
+| 이미지 유틸 | `src/services/utils/imageUtils.ts` |
 | 인증 Context | `src/contexts/auth-context.tsx` |
 | 필터 Store | `src/stores/filterStore.ts` |
 | 위시리스트 | `src/lib/wishlist.ts` |
@@ -497,7 +564,8 @@ WishlistMonitor (전역) → useWishlistAuctionMonitor → 1분마다 찜한 경
 
 ---
 
-**마지막 업데이트**: 2026년 2월  
+**마지막 업데이트**: 2026년 2월 13일  
 **프로젝트명**: DDIP (크라우드펀딩 & 경매 플랫폼)  
 **버전**: 0.1.0  
-**API**: 백엔드 연동 완료 (fetch, Bearer 토큰, S3 이미지)
+**API**: 백엔드 연동 완료 (fetch, Bearer 토큰, S3 이미지)  
+**아키텍처**: Domain-Driven Design (DDD) - 2,300줄 단일 파일 → 7개 도메인 모듈 ✅

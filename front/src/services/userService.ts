@@ -344,8 +344,6 @@ export const authApi = {
    * 백엔드에서 UserResponseDto만 반환하므로, 회원가입 후 자동 로그인 처리
    */
   register: async (data: RegisterRequest): Promise<AuthResponse> => {
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
-    
     // 회원가입 요청 데이터 준비
     const requestBody = {
       email: data.email,
@@ -522,7 +520,6 @@ export const authApi = {
     // 백엔드 API 엔드포인트
     // 백엔드에서 OAuth 로그인 엔드포인트를 제공한다고 가정
     // 예: GET /oauth2/{provider} -> OAuth 제공자 페이지로 리다이렉트
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
     const redirectUrl = `${API_BASE_URL}/oauth2/authorization/${provider}`;
     
     // 실제 백엔드 연동 시:
@@ -546,8 +543,6 @@ export const authApi = {
     code: string,
     state?: string
   ): Promise<AuthResponse> => {
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
-    
     try {
       // 백엔드 OAuth 콜백 엔드포인트 호출
       // POST /oauth2/callback/{provider}
