@@ -64,7 +64,7 @@ public class CrowdFundingController {
             @ApiResponse(responseCode = "404", description = "프로젝트를 찾을 수 없음")
     })
     public ResponseEntity<ProjectDetailResponseDto> getCrowdFunding(@PathVariable Long projectId ){
-        ProjectDetailResponseDto response = crowdFundingService.getProject(projectId);
+        ProjectDetailResponseDto response = crowdFundingService.findProjectDetail(projectId);
         return ResponseEntity.ok(response);
     }
 

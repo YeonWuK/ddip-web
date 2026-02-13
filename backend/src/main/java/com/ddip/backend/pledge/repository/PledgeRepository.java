@@ -1,7 +1,7 @@
-package com.ddip.backend.project.repository;
+package com.ddip.backend.pledge.repository;
 
-import com.ddip.backend.project.dto.enums.PledgeStatus;
-import com.ddip.backend.project.domain.Pledge;
+import com.ddip.backend.pledge.dto.enums.PledgeStatus;
+import com.ddip.backend.pledge.domain.Pledge;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

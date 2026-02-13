@@ -1,9 +1,9 @@
 package com.ddip.backend.project.controller;
 
-import com.ddip.backend.project.dto.crowd.pledge.PledgeCreateResponseDto;
-import com.ddip.backend.project.dto.crowd.pledge.PledgeCreateRequestDto;
+import com.ddip.backend.pledge.dto.PledgeCreateResponseDto;
+import com.ddip.backend.pledge.dto.PledgeCreateRequestDto;
 import com.ddip.backend.common.security.auth.CustomUserDetails;
-import com.ddip.backend.project.service.PledgeService;
+import com.ddip.backend.pledge.service.PledgeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;

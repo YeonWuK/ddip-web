@@ -1,12 +1,12 @@
-package com.ddip.backend.project.service;
+package com.ddip.backend.pledge.service;
 
-import com.ddip.backend.project.dto.crowd.pledge.PledgeCreateRequestDto;
-import com.ddip.backend.project.dto.crowd.pledge.PledgeCreateResponseDto;
-import com.ddip.backend.project.dto.enums.PledgeStatus;
+import com.ddip.backend.pledge.dto.PledgeCreateRequestDto;
+import com.ddip.backend.pledge.dto.PledgeCreateResponseDto;
+import com.ddip.backend.pledge.dto.enums.PledgeStatus;
 import com.ddip.backend.billing.dto.PointLedgerSource;
 import com.ddip.backend.billing.dto.PointLedgerType;
 import com.ddip.backend.project.dto.enums.ProjectStatus;
-import com.ddip.backend.project.domain.Pledge;
+import com.ddip.backend.pledge.domain.Pledge;
 import com.ddip.backend.project.domain.Project;
 import com.ddip.backend.project.domain.RewardTier;
 import com.ddip.backend.billing.service.PointService;
@@ -17,7 +17,7 @@ import com.ddip.backend.project.validation.project.ProjectNotFoundException;
 import com.ddip.backend.project.validation.reward.InvalidQuantityException;
 import com.ddip.backend.project.validation.reward.RewardNotFoundException;
 import com.ddip.backend.user.validation.user.UserNotFoundException;
-import com.ddip.backend.project.repository.PledgeRepository;
+import com.ddip.backend.pledge.repository.PledgeRepository;
 import com.ddip.backend.project.repository.ProjectRepository;
 import com.ddip.backend.project.repository.RewardTierRepository;
 import com.ddip.backend.user.repository.UserRepository;
@@ -50,7 +50,7 @@ public class PledgeService {
     public PledgeCreateResponseDto createPledge(Long userId, Long projectId, PledgeCreateRequestDto requestDto) {
 
         User user = getUser(userId);
-        Project project = getOpenProject(projectId);
+        Project project = getOpenProjectForUpdate(projectId);
 
         List<PledgeItemContext> contexts = buildPledgeContexts(requestDto, project);
 
@@ -111,15 +111,20 @@ public class PledgeService {
         Pledge pledge = pledgeRepository.findById(pledgeId)
                 .orElseThrow(() -> new PledgeNotFoundException(pledgeId));
 
+        Project project = projectRepository.findById(pledge.getProjectId())
+                        .orElseThrow(() -> new ProjectNotFoundException(pledge.getProjectId()));
+
         pledge.assertOwnedBy(userId);
         pledge.assertCancelable();
 
-        cancelAndRefund(pledge);
+        cancelAndRefund(pledge, project);
 
         log.info("후원 취소 완료 userId={}, pledgeId={}", userId, pledgeId);
     }
 
-    private void cancelAndRefund(Pledge pledge) {
+    private void cancelAndRefund(Pledge pledge, Project project) {
+        // PAID 인 상태인지 한번 더 검증
+        pledge.assertRefundable();
 
         long amount = pledge.getPaidAmount();
 
@@ -127,11 +132,9 @@ public class PledgeService {
         refundPointForPledge(pledge.getUserId(), amount, pledge.getId());
 
         // 2) 상태 변경
-        pledge.canceledFunding();
+        pledge.refundPledgeStatus();
 
         // 3) 프로젝트 금액 롤백
-        Project project = projectRepository.findById(pledge.getProjectId())
-                .orElseThrow(() -> new ProjectNotFoundException(pledge.getProjectId()));
         project.decreaseCurrentAmount(amount);
 
         // 4) 리워드 티어 롤백
@@ -187,15 +190,15 @@ public class PledgeService {
     }
 
     /**
-     * 펀딩 실패 시, 해당 프로젝트의 결제 완료(PAID) 상태 후원 전체 환불
+     * 해당 프로젝트의 결제 완료(PAID) 상태 후원을 전체 환불
      */
     @Transactional
-    public void refundAllFailedProjects(Long projectId) {
-        List<Pledge> pledges =
-                pledgeRepository.findByProjectIdAndStatus(projectId, PledgeStatus.PAID);
+    public void refundAllPaidPledges(Project project) {
+
+        List<Pledge> pledges = pledgeRepository.findByProjectIdAndStatus(project.getId(), PledgeStatus.PAID);
 
         for (Pledge pledge : pledges) {
-            cancelAndRefund(pledge);
+            cancelAndRefund(pledge, project);
         }
     }
 
@@ -207,8 +210,8 @@ public class PledgeService {
                 .orElseThrow(() -> new UserNotFoundException(userId));
     }
 
-    private Project getOpenProject(Long projectId) {
-        Project project = projectRepository.findById(projectId)
+    private Project getOpenProjectForUpdate(Long projectId) {
+        Project project = projectRepository.findByIdForUpdate(projectId)
                 .orElseThrow(() -> new ProjectNotFoundException(projectId));
         project.assertStatus(ProjectStatus.OPEN);
         return project;

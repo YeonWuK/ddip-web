@@ -1,6 +1,6 @@
 package com.ddip.backend.admin.dto.crowdfunding;
 
-import com.ddip.backend.project.domain.Pledge;
+import com.ddip.backend.pledge.domain.Pledge;
 import com.ddip.backend.project.domain.Project;
 import com.ddip.backend.project.domain.RewardTier;
 import lombok.AllArgsConstructor;
