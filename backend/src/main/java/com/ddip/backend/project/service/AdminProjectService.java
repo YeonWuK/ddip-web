@@ -1,35 +1,23 @@
 package com.ddip.backend.project.service;
 
-import com.ddip.backend.admin.dto.crowdfunding.AdminProjectSearchCondition;
-import com.ddip.backend.admin.dto.crowdfunding.AdminProjectSummaryDto;
 import com.ddip.backend.pledge.service.PledgeService;
 import com.ddip.backend.project.domain.Project;
 import com.ddip.backend.project.event.ProjectEsEvent;
 import com.ddip.backend.project.exception.project.ProjectNotFoundException;
 import com.ddip.backend.project.repository.ProjectRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class CrowdFundingByAdminService {
+public class AdminProjectService {
 
     private final ProjectRepository projectRepository;
     private final PledgeService pledgeService;
     private final ApplicationEventPublisher publisher;
-
-    @Transactional(readOnly = true)
-    public Page<AdminProjectSummaryDto> searchProjectsForAdmin(AdminProjectSearchCondition condition, Pageable pageable) {
-        Page<Project> projects = projectRepository.searchProjectsForAdmin(condition, pageable);
-        return projects.map(AdminProjectSummaryDto::from);
-    }
 
     public void approveProjectByAdmin(Long projectId) {
         Project project = getProject(projectId);
@@ -50,13 +38,18 @@ public class CrowdFundingByAdminService {
     }
 
     public void forceCancelProjectByAdmin(Long projectId) {
-        Project project = getProject(projectId);
+        Project project = getProjectForUpdate(projectId);
         project.cancel();
         pledgeService.refundAllPaidPledges(project);
         publisher.publishEvent(new ProjectEsEvent(projectId));
     }
 
     private Project getProject(Long projectId) {
+        return projectRepository.findById(projectId)
+                .orElseThrow(() -> new ProjectNotFoundException(projectId));
+    }
+
+    private Project getProjectForUpdate(Long projectId) {
         return projectRepository.findByIdForUpdate(projectId)
                 .orElseThrow(() -> new ProjectNotFoundException(projectId));
     }

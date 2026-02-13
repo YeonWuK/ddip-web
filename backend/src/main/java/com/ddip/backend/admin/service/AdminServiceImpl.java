@@ -26,8 +26,8 @@ import com.ddip.backend.billing.dto.PointLedgerType;
 import com.ddip.backend.pledge.domain.Pledge;
 import com.ddip.backend.project.domain.Project;
 import com.ddip.backend.project.domain.RewardTier;
+import com.ddip.backend.project.service.AdminProjectService;
 import com.ddip.backend.project.service.AdminProjectQueryService;
-import com.ddip.backend.project.service.CrowdFundingByAdminService;
 import com.ddip.backend.pledge.service.PledgeService;
 import com.ddip.backend.admin.repository.AdminHistoryRepository;
 import com.ddip.backend.user.domain.User;
@@ -53,7 +53,7 @@ public class AdminServiceImpl implements AdminService {
     private final UserService userService;
     private final AuctionService auctionService;
     private final BidsService bidsService;
-    private final CrowdFundingByAdminService crowdFundingByAdminService;
+    private final AdminProjectService adminProjectService;
     private final PledgeService pledgeService;
     private final PointService pointService;
     private final SmsService smsService;
@@ -192,8 +192,7 @@ public class AdminServiceImpl implements AdminService {
     @Override
     @Transactional(readOnly = true)
     public Page<AdminProjectSummaryDto> getProjectList(AdminProjectSearchCondition condition, Pageable pageable) {
-        Page<AdminProjectSummaryDto> adminProjectSummaryDtos = crowdFundingByAdminService.searchProjectsForAdmin(condition, pageable);
-        return adminProjectSummaryDtos;
+        return adminProjectQueryService.searchProjectsForAdmin(condition, pageable);
     }
 
     /**
@@ -218,7 +217,7 @@ public class AdminServiceImpl implements AdminService {
      */
     @Override
     public void approveProject(Long projectId, Long adminId) {
-        crowdFundingByAdminService.approveProjectByAdmin(projectId);
+        adminProjectService.approveProjectByAdmin(projectId);
 
         log.info("Approving project By Admin projectId = {}, adminId = {} ", projectId, adminId);
 
@@ -233,7 +232,7 @@ public class AdminServiceImpl implements AdminService {
     @Override
     public void rejectProject(Long projectId, String reason, Long adminId) {
 
-        crowdFundingByAdminService.rejectProjectByAdmin(projectId);
+        adminProjectService.rejectProjectByAdmin(projectId);
         AdminHistory adminHistory = AdminHistory.of(AdminTargetType.PROJECT, projectId, AdminActionType.PROJECT_REJECT, adminId, reason);
         adminHistoryRepository.save(adminHistory);
 
@@ -249,7 +248,7 @@ public class AdminServiceImpl implements AdminService {
     @Override
     public void forceStopProject(Long projectId, String reason, Long adminId) {
 
-        crowdFundingByAdminService.forceStopByAdmin(projectId);
+        adminProjectService.forceStopByAdmin(projectId);
 
         AdminHistory adminHistory = AdminHistory.of(AdminTargetType.PROJECT, projectId, AdminActionType.PROJECT_FORCE_STOP, adminId, reason);
         adminHistoryRepository.save(adminHistory);
@@ -262,7 +261,7 @@ public class AdminServiceImpl implements AdminService {
     @Override
     public void forceCancelProject(Long projectId, String reason, Long adminId){
 
-        crowdFundingByAdminService.forceCancelProjectByAdmin(projectId);
+        adminProjectService.forceCancelProjectByAdmin(projectId);
 
         AdminHistory adminHistory = AdminHistory.of(AdminTargetType.PROJECT, projectId, AdminActionType.PROJECT_FORCE_CANCEL, adminId, reason);
         adminHistoryRepository.save(adminHistory);

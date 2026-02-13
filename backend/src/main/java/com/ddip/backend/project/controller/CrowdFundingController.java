@@ -5,7 +5,8 @@ import com.ddip.backend.project.dto.project.ProjectResponseDto;
 import com.ddip.backend.project.dto.project.ProjectRequestDto;
 import com.ddip.backend.project.dto.project.ProjectUpdateRequestDto;
 import com.ddip.backend.common.security.auth.CustomUserDetails;
-import com.ddip.backend.project.service.CrowdFundingService;
+import com.ddip.backend.project.service.ProjectService;
+import com.ddip.backend.project.service.ProjectQueryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -27,7 +28,8 @@ import java.util.List;
 @Tag(name = "Project", description = "크라우드 펀딩 프로젝트 API")
 public class CrowdFundingController {
 
-    private final CrowdFundingService crowdFundingService;
+    private final ProjectService projectService;
+    private final ProjectQueryService projectQueryService;
 
     /**
      * 크라우드 펀딩 프로젝트 생성 API
@@ -47,7 +49,7 @@ public class CrowdFundingController {
                                                 @Valid @RequestPart(value = "data") ProjectRequestDto projectRequestDto,
                                                 @RequestPart(name = "file") List<MultipartFile> multipartFiles) {
         Long userId = customUserDetails.getUserId();
-        long projectId = crowdFundingService.createProject(multipartFiles, projectRequestDto , userId);
+        long projectId = projectService.createProject(multipartFiles, projectRequestDto , userId);
         return ResponseEntity.ok(projectId);
     }
 
@@ -64,7 +66,7 @@ public class CrowdFundingController {
             @ApiResponse(responseCode = "404", description = "프로젝트를 찾을 수 없음")
     })
     public ResponseEntity<ProjectDetailResponseDto> getCrowdFunding(@PathVariable Long projectId ){
-        ProjectDetailResponseDto response = crowdFundingService.findProjectDetail(projectId);
+        ProjectDetailResponseDto response = projectQueryService.findProjectDetail(projectId);
         return ResponseEntity.ok(response);
     }
 
@@ -89,7 +91,7 @@ public class CrowdFundingController {
             @RequestPart(name = "file", required = false) List<MultipartFile> multipartFiles) {
 
         Long userId = customUserDetails.getUserId();
-        crowdFundingService.updateProject(multipartFiles, projectId, userId, requestDto);
+        projectService.updateProject(multipartFiles, projectId, userId, requestDto);
         return ResponseEntity.ok().build();
 
     }
@@ -114,7 +116,7 @@ public class CrowdFundingController {
     public ResponseEntity<?> deleteCrowdFunding(@AuthenticationPrincipal CustomUserDetails customUserDetails,
                                                    @PathVariable Long projectId) {
         Long userId = customUserDetails.getUserId();
-        crowdFundingService.deleteProject(projectId, userId);
+        projectService.deleteProject(projectId, userId);
         return ResponseEntity.ok().build();
     }
 
@@ -128,7 +130,7 @@ public class CrowdFundingController {
             @ApiResponse(responseCode = "200", description = "조회 성공")
     })
     public ResponseEntity<List<ProjectResponseDto>> getAllCrowdFunding(){
-        List<ProjectResponseDto> allProjects = crowdFundingService.getAllProjects();
+        List<ProjectResponseDto> allProjects = projectQueryService.getAllProjects();
         return ResponseEntity.ok(allProjects);
     }
 

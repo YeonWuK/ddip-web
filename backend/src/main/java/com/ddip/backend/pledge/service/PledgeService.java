@@ -111,7 +111,7 @@ public class PledgeService {
         Pledge pledge = pledgeRepository.findById(pledgeId)
                 .orElseThrow(() -> new PledgeNotFoundException(pledgeId));
 
-        Project project = projectRepository.findById(pledge.getProjectId())
+        Project project = projectRepository.findByIdForUpdate(pledge.getProjectId())
                         .orElseThrow(() -> new ProjectNotFoundException(pledge.getProjectId()));
 
         pledge.assertOwnedBy(userId);
