@@ -1,5 +1,6 @@
 package com.ddip.backend.auction.dto.auction;
 
+import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -21,4 +22,7 @@ public class AuctionRequestDto {
     private int bidStep;
 
     private String endAt;
+
+    @Min(0)
+    private int mainIndex;
 }
