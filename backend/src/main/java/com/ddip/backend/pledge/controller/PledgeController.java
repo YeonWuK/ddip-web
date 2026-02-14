@@ -3,6 +3,7 @@ package com.ddip.backend.pledge.controller;
 import com.ddip.backend.pledge.dto.PledgeCreateResponseDto;
 import com.ddip.backend.pledge.dto.PledgeCreateRequestDto;
 import com.ddip.backend.common.security.auth.CustomUserDetails;
+import com.ddip.backend.pledge.service.PledgeQueryService;
 import com.ddip.backend.pledge.service.PledgeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -25,6 +26,7 @@ import java.util.List;
 public class PledgeController {
 
     private final PledgeService pledgeService;
+    private final PledgeQueryService pledgeQueryService;
 
     /**
      * 리워드 구매
@@ -57,7 +59,7 @@ public class PledgeController {
     })
     public ResponseEntity<List<PledgeCreateResponseDto>> getMyPledges(@AuthenticationPrincipal CustomUserDetails userDetails) {
         Long userId = userDetails.getUserId();
-        List<PledgeCreateResponseDto> response = pledgeService.getPledgeHistory(userId);
+        List<PledgeCreateResponseDto> response = pledgeQueryService.getPledgeHistory(userId);
         return ResponseEntity.ok(response);
     }
 
