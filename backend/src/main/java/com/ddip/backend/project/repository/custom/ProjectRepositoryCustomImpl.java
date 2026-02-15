@@ -7,8 +7,11 @@ import com.ddip.backend.project.dto.enums.ProjectStatus;
 import com.ddip.backend.project.domain.Project;
 import com.ddip.backend.user.domain.QUser;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import jakarta.persistence.LockModeType;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.LockOptions;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -35,6 +38,27 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
                 .fetchOne();
 
         return Optional.ofNullable(result);
+    }
+
+    @Override
+    public List<Project> findExpiredOpenProjectsForUpdate(LocalDate today, int batchSize) {
+        QProject project = QProject.project;
+
+        JPAQuery<Project> query = queryFactory
+                .selectFrom(project)
+                .where(
+                        project.status.eq(ProjectStatus.OPEN),
+                        project.endAt.loe(today)
+                )
+                .orderBy(project.id.asc())
+                .limit(batchSize);
+
+        // FOR UPDATE
+        query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
+
+        query.setHint("jakarta.persistence.lock.timeout", LockOptions.SKIP_LOCKED);
+
+        return query.fetch();
     }
 
     @Override
@@ -129,5 +153,3 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
     }
 
 }
-
-

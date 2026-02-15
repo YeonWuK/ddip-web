@@ -28,7 +28,7 @@ import com.ddip.backend.project.domain.Project;
 import com.ddip.backend.project.domain.RewardTier;
 import com.ddip.backend.project.service.AdminProjectService;
 import com.ddip.backend.project.service.AdminProjectQueryService;
-import com.ddip.backend.pledge.service.PledgeService;
+import com.ddip.backend.pledge.service.AdminPledgeQueryService;
 import com.ddip.backend.admin.repository.AdminHistoryRepository;
 import com.ddip.backend.user.domain.User;
 import com.ddip.backend.user.service.UserService;
@@ -54,7 +54,7 @@ public class AdminServiceImpl implements AdminService {
     private final AuctionService auctionService;
     private final BidsService bidsService;
     private final AdminProjectService adminProjectService;
-    private final PledgeService pledgeService;
+    private final AdminPledgeQueryService adminPledgeQueryService;
     private final PointService pointService;
     private final SmsService smsService;
     private final AdminHistoryRepository adminHistoryRepository;
@@ -86,7 +86,7 @@ public class AdminServiceImpl implements AdminService {
         List<Bids> bids = bidsService.getBidsByUser(userId);
 
         // 펀딩 참여 기록
-        List<Pledge> pledges = pledgeService.getPledgesByUser(userId);
+        List<Pledge> pledges = adminPledgeQueryService.getPledgesByUser(userId);
 
         // 포인트 원장 이력
         List<PointLedger> ledgers = pointService.getLedgersByUser(userId);
@@ -206,7 +206,7 @@ public class AdminServiceImpl implements AdminService {
 
         List<RewardTier> rewardTiers = project.getRewardTiers();
 
-        List<Pledge> pledges = pledgeService.getPledgesByProject(projectId);
+        List<Pledge> pledges = adminPledgeQueryService.getPledgesByProject(projectId);
 
         return AdminProjectDetailDto.of(project, rewardTiers, pledges);
 
