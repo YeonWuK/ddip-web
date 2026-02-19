@@ -49,7 +49,7 @@ public class BidsService {
     /**
      * 경매 참여
      */
-    @DistributedLock(key = "auction:#{#auctionId}")
+    @DistributedLock(key = "'auction:' + #auctionId")
     public BidsResponseDto createBid(Long userId, Long auctionId, BidsRequestDto dto) {
 
         User user = userRepository.findById(userId)

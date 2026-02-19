@@ -16,6 +16,8 @@ public class AuctionEndedEventDto {
 
     private Long auctionId;
 
+    private String title;
+
     private AuctionStatus auctionStatus;
 
     private UserResponseDto user;
@@ -27,6 +29,7 @@ public class AuctionEndedEventDto {
     public static AuctionEndedEventDto from(Auction auction) {
         return AuctionEndedEventDto.builder()
                 .auctionId(auction.getId())
+                .title(auction.getTitle())
                 .auctionStatus(auction.getAuctionStatus())
                 .user(auction.getWinner() == null ? null : UserResponseDto.from(auction.getWinner()))
                 .currentPrice(auction.getCurrentPrice())
