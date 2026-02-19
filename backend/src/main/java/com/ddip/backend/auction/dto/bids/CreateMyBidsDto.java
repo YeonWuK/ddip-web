@@ -14,6 +14,4 @@ public class CreateMyBidsDto {
     private User user;
 
     private Long auctionId;
-
-    private Long price;
 }

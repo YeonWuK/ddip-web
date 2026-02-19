@@ -42,7 +42,7 @@ public class MyBids extends BaseTimeEntity {
                 .user(dto.getUser())
                 .auctionId(dto.getAuctionId())
                 .myAuctionState(MyAuctionStatus.OUTBID)
-                .lastBidPrice(dto.getPrice())
+                .lastBidPrice(0L)
                 .build();
     }
 
