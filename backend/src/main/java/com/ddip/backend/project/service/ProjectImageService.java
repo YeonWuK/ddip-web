@@ -94,7 +94,9 @@ public class ProjectImageService {
             throw new InvalidProjectImageException("mainIndex와 mainImageId는 동시에 보낼 수 없습니다.");
         }
 
-        if (hasUploaded) {
+        List<ProjectImage> projectImages = projectImageRepository.findImagesByProjectId(projectId);
+
+        if (hasUploaded && projectImages.isEmpty()) {
             Integer mainIndex = dto.getMainIndex();
             if (mainIndex == null) {
                 throw new InvalidProjectImageException("새 이미지를 업로드하면 mainIndex는 필수입니다.");
@@ -102,22 +104,26 @@ public class ProjectImageService {
             if (mainIndex < 0 || mainIndex >= uploaded.size()) {
                 throw new InvalidProjectImageException("mainIndex가 업로드 파일 범위를 벗어났습니다.");
             }
-            projectImageRepository.clearMainByProjectId(projectId);
-            projectImageRepository.setMainById(uploaded.get(mainIndex).getId());
+            resetMain(projectId, uploaded.get(mainIndex).getId());
             return;
         }
 
-        Long mainImageId = dto.getMainImageId();
-        if (mainImageId == null) {
-            throw new InvalidProjectImageException("이미지를 업로드하지 않으면 mainImageId는 필수입니다.");
+        if (dto.getMainImageId() != null) {
+            Long mainImageId = dto.getMainImageId();
+            if (!projectImageRepository.existsByIdAndProjectId(mainImageId, projectId)) {
+                throw new InvalidProjectImageException("해당 프로젝트의 이미지가 아닙니다.");
+            }
+            resetMain(projectId, mainImageId);
+            return;
         }
 
-        boolean existed = projectImageRepository.existsByIdAndProjectId(mainImageId, projectId);
-        if (!existed) {
-            throw new InvalidProjectImageException("해당 프로젝트의 이미지가 아닙니다.");
+        if (hasUploaded && dto.getMainIndex() != null) {
+            int mainIndex = dto.getMainIndex();
+            if (mainIndex < 0 || mainIndex >= uploaded.size()) {
+                throw new InvalidProjectImageException("mainIndex가 업로드 파일 범위를 벗어났습니다.");
+            }
+            resetMain(projectId, uploaded.get(mainIndex).getId());
         }
-        projectImageRepository.clearMainByProjectId(projectId);
-        projectImageRepository.setMainById(mainImageId);
     }
 
     public void syncProjectThumbnailFromMainOrThrow(Project project) {
@@ -125,5 +131,11 @@ public class ProjectImageService {
                 .map(ProjectImage::getS3Key)
                 .orElseThrow(() -> new InvalidProjectImageException("대표 이미지(isMain)를 찾을 수 없습니다."));
         project.updateThumbnailUrl(key);
+    }
+
+    private void resetMain(Long projectId, Long mainImageId) {
+        projectImageRepository.clearMainByProjectId(projectId);
+        projectImageRepository.setMainById(mainImageId);
+
     }
 }
