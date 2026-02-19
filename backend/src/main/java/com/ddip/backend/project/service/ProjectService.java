@@ -61,6 +61,8 @@ public class ProjectService {
         project.updateFrom(requestDto);
         projectImageService.applyMainImageOrThrow(project.getId(), requestDto, uploaded);
 
+        projectImageService.syncProjectThumbnailFromMainOrThrow(project);
+
         publisher.publishEvent(new ProjectEsEvent(projectId));
     }
 
