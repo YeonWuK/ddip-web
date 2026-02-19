@@ -121,7 +121,7 @@ public class AuctionService {
             throw new AuctionDeniedException(auctionId, userId);
         }
 
-        List<AuctionImage> auctionImages = auctionImageRepository.findImagesByAuctionId(auction.getId());
+        List<AuctionImage> auctionImages = auctionImageService.findImagesByAuctionId(auction.getId());
 
         auctionImageService.deleteProjectImages(auctionImages);
 
