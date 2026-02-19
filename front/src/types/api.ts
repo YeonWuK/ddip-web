@@ -77,7 +77,7 @@ export interface ProjectCreateRequest {
   summary?: string | null;
   rewardTiers: RewardTierRequest[];
   /** 새로 업로드하는 file 배열 중 대표 이미지 인덱스 (0부터 시작) */
-  mainImageIndex?: number;
+  mainIndex?: number;
 }
 
 export interface ProjectUpdateRequest extends Partial<ProjectCreateRequest> {
@@ -123,6 +123,8 @@ export interface ProjectResponse {
   imageUrls?: string[] | null; // 다중 이미지 (최대 3장)
   /** 기존 이미지 id+url (Edit 시 X 버튼으로 제거할 이미지 id 추적용) */
   imageItems?: { id: number; url: string }[];
+  /** 대표 이미지로 지정된 기존 이미지 ID (Edit 시 초기 선택용) */
+  mainImageId?: number;
   targetAmount: number;
   currentAmount: number;
   status: ProjectStatus;

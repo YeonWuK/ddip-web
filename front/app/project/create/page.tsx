@@ -24,7 +24,7 @@ export default function CreateProjectPage() {
   const [rewardTiers, setRewardTiers] = useState<RewardTierFormData[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [startDate, setStartDate] = useState<string>("")
-  const [mainImageIndex, setMainImageIndex] = useState<number | undefined>(0) // 기본값: 첫 번째 이미지
+  const [mainIndex, setMainIndex] = useState<number | undefined>(0) // 기본값: 첫 번째 이미지
 
   // 오늘 날짜를 YYYY-MM-DD 형식으로 가져오기
   const today = new Date().toISOString().split("T")[0]
@@ -57,18 +57,18 @@ export default function CreateProjectPage() {
   // 이미지 변경 시 대표 이미지 인덱스 조정
   useEffect(() => {
     if (imageFiles.length === 0) {
-      setMainImageIndex(undefined)
-    } else if (mainImageIndex === undefined) {
-      setMainImageIndex(0) // 이미지가 추가되면 첫 번째를 대표로
-    } else if (mainImageIndex >= imageFiles.length) {
-      setMainImageIndex(imageFiles.length - 1) // 인덱스가 범위를 벗어나면 마지막 이미지로
+      setMainIndex(undefined)
+    } else if (mainIndex === undefined) {
+      setMainIndex(0) // 이미지가 추가되면 첫 번째를 대표로
+    } else if (mainIndex >= imageFiles.length) {
+      setMainIndex(imageFiles.length - 1) // 인덱스가 범위를 벗어나면 마지막 이미지로
     }
-  }, [imageFiles, mainImageIndex])
+  }, [imageFiles, mainIndex])
 
   // 대표 이미지 변경 핸들러
   const handleMainImageChange = (type: 'existing' | 'new', idOrIndex: number) => {
     if (type === 'new') {
-      setMainImageIndex(idOrIndex)
+      setMainIndex(idOrIndex)
     }
   }
 
@@ -98,14 +98,11 @@ export default function CreateProjectPage() {
         return
       }
 
-      const startDateStr = data.startAt.trim()
-      const endDateStr = data.endAt.trim()
+      const startDateStr = data.startAt.trim().split("T")[0] // YYYY-MM-DD
+      const endDateStr = data.endAt.trim().split("T")[0] // YYYY-MM-DD
 
-      const startDateWithTime = startDateStr.includes("T") ? startDateStr : `${startDateStr}T00:00:00`
-      const endDateWithTime = endDateStr.includes("T") ? endDateStr : `${endDateStr}T23:59:59`
-
-      const startDateObj = new Date(startDateWithTime)
-      const endDateObj = new Date(endDateWithTime)
+      const startDateObj = new Date(startDateStr)
+      const endDateObj = new Date(endDateStr)
 
       if (isNaN(startDateObj.getTime())) {
         toast.error(`유효하지 않은 시작일입니다: ${startDateStr}`)
@@ -117,13 +114,14 @@ export default function CreateProjectPage() {
         return
       }
 
-      if (endDateObj <= startDateObj) {
+      if (endDateObj < startDateObj) {
         toast.error("종료일은 시작일 이후여야 합니다")
         return
       }
 
-      const startDateISO = startDateObj.toISOString()
-      const endDateISO = endDateObj.toISOString()
+      // 백엔드 LocalDate 형식(YYYY-MM-DD)으로 전송 (toISOString 사용 시 UTC 변환으로 하루 밀림 발생)
+      const startDateISO = startDateStr
+      const endDateISO = endDateStr
 
       // 백엔드 ProjectRequestDto 형식
       const projectRequest: any = {
@@ -144,14 +142,14 @@ export default function CreateProjectPage() {
       }
 
       // 대표 이미지 인덱스 지정
-      if (mainImageIndex !== undefined) {
-        projectRequest.mainImageIndex = mainImageIndex
+      if (mainIndex !== undefined) {
+        projectRequest.mainIndex = mainIndex
       }
 
       // 검증용 로그: 전송 데이터 확인
       console.log('[프로젝트 생성] 이미지 파일 목록:', imageFiles.map((f, i) => `[${i}] ${f.name}`))
-      console.log('[프로젝트 생성] mainImageIndex:', mainImageIndex)
-      console.log('[프로젝트 생성] 대표 이미지로 선택된 파일:', mainImageIndex !== undefined ? imageFiles[mainImageIndex]?.name : '없음')
+      console.log('[프로젝트 생성] mainIndex:', mainIndex)
+      console.log('[프로젝트 생성] 대표 이미지로 선택된 파일:', mainIndex !== undefined ? imageFiles[mainIndex]?.name : '없음')
       console.log('[프로젝트 생성] projectRequest:', JSON.stringify(projectRequest, null, 2))
 
       const createdProject = await projectApi.createProject(imageFiles, projectRequest)
@@ -183,16 +181,16 @@ export default function CreateProjectPage() {
                     value={imageFiles} 
                     onChange={setImageFiles}
                     enableMainImageSelection={true}
-                    selectedMainIndex={mainImageIndex}
+                    selectedMainIndex={mainIndex}
                     onMainImageChange={handleMainImageChange}
                   />
                   {imageFiles.length === 0 && (
                     <p className="text-sm text-muted-foreground">프로젝트를 대표할 이미지를 업로드해주세요</p>
                   )}
-                  {mainImageIndex !== undefined && imageFiles.length > 0 && (
+                  {mainIndex !== undefined && imageFiles.length > 0 && (
                     <p className="text-sm text-green-600 flex items-center gap-1">
                       <Star className="size-3 fill-yellow-400" />
-                      대표 이미지: {mainImageIndex + 1}번째 이미지
+                      대표 이미지: {mainIndex + 1}번째 이미지
                     </p>
                   )}
                 </div>

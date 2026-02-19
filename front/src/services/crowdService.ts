@@ -87,11 +87,11 @@ export const projectApi = {
             return toS3ImageUrl(keyOrUrl);
           })
           .filter((url: string | null): url is string => url != null);
+        // thumbnailUrl = 대표 이미지, 우선 사용
         const thumb = backendProject.thumbnailUrl || backendProject.thumbnail_url || null;
-        const firstImageUrl =
-          imageUrlsFromS3[0] ??
-          toS3ImageUrl(backendProject.imageUrl ?? thumb);
-        const imageUrl = firstImageUrl ?? toS3ImageUrl(thumb);
+        const thumbResolved = toS3ImageUrl(thumb ?? backendProject.imageUrl);
+        const firstImageUrl = thumbResolved ?? imageUrlsFromS3[0] ?? toS3ImageUrl(thumb);
+        const imageUrl = firstImageUrl;
         const imageUrls = imageUrlsFromS3.length > 0 ? imageUrlsFromS3 : (imageUrl ? [imageUrl] : null);
 
         // 날짜 필드 처리
@@ -234,12 +234,25 @@ export const projectApi = {
           return url;
         })
         .filter((url: string | null): url is string => url != null);
+      // thumbnailUrl = 백엔드가 지정한 대표 이미지 (DB 반영됨), 이를 우선 사용
       const thumbnailUrl = backendResponse.thumbnailUrl ?? backendResponse.thumbnail_url ?? null;
+      const thumbnailUrlResolved = toS3ImageUrl(thumbnailUrl ?? backendResponse.imageUrl);
       const firstImageUrl =
+        thumbnailUrlResolved ??
         imageUrlsFromS3[0] ??
-        toS3ImageUrl(backendResponse.imageUrl ?? thumbnailUrl) ??
         toS3ImageUrl(thumbnailUrl);
-      const imageUrls = imageUrlsFromS3.length > 0 ? imageUrlsFromS3 : (firstImageUrl ? [firstImageUrl] : null);
+      // imageUrls: 대표 이미지(thumbnailUrl)를 맨 앞에 배치해 갤러리에서 먼저 표시
+      const imageUrls =
+        imageUrlsFromS3.length > 0
+          ? thumbnailUrlResolved
+            ? [
+                thumbnailUrlResolved,
+                ...imageUrlsFromS3.filter((u: string) => u !== thumbnailUrlResolved),
+              ]
+            : imageUrlsFromS3
+          : firstImageUrl
+            ? [firstImageUrl]
+            : null;
       const imageUrl = firstImageUrl;
 
       // 날짜: LocalDate "2025-02-12" 또는 LocalDateTime ISO
@@ -277,6 +290,15 @@ export const projectApi = {
         tags: backendResponse.tags ?? null,
         summary: backendResponse.summary ?? null,
         imageItems: imageItems.length > 0 ? imageItems : undefined,
+        mainImageId: (() => {
+          // 백엔드 mainImageId 또는 thumbnailUrl과 일치하는 이미지 id
+          const fromBackend = backendResponse.mainImageId ?? backendResponse.main_image_id;
+          if (fromBackend != null) return fromBackend;
+          const mainUrl = thumbnailUrlResolved ?? firstImageUrl;
+          if (!mainUrl || imageItems.length === 0) return undefined;
+          const matched = imageItems.find((item) => item.url === mainUrl);
+          return matched?.id;
+        })(),
       };
 
       return project;
@@ -319,11 +341,12 @@ export const projectApi = {
         })),
       };
       
-      // 대표 이미지 인덱스 지정
-      if (data.mainImageIndex !== undefined) {
-        dataPart.mainImageIndex = data.mainImageIndex;
+      // 대표 이미지 인덱스 지정 - 백엔드는 mainIndex 키를 기대함 (mainImageIndex 아님)
+      if (data.mainIndex !== undefined) {
+        dataPart.mainIndex = data.mainIndex;
       }
-      
+      delete dataPart.mainImageIndex; // 잘못된 키 제거
+
       formData.append('data', new Blob([JSON.stringify(dataPart)], { type: 'application/json' }));
       for (const file of files) {
         formData.append('file', file);
@@ -331,7 +354,7 @@ export const projectApi = {
 
       // 검증용 로그: 백엔드 전송 직전
       console.log('[crowdService.createProject] files:', files.map((f, i) => `[${i}] ${f.name}`));
-      console.log('[crowdService.createProject] dataPart.mainImageIndex:', dataPart.mainImageIndex);
+      console.log('[crowdService.createProject] dataPart.mainIndex:', dataPart.mainIndex);
 
       const projectId = await apiRequest<number>('/api/crowd', {
         method: 'POST',
@@ -386,17 +409,26 @@ export const projectApi = {
         dataPart.deleteImageIds = data.deleteImageIds;
       }
 
-      // 대표 이미지 지정 (기존 이미지)
+      // 대표 이미지 지정 - mainIndex와 mainImageId는 동시에 보낼 수 없음
       if (data.mainImageId !== undefined) {
         dataPart.mainImageId = data.mainImageId;
-      }
-
-      // 대표 이미지 지정 (새 이미지)
-      if (data.mainIndex !== undefined) {
+        delete dataPart.mainIndex; // 기존 이미지 선택 시 mainIndex 제거
+      } else if (data.mainIndex !== undefined) {
         dataPart.mainIndex = data.mainIndex;
+        delete dataPart.mainImageId; // 새 이미지 선택 시 mainImageId 제거
       }
+      delete dataPart.mainImageIndex; // 잘못된 키 제거
 
-      formData.append('data', new Blob([JSON.stringify(dataPart)], { type: 'application/json' }));
+      // 대표 이미지 전송 확인용 로그 (실제 JSON 키가 mainIndex인지 확인)
+      const jsonPayload = JSON.stringify(dataPart);
+      console.log('[crowdService.updateProject] 전송 payload 키 확인:', {
+        hasMainIndex: jsonPayload.includes('"mainIndex"'),
+        hasMainImageIndex: jsonPayload.includes('"mainImageIndex"'),
+        mainImageId: dataPart.mainImageId,
+        mainIndex: dataPart.mainIndex,
+      });
+
+      formData.append('data', new Blob([jsonPayload], { type: 'application/json' }));
 
       for (const file of files) {
         formData.append('file', file);

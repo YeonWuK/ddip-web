@@ -78,9 +78,14 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
         // 기존 이미지 (id+url) 저장 - X 버튼으로 제거 시 imageIds 전송용
         if (projectData.imageItems && projectData.imageItems.length > 0) {
           setExistingImageItems(projectData.imageItems)
-          // 첫 번째 이미지를 기본 대표 이미지로 설정
-          if (projectData.imageItems[0]?.id) {
-            setMainImageId(projectData.imageItems[0].id)
+          // 대표 이미지 설정: mainImageId가 있으면 사용, 없으면 첫 번째
+          const mainId = projectData.mainImageId
+          const validMainId =
+            mainId != null && projectData.imageItems.some((item) => item.id === mainId)
+              ? mainId
+              : projectData.imageItems[0]?.id
+          if (validMainId != null) {
+            setMainImageId(validMainId)
           }
         } else if (projectData.imageUrls && projectData.imageUrls.length > 0) {
           setExistingImageItems(projectData.imageUrls.map((url, i) => ({ id: 0, url })))
@@ -173,9 +178,20 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
   // 대표 이미지 변경 핸들러
   const handleMainImageChange = (type: 'existing' | 'new', idOrIndex: number) => {
     if (type === 'existing') {
+      const selectedItem = existingImageItems.find((item) => item.id === idOrIndex)
+      console.log('[프로젝트 수정] 대표 이미지 변경 → 기존 이미지 선택', {
+        mainImageId: idOrIndex,
+        imageUrl: selectedItem?.url ?? '(url 없음)',
+      })
       setMainImageId(idOrIndex)
       setMainIndex(undefined) // 새 이미지 선택 해제
     } else {
+      const selectedFile = imageFiles[idOrIndex]
+      console.log('[프로젝트 수정] 대표 이미지 변경 → 새 이미지 선택', {
+        mainIndex: idOrIndex,
+        fileName: selectedFile?.name ?? '(파일 없음)',
+        fileSize: selectedFile?.size,
+      })
       setMainIndex(idOrIndex)
       setMainImageId(undefined) // 기존 이미지 선택 해제
     }
@@ -212,14 +228,11 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
         return
       }
 
-      const startDateStr = data.startAt.trim()
-      const endDateStr = data.endAt.trim()
+      const startDateStr = data.startAt.trim().split("T")[0] // YYYY-MM-DD
+      const endDateStr = data.endAt.trim().split("T")[0] // YYYY-MM-DD
 
-      const startDateWithTime = startDateStr.includes("T") ? startDateStr : `${startDateStr}T00:00:00`
-      const endDateWithTime = endDateStr.includes("T") ? endDateStr : `${endDateStr}T23:59:59`
-
-      const startDateObj = new Date(startDateWithTime)
-      const endDateObj = new Date(endDateWithTime)
+      const startDateObj = new Date(startDateStr)
+      const endDateObj = new Date(endDateStr)
 
       if (isNaN(startDateObj.getTime())) {
         toast.error(`유효하지 않은 시작일입니다: ${startDateStr}`)
@@ -231,13 +244,14 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
         return
       }
 
-      if (endDateObj <= startDateObj) {
+      if (endDateObj < startDateObj) {
         toast.error("종료일은 시작일 이후여야 합니다")
         return
       }
 
-      const startDateISO = startDateObj.toISOString()
-      const endDateISO = endDateObj.toISOString()
+      // 백엔드 LocalDate 형식(YYYY-MM-DD)으로 전송 (toISOString 사용 시 UTC 변환으로 하루 밀림 발생)
+      const startDateISO = startDateStr
+      const endDateISO = endDateStr
 
       // X 버튼으로 제거한 기존 이미지 ID 목록
       const deleteImageIds = Array.from(removedImageIds).filter((id) => id > 0)
@@ -265,13 +279,15 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
         updateData.deleteImageIds = deleteImageIds
       }
 
-      // 대표 이미지 지정
-      if (mainImageId !== undefined) {
-        // 기존 이미지 중 하나를 대표로 선택
+      // 대표 이미지 지정 - mainIndex와 mainImageId는 동시에 보낼 수 없음
+      // - 기존 이미지 선택 → mainImageId만
+      // - 새 이미지 선택 → mainIndex만
+      if (mainImageId !== undefined && !removedImageIds.has(mainImageId)) {
         updateData.mainImageId = mainImageId
-      } else if (mainIndex !== undefined) {
-        // 새로 업로드하는 이미지 중 하나를 대표로 선택
+        console.log('[프로젝트 수정] 백엔드 전송 - mainImageId:', mainImageId, '(기존 이미지)')
+      } else if (mainIndex !== undefined && mainIndex < imageFiles.length) {
         updateData.mainIndex = mainIndex
+        console.log('[프로젝트 수정] 백엔드 전송 - mainIndex:', mainIndex, '(새 이미지, 업로드', imageFiles.length, '장)')
       }
 
       const updatedProject = await projectApi.updateProject(projectId, imageFiles, updateData)
@@ -279,6 +295,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
       toast.success("프로젝트가 수정되었습니다!")
       router.push(`/project/${projectId}`)
     } catch (error) {
+      console.error('[프로젝트 수정] 400 에러 상세:', error)
       toast.error(error instanceof Error ? error.message : "프로젝트 수정에 실패했습니다")
     } finally {
       setIsSubmitting(false)

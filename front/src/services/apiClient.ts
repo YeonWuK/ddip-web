@@ -49,13 +49,19 @@ export async function apiRequest<T>(
     const errorText = await response.text();
     let errorMessage = '요청 처리 중 오류가 발생했습니다';
     let errorJson: any = null;
-    
+
     try {
       errorJson = JSON.parse(errorText);
-      errorMessage = errorJson.message || errorJson.error || errorMessage;
+      errorMessage = errorJson.detail || errorJson.message || errorJson.error || errorMessage;
     } catch {
       errorMessage = errorText || errorMessage;
     }
+
+    // 4xx 에러 시 상세 로그 (디버깅용)
+    if (response.status >= 400 && response.status < 500) {
+      console.error(`[apiClient] ${response.status} ${endpoint}:`, errorJson ?? errorText);
+    }
+
     throw new Error(`${errorMessage} (${response.status})`);
   }
 
