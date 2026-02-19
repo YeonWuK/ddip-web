@@ -38,7 +38,7 @@ public class AuctionImageService {
             throw new IllegalArgumentException("mainIndex 가 유효하지 않습니다.");
         }
 
-        String prefix = s3UrlPrefixFactory.projectPrefix(auction.getId());
+        String prefix = s3UrlPrefixFactory.auctionPrefix(auction.getId());
 
         List<AuctionImage> projectImages = IntStream.range(0, files.size())
                 .mapToObj(i -> {
