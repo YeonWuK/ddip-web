@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -10,7 +10,7 @@ import { Input } from "@/src/components/ui/input"
 import { Label } from "@/src/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card"
 import { Alert, AlertDescription } from "@/src/components/ui/alert"
-import { AlertCircle, Loader2 } from "lucide-react"
+import { AlertCircle, Loader2, Star } from "lucide-react"
 import { ProtectedRoute } from "@/src/components/protected-route"
 import { MultiImageUpload } from "@/src/components/multi-image-upload"
 import { auctionApi } from "@/src/services/api"
@@ -21,9 +21,28 @@ import { toast } from "sonner"
 export default function CreateAuctionPage() {
   const router = useRouter()
   const [imageFiles, setImageFiles] = useState<File[]>([])
+  const [mainIndex, setMainIndex] = useState<number | undefined>(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
   // 페이지 진입 시각을 종료일 min으로 사용 (이전 시각 선택 불가)
   const [minEndAt] = useState(() => new Date().toISOString().slice(0, 16))
+
+  // 이미지 변경 시 대표 이미지 인덱스 조정
+  useEffect(() => {
+    if (imageFiles.length === 0) {
+      setMainIndex(undefined)
+    } else if (mainIndex === undefined) {
+      setMainIndex(0)
+    } else if (mainIndex >= imageFiles.length) {
+      setMainIndex(imageFiles.length - 1)
+    }
+  }, [imageFiles, mainIndex])
+
+  // 대표 이미지 변경 핸들러
+  const handleMainImageChange = (type: 'existing' | 'new', idOrIndex: number) => {
+    if (type === 'new') {
+      setMainIndex(idOrIndex)
+    }
+  }
 
   const {
     register,
@@ -48,6 +67,13 @@ export default function CreateAuctionPage() {
   const onSubmit = async (data: AuctionCreateFormData) => {
     try {
       setIsSubmitting(true)
+
+      // 이미지 파일 필수 체크
+      if (imageFiles.length === 0) {
+        toast.error("경매 상품 이미지를 최소 1개 이상 업로드해주세요")
+        setIsSubmitting(false)
+        return
+      }
 
       // 이미지 파일 크기 검사 (5MB 제한, 백엔드 S3 업로드용)
       for (const file of imageFiles) {
@@ -95,6 +121,9 @@ export default function CreateAuctionPage() {
         bidStep: data.bidStep,
         endAt: endAtFormatted,
       }
+      if (mainIndex !== undefined) {
+        auctionData.mainIndex = mainIndex
+      }
 
       const createdAuction = await auctionApi.createAuction(imageFiles, auctionData)
       toast.success("경매가 생성되었습니다!")
@@ -121,9 +150,19 @@ export default function CreateAuctionPage() {
                 {/* 경매 이미지 */}
                 <div className="space-y-2">
                   <Label>경매 상품 이미지 *</Label>
-                  <MultiImageUpload value={imageFiles} onChange={setImageFiles} maxImages={3} />
+                  <MultiImageUpload value={imageFiles} onChange={setImageFiles}
+                    enableMainImageSelection={true}
+                    selectedMainIndex={mainIndex}
+                    onMainImageChange={handleMainImageChange}
+                  />
                   {imageFiles.length === 0 && (
-                    <p className="text-sm text-muted-foreground">경매 상품을 대표할 이미지를 업로드해주세요 (최대 3장)</p>
+                    <p className="text-sm text-muted-foreground">경매 상품을 대표할 이미지를 업로드해주세요</p>
+                  )}
+                  {mainIndex !== undefined && imageFiles.length > 0 && (
+                    <p className="text-sm text-green-600 flex items-center gap-1">
+                      <Star className="size-3 fill-yellow-400" />
+                      대표 이미지: {mainIndex + 1}번째 이미지
+                    </p>
                   )}
                 </div>
 

@@ -152,10 +152,20 @@ export interface AuctionCreateRequest {
   startPrice: number;
   bidStep: number;
   endAt: string; // ISO 8601 형식 (시작은 백엔드에서 생성 시점으로 자동 설정)
+  /** 새로 업로드하는 file 배열 중 대표 이미지 인덱스 (0부터 시작) */
+  mainIndex?: number;
   thumbnailImageUrl?: string | null;
   categoryPath?: string | null;
   tags?: string | null;
   summary?: string | null;
+}
+
+// 경매 수정 요청 타입 (project와 동일 방식)
+export interface AuctionUpdateRequest extends Partial<AuctionCreateRequest> {
+  /** 삭제할 기존 이미지의 ID 배열 */
+  deleteImageIds?: number[];
+  /** 기존 이미지 중 대표 이미지로 지정할 이미지 ID */
+  mainImageId?: number;
 }
 
 // 경매 상세 응답 타입
@@ -167,6 +177,10 @@ export interface AuctionResponse {
   thumbnailImageUrl: string | null;
   imageUrl: string | null; // 하위 호환성 유지 (첫 번째 이미지)
   imageUrls?: string[] | null; // 다중 이미지 (최대 3장)
+  /** 기존 이미지 id+url (Edit 시 X 버튼으로 제거할 이미지 id 추적용) */
+  imageItems?: { id: number; url: string }[];
+  /** 대표 이미지 ID (Edit 시 대표 이미지 선택용) */
+  mainImageId?: number;
   startPrice: number;
   currentPrice: number;
   bidStep: number;

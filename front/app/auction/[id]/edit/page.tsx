@@ -10,10 +10,11 @@ import { Input } from "@/src/components/ui/input"
 import { Label } from "@/src/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card"
 import { Alert, AlertDescription } from "@/src/components/ui/alert"
-import { AlertCircle, Loader2 } from "lucide-react"
+import { AlertCircle, Loader2, Star } from "lucide-react"
 import { ProtectedRoute } from "@/src/components/protected-route"
 import { MultiImageUpload } from "@/src/components/multi-image-upload"
 import { auctionApi } from "@/src/services/api"
+import type { AuctionUpdateRequest } from "@/src/types/api"
 import { auctionCreateSchema, AuctionCreateFormData } from "@/src/lib/validations"
 import { canEditAuction } from "@/src/lib/permissions"
 import { useAuth } from "@/src/contexts/auth-context"
@@ -29,10 +30,14 @@ export default function EditAuctionPage({ params }: { params: Promise<{ id: stri
   const [auction, setAuction] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [imageFiles, setImageFiles] = useState<File[]>([])
-  const [existingImageUrls, setExistingImageUrls] = useState<string[]>([])
-  const [removedExistingImageIndices, setRemovedExistingImageIndices] = useState<Set<number>>(new Set())
+  const [existingImageItems, setExistingImageItems] = useState<{ id: number; url: string }[]>([])
+  const [removedImageIds, setRemovedImageIds] = useState<Set<number>>(new Set())
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [startDateTime, setStartDateTime] = useState<string>("")
+  
+  // 대표 이미지 선택 상태 (project edit와 동일)
+  const [mainImageId, setMainImageId] = useState<number | undefined>(undefined)
+  const [mainIndex, setMainIndex] = useState<number | undefined>(undefined)
 
   // 오늘 날짜와 시간을 datetime-local 형식으로 가져오기
   const now = new Date()
@@ -72,11 +77,21 @@ export default function EditAuctionPage({ params }: { params: Promise<{ id: stri
 
         setAuction(auctionData)
 
-        // 기존 이미지 URL 저장
-        if (auctionData.imageUrls && auctionData.imageUrls.length > 0) {
-          setExistingImageUrls(auctionData.imageUrls)
+        // 기존 이미지 (id+url) 저장 - project와 동일 방식
+        if (auctionData.imageItems && auctionData.imageItems.length > 0) {
+          setExistingImageItems(auctionData.imageItems)
+          const mainId = auctionData.mainImageId
+          const validMainId =
+            mainId != null && auctionData.imageItems.some((item) => item.id === mainId)
+              ? mainId
+              : auctionData.imageItems[0]?.id
+          if (validMainId != null) {
+            setMainImageId(validMainId)
+          }
+        } else if (auctionData.imageUrls && auctionData.imageUrls.length > 0) {
+          setExistingImageItems(auctionData.imageUrls.map((url, i) => ({ id: i + 1, url })))
         } else if (auctionData.imageUrl) {
-          setExistingImageUrls([auctionData.imageUrl])
+          setExistingImageItems([{ id: 1, url: auctionData.imageUrl }])
         }
 
         // 날짜를 datetime-local 형식으로 변환 (한국 시간 기준)
@@ -106,11 +121,65 @@ export default function EditAuctionPage({ params }: { params: Promise<{ id: stri
     loadAuction()
   }, [auctionId, router, user, reset])
 
+  // 이미지 삭제 시 대표 이미지 상태 조정
+  useEffect(() => {
+    if (mainImageId !== undefined && removedImageIds.has(mainImageId)) {
+      const remainingExisting = existingImageItems.find((item) => !removedImageIds.has(item.id))
+      if (remainingExisting) {
+        setMainImageId(remainingExisting.id)
+      } else if (imageFiles.length > 0) {
+        setMainImageId(undefined)
+        setMainIndex(0)
+      } else {
+        setMainImageId(undefined)
+        setMainIndex(undefined)
+      }
+    }
+  }, [removedImageIds, mainImageId, existingImageItems, imageFiles])
+
+  // 새 이미지 삭제 시 대표 이미지 인덱스 조정
+  useEffect(() => {
+    if (mainIndex !== undefined && mainIndex >= imageFiles.length) {
+      if (imageFiles.length > 0) {
+        setMainIndex(0)
+      } else {
+        const remainingExisting = existingImageItems.find((item) => !removedImageIds.has(item.id))
+        if (remainingExisting) {
+          setMainIndex(undefined)
+          setMainImageId(remainingExisting.id)
+        } else {
+          setMainIndex(undefined)
+        }
+      }
+    }
+  }, [imageFiles, mainIndex, existingImageItems, removedImageIds])
+
+  // 대표 이미지 변경 핸들러
+  const handleMainImageChange = (type: 'existing' | 'new', idOrIndex: number) => {
+    if (type === 'existing') {
+      setMainImageId(idOrIndex)
+      setMainIndex(undefined)
+    } else {
+      setMainIndex(idOrIndex)
+      setMainImageId(undefined)
+    }
+  }
+
   const onSubmit = async (data: AuctionCreateFormData) => {
     if (!auction) return
 
     try {
       setIsSubmitting(true)
+
+      // 유지되는 기존 이미지 + 새 이미지 최소 1개 필요
+      const keptExistingCount = existingImageItems.filter(
+        (item) => !removedImageIds.has(item.id)
+      ).length
+      if (keptExistingCount + imageFiles.length === 0) {
+        toast.error("경매 상품 이미지를 최소 1개 이상 유지해주세요")
+        setIsSubmitting(false)
+        return
+      }
 
       // 이미지 파일 크기 검증
       for (const file of imageFiles) {
@@ -151,19 +220,25 @@ export default function EditAuctionPage({ params }: { params: Promise<{ id: stri
 
       const endDateTimeISO = endDateTimeObj.toISOString()
 
-      // 경매 수정 (multipart/form-data로 파일과 함께 전송)
-      // startAt은 수정 불가 (백엔드에서 자동 처리)
-      const updatedAuction = await auctionApi.updateAuction(
-        auctionId,
-        imageFiles, // 새로 업로드한 이미지 파일들
-        {
-          title: data.title,
-          description: data.description,
-          startPrice: data.startPrice,
-          bidStep: data.bidStep,
-          endAt: endDateTimeISO,
-        }
-      )
+      const deleteImageIds = Array.from(removedImageIds).filter((id) => id > 0)
+
+      const updateData: AuctionUpdateRequest = {
+        title: data.title,
+        description: data.description,
+        startPrice: data.startPrice,
+        bidStep: data.bidStep,
+        endAt: endDateTimeISO,
+      }
+      if (deleteImageIds.length > 0) {
+        updateData.deleteImageIds = deleteImageIds
+      }
+      if (mainImageId !== undefined && !removedImageIds.has(mainImageId)) {
+        updateData.mainImageId = mainImageId
+      } else if (mainIndex !== undefined && mainIndex < imageFiles.length) {
+        updateData.mainIndex = mainIndex
+      }
+
+      const updatedAuction = await auctionApi.updateAuction(auctionId, imageFiles, updateData)
 
       toast.success("경매가 수정되었습니다!")
       router.push(`/auction/${auctionId}`)
@@ -223,12 +298,21 @@ export default function EditAuctionPage({ params }: { params: Promise<{ id: stri
                   <MultiImageUpload 
                     value={imageFiles} 
                     onChange={setImageFiles} 
-                    maxImages={3}
-                    existingImages={existingImageUrls}
-                    onExistingImagesChange={setRemovedExistingImageIndices}
+                    existingImageItems={existingImageItems}
+                    onRemovedIdsChange={setRemovedImageIds}
+                    enableMainImageSelection={true}
+                    selectedMainImageId={mainImageId}
+                    selectedMainIndex={mainIndex}
+                    onMainImageChange={handleMainImageChange}
                   />
-                  {imageFiles.length === 0 && existingImageUrls.length === 0 && (
-                    <p className="text-sm text-muted-foreground">경매 상품을 대표할 이미지를 업로드해주세요 (최대 3장)</p>
+                  {imageFiles.length === 0 && existingImageItems.length === 0 && (
+                    <p className="text-sm text-muted-foreground">경매 상품을 대표할 이미지를 업로드해주세요</p>
+                  )}
+                  {(mainImageId !== undefined || mainIndex !== undefined) && (
+                    <p className="text-sm text-green-600 flex items-center gap-1">
+                      <Star className="size-3 fill-yellow-400" />
+                      대표 이미지가 선택되었습니다
+                    </p>
                   )}
                 </div>
 

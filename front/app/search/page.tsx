@@ -34,12 +34,30 @@ function SearchContent() {
   }, [query])
 
   useEffect(() => {
-    if (query.trim()) {
-      performSearch(query)
-    } else {
+    if (!query.trim()) {
       setProjects([])
       setAuctions([])
+      return
     }
+    let cancelled = false
+    const run = async () => {
+      setLoading(true)
+      try {
+        const [projectsData, auctionsData] = await Promise.allSettled([
+          searchApi.searchProjects(query.trim()),
+          searchApi.searchAuctions(query.trim()),
+        ])
+        if (cancelled) return
+        setProjects(projectsData.status === 'fulfilled' ? projectsData.value : [])
+        setAuctions(auctionsData.status === 'fulfilled' ? auctionsData.value : [])
+        if (projectsData.status === 'rejected') console.error('프로젝트 검색 실패:', projectsData.reason)
+        if (auctionsData.status === 'rejected') console.error('경매 검색 실패:', auctionsData.reason)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    run()
+    return () => { cancelled = true }
   }, [query])
 
   // 자동완성
@@ -61,29 +79,6 @@ function SearchContent() {
     const timer = setTimeout(loadSuggestions, 300) // 300ms 디바운스
     return () => clearTimeout(timer)
   }, [searchQuery])
-
-  const performSearch = async (searchTerm: string) => {
-    if (!searchTerm.trim()) {
-      setProjects([])
-      setAuctions([])
-      return
-    }
-
-    setLoading(true)
-    setShowSuggestions(false)
-    try {
-      const [projectsData, auctionsData] = await Promise.all([
-        searchApi.searchProjects(searchTerm.trim()),
-        searchApi.searchAuctions(searchTerm.trim()),
-      ])
-      setProjects(projectsData)
-      setAuctions(auctionsData)
-    } catch (error) {
-      console.error("검색 실패:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()

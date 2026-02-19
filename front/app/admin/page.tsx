@@ -126,11 +126,19 @@ export default function AdminPage() {
   const loadAllData = async () => {
     try {
       setIsLoading(true);
-      await Promise.all([
+      const results = await Promise.allSettled([
         loadUsers(),
         loadProjects(),
         loadAuctions(),
       ]);
+      const failed = results.filter((r) => r.status === 'rejected');
+      if (failed.length > 0) {
+        failed.forEach((r) => r.status === 'rejected' && console.error('데이터 로드 실패:', r.reason));
+        const failedNames = results
+          .map((r, i) => (r.status === 'rejected' ? ['유저', '프로젝트', '경매'][i] : null))
+          .filter(Boolean);
+        toast.error(`${failedNames.join(', ')} 데이터를 불러오는데 실패했습니다`);
+      }
     } catch (error) {
       console.error("데이터 로드 실패:", error);
       toast.error("데이터를 불러오는데 실패했습니다");
