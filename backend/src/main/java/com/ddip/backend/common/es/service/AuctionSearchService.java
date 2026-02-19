@@ -6,6 +6,7 @@ import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import com.ddip.backend.auction.dto.es.AuctionSearchResponse;
+import com.ddip.backend.common.es.document.AuctionDocument;
 import com.ddip.backend.common.es.util.BuildSearchQueryUtil;
 import com.ddip.backend.common.exception.es.SearchResponseNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -50,12 +52,15 @@ public class AuctionSearchService {
                     .size(20)
                     .build();
 
-            SearchResponse<AuctionSearchResponse> searchResponse =
-                    elasticsearchClient.search(searchRequest, AuctionSearchResponse.class);
+            SearchResponse<AuctionDocument> searchResponse =
+                    elasticsearchClient.search(searchRequest, AuctionDocument.class);
 
             return searchResponse.hits().hits().stream()
                     .map(Hit::source)
+                    .filter(Objects::nonNull)
+                    .map(AuctionSearchResponse::from)
                     .toList();
+
         } catch (IOException e) {
             throw new SearchResponseNotFoundException(e.getMessage());
         }
@@ -78,11 +83,13 @@ public class AuctionSearchService {
                     .size(size)
             );
 
-            SearchResponse<AuctionSearchResponse> searchResponse =
-                    elasticsearchClient.search(searchRequest, AuctionSearchResponse.class);
+            SearchResponse<AuctionDocument> searchResponse =
+                    elasticsearchClient.search(searchRequest, AuctionDocument.class);
 
             List<AuctionSearchResponse> auctions = searchResponse.hits().hits().stream()
                     .map(Hit::source)
+                    .filter(Objects::nonNull)
+                    .map(AuctionSearchResponse::from)
                     .toList();
 
             long total = searchResponse.hits().total() == null ? auctions.size() :

@@ -5,6 +5,7 @@ import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
+import com.ddip.backend.common.es.document.ProjectDocument;
 import com.ddip.backend.common.es.util.BuildSearchQueryUtil;
 import com.ddip.backend.common.exception.es.SearchResponseNotFoundException;
 import com.ddip.backend.project.dto.es.ProjectSearchResponse;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @Transactional
@@ -44,11 +46,13 @@ public class ProjectSearchService {
                     .size(20)
                     .build();
 
-            SearchResponse<ProjectSearchResponse> searchResponse =
-                    elasticsearchClient.search(searchRequest, ProjectSearchResponse.class);
+            SearchResponse<ProjectDocument> searchResponse =
+                    elasticsearchClient.search(searchRequest, ProjectDocument.class);
 
             return searchResponse.hits().hits().stream()
                     .map(Hit::source)
+                    .filter(Objects::nonNull)
+                    .map(ProjectSearchResponse::from)
                     .toList();
 
         } catch (IOException e) {
@@ -73,11 +77,13 @@ public class ProjectSearchService {
                     .size(size)
             );
 
-            SearchResponse<ProjectSearchResponse> searchResponse =
-                    elasticsearchClient.search(searchRequest, ProjectSearchResponse.class);
+            SearchResponse<ProjectDocument> searchResponse =
+                    elasticsearchClient.search(searchRequest, ProjectDocument.class);
 
             List<ProjectSearchResponse> project = searchResponse.hits().hits().stream()
                     .map(Hit::source)
+                    .filter(Objects::nonNull)
+                    .map(ProjectSearchResponse::from)
                     .toList();
 
             long total = searchResponse.hits().total() == null ? project.size() :
