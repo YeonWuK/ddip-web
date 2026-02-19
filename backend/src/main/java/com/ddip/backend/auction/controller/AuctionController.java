@@ -25,26 +25,26 @@ public class AuctionController {
 
     private final AuctionService auctionService;
 
-//    /**
-//     * 경매 생성
-//     */
-//    @PostMapping(consumes = {"multipart/form-data"})
-//    @Operation(summary = "경매 생성", description = "이미지와 경매 정보를 업로드하여 경매를 생성합니다.")
-//    @ApiResponses(value = {
-//            @ApiResponse(responseCode = "200", description = "생성 성공"),
-//            @ApiResponse(responseCode = "400", description = "요청 값 오류"),
-//            @ApiResponse(responseCode = "401", description = "인증 필요")
-//    })
-//    public ResponseEntity<?> createAuction(@AuthenticationPrincipal CustomUserDetails customUserDetails,
-//                                           @RequestPart(name = "file") List<MultipartFile> auctionFiles,
-//                                           @RequestPart(value = "data") AuctionRequestDto dto) {
-//
-//        Long userId = customUserDetails.getUserId();
-//
-//        AuctionResponseDto auctionResponseDto = auctionService.createAuction(auctionFiles, userId, dto);
-//
-//        return ResponseEntity.ok(auctionResponseDto);
-//    }
+    /**
+     * 경매 생성
+     */
+    @PostMapping(consumes = {"multipart/form-data"})
+    @Operation(summary = "경매 생성", description = "이미지와 경매 정보를 업로드하여 경매를 생성합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "생성 성공"),
+            @ApiResponse(responseCode = "400", description = "요청 값 오류"),
+            @ApiResponse(responseCode = "401", description = "인증 필요")
+    })
+    public ResponseEntity<?> createAuction(@AuthenticationPrincipal CustomUserDetails customUserDetails,
+                                           @RequestPart(name = "file") List<MultipartFile> auctionFiles,
+                                           @RequestPart(value = "data") AuctionRequestDto dto) {
+
+        Long userId = customUserDetails.getUserId();
+
+        AuctionResponseDto auctionResponseDto = auctionService.createAuction(auctionFiles, userId, dto);
+
+        return ResponseEntity.ok(auctionResponseDto);
+    }
 
     /**
      * 경매 전체 조회

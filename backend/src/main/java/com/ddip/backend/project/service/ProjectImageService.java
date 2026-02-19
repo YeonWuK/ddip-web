@@ -136,6 +136,5 @@ public class ProjectImageService {
     private void resetMain(Long projectId, Long mainImageId) {
         projectImageRepository.clearMainByProjectId(projectId);
         projectImageRepository.setMainById(mainImageId);
-
     }
 }

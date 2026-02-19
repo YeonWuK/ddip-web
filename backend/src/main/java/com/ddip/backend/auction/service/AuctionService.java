@@ -50,8 +50,8 @@ public class AuctionService {
 
     private final AwsS3Util awsS3Util;
     private final PointService pointService;
-    private final S3UrlPrefixFactory s3UrlPrefixFactory;
     private final ApplicationEventPublisher publisher;
+    private final AuctionImageService auctionImageService;
 
     private final UserRepository userRepository;
     private final BidsRepository bidsRepository;
@@ -61,43 +61,28 @@ public class AuctionService {
     private final AuctionElasticsearchRepository auctionEsRepository;
 
 
-//    /**
-//     * 경매 생성
-//     */
-//    public AuctionResponseDto createAuction(List<MultipartFile> auctionFiles,
-//                                            Long userId, AuctionRequestDto dto) {
-//        User user = userRepository.findById(userId)
-//                .orElseThrow(() -> new UserNotFoundException(userId));
-//
-//        validateBidStep(dto.getStartPrice(), dto.getBidStep());
-//
-//        Auction auction = Auction.from(user, dto);
-//        auctionRepository.save(auction);
-//
-//        String prefix = s3UrlPrefixFactory.auctionPrefix(auction.getId());
-//
-//        String mainImageKey = null;
-//
-//        // 이미지 다중 저장
-//        for (MultipartFile multipartFile : auctionFiles) {
-//            String key = awsS3Util.uploadFile(multipartFile, prefix);
-//
-//            if (mainImageKey == null) {
-//                mainImageKey = key;
-//            }
-//
-//            AuctionImage auctionImage = AuctionImage.from(auction, key);
-//            auctionImageRepository.save(auctionImage);
-//        }
-//
-//        auction.updateMainImageKey(mainImageKey);
-//
-//        // Es 인덱스 생성
-//        AuctionDocument auctionDocument = AuctionDocument.from(auction, mainImageKey);
-//        auctionEsRepository.save(auctionDocument);
-//
-//        return AuctionResponseDto.from(auction);
-//    }
+    /**
+     * 경매 생성
+     */
+    public AuctionResponseDto createAuction(List<MultipartFile> auctionFiles,
+                                            Long userId, AuctionRequestDto dto) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+
+        validateBidStep(dto.getStartPrice(), dto.getBidStep());
+
+        Auction auction = Auction.from(user, dto);
+        auctionRepository.save(auction);
+
+        auctionImageService.uploadAuctionImagesAndSaveEntities(auction, auctionFiles, dto.getMainIndex());
+        auctionImageService.syncAuctionThumbnailFromMainOrThrow(auction);
+
+        // Es 인덱스 생성
+        AuctionDocument auctionDocument = AuctionDocument.from(auction, auction.getMainImagKey());
+        auctionEsRepository.save(auctionDocument);
+
+        return AuctionResponseDto.from(auction);
+    }
 
     /**
      * 경매 상세 조회
@@ -138,10 +123,7 @@ public class AuctionService {
 
         List<AuctionImage> auctionImages = auctionImageRepository.findImagesByAuctionId(auction.getId());
 
-        // S3에 있는 이미지 삭제
-        for (AuctionImage auctionImage : auctionImages) {
-            awsS3Util.deleteByKey(auctionImage.getS3Key());
-        }
+        auctionImageService.deleteProjectImages(auctionImages);
 
         User currentWinner = auction.getCurrentWinner();
 
