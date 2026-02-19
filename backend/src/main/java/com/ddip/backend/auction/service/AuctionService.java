@@ -183,7 +183,7 @@ public class AuctionService {
     /**
      * admin 강제 낙찰
      */
-    @DistributedLock(key = "auction:#{#auctionId}")
+    @DistributedLock(key = "'auction:' + #auctionId")
     public void forceEndAuction(Long auctionId) {
         Auction auction = auctionRepository.findById(auctionId)
                 .orElseThrow(() -> new AuctionNotFoundException(auctionId));
