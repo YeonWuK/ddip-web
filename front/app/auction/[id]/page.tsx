@@ -335,13 +335,39 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
     }
 
     const bidStep = auction.bidStep || 1000
-    if (bidAmount < auction.currentPrice + bidStep) {
-      toast.error(`최소 입찰 금액은 ${(auction.currentPrice + bidStep).toLocaleString()}원입니다`)
+    const minBid = auction.currentPrice + bidStep
+    // delta 0 방지: 입찰가는 반드시 현재가보다 높아야 함
+    if (bidAmount <= auction.currentPrice) {
+      toast.error(`입찰가는 현재가(${auction.currentPrice.toLocaleString()}원)보다 높아야 합니다`)
+      return
+    }
+    if (bidAmount < minBid) {
+      toast.error(`최소 입찰 금액은 ${minBid.toLocaleString()}원입니다 (현재가 + ${bidStep.toLocaleString()}원)`)
       return
     }
 
+    // 입찰 직전 최신 가격 확인 (다른 사용자 입찰로 인한 stale data 방지)
+    let auctionToValidate = auction
+    try {
+      const latestAuction = await auctionApi.getAuction(auctionId)
+      auctionToValidate = latestAuction
+      if (latestAuction.currentPrice !== auction.currentPrice) {
+        setAuction(latestAuction)
+        const newMinBid = latestAuction.currentPrice + (latestAuction.bidStep || 1000)
+        setBidAmount(newMinBid)
+        toast.error(`경매 가격이 변경되었습니다. 최소 입찰가가 ${newMinBid.toLocaleString()}원으로 업데이트되었습니다.`)
+        return
+      }
+      if (bidAmount <= latestAuction.currentPrice) {
+        toast.error(`입찰가는 현재가(${latestAuction.currentPrice.toLocaleString()}원)보다 높아야 합니다`)
+        return
+      }
+    } catch {
+      // 최신 확인 실패 시 기존 검증 유지
+    }
+
     // 백엔드 상태만 사용: RUNNING일 때만 입찰 가능 (ENDED는 서버가 내려줄 때만)
-    const canBid = auction.status === "RUNNING"
+    const canBid = auctionToValidate.status === "RUNNING"
     
     if (!canBid) {
       toast.error("진행 중인 경매에만 입찰할 수 있습니다")
