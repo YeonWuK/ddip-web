@@ -2,6 +2,7 @@ package com.ddip.backend.pledge.service;
 
 import com.ddip.backend.pledge.domain.Pledge;
 import com.ddip.backend.pledge.dto.PledgeCreateRequestDto;
+import com.ddip.backend.pledge.dto.PledgeCreateResponseDto;
 import com.ddip.backend.project.domain.Project;
 import com.ddip.backend.project.domain.RewardTier;
 import com.ddip.backend.project.dto.enums.ProjectStatus;
@@ -38,18 +39,20 @@ public class PledgeCreateService {
      * 실수로 단독 호출 방지 Propagation.MANDATORY
      */
     @Transactional(propagation = Propagation.MANDATORY)
-    public PledgeCreationResult createPledge(Long userId, Long projectId, PledgeCreateRequestDto requestDto) {
+    public PledgeCreateResponseDto createPledge(Long userId, Long projectId, PledgeCreateRequestDto requestDto) {
         User user = getUser(userId);
         Project project = getOpenProjectForUpdate(projectId);
 
         List<PledgeItemContext> contexts = buildPledgeContexts(requestDto, project);
+        // 가격 *  수량 토탈 Price
         long totalRequiredAmount = calculateTotalRequiredAmount(contexts);
+        // 유저 Point 검증
         user.assertEnoughPoint(totalRequiredAmount);
 
         String orderId = UUID.randomUUID().toString();
         List<Pledge> savedPledges = createAndPayPledges(user, project, contexts, orderId);
 
-        return new PledgeCreationResult(project.getId(), orderId, savedPledges);
+        return PledgeCreateResponseDto.of(projectId, orderId, savedPledges);
     }
 
     private List<Pledge> createAndPayPledges(User user, Project project, List<PledgeItemContext> contexts, String orderId) {
@@ -116,6 +119,5 @@ public class PledgeCreateService {
 
     private record PledgeItemContext(RewardTier rewardTier, int quantity, long requiredAmount) {}
 
-    public record PledgeCreationResult(Long projectId, String orderId, List<Pledge> pledges) {}
 }
 

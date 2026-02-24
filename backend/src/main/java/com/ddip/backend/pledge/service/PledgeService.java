@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -35,10 +36,10 @@ public class PledgeService {
      */
     @Transactional
     public PledgeCreateResponseDto createPledge(Long userId, Long projectId, PledgeCreateRequestDto requestDto) {
-        PledgeCreateService.PledgeCreationResult result = pledgeCreateService.createPledge(userId, projectId, requestDto);
+        PledgeCreateResponseDto responseDto = pledgeCreateService.createPledge(userId, projectId, requestDto);
 
-        publisher.publishEvent(new ProjectEsEvent(result.projectId()));
-        return PledgeCreateResponseDto.of(result.projectId(), result.orderId(), result.pledges());
+        publisher.publishEvent(new ProjectEsEvent(responseDto.getProjectId()));
+        return responseDto;
     }
 
     /**
@@ -46,11 +47,12 @@ public class PledgeService {
      */
     @Transactional
     public void cancelPledge(Long userId, Long pledgeId) {
-        Pledge pledge = pledgeRepository.findById(pledgeId).orElseThrow(() -> new PledgeNotFoundException(pledgeId));
+        Pledge pledge = pledgeRepository.findByIdForUpdate(pledgeId).orElseThrow(() -> new PledgeNotFoundException(pledgeId));
 
         Project project = projectRepository.findByIdForUpdate(pledge.getProjectId())
                         .orElseThrow(() -> new ProjectNotFoundException(pledge.getProjectId()));
 
+        project.assertCancelable();
         pledge.assertOwnedBy(userId);
         pledge.assertCancelable();
 
@@ -64,18 +66,15 @@ public class PledgeService {
      */
     @Transactional
     public void refundAllPaidPledges(Project project) {
-
+        project.assertBulkRefundable();
         List<Pledge> pledges = pledgeRepository.findByProjectIdAndStatus(project.getId(), PledgeStatus.PAID);
-
-        for (Pledge pledge : pledges) {
-            pledgePaymentService.cancelAndRefund(pledge, project);
-        }
+        pledgePaymentService.refundPaidPledges(pledges);
     }
 
     /**
      * Scheduler 사용
      */
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void refundAllPaidPledgesByProjectId(Long projectId) {
         Project project = projectRepository.findByIdForUpdate(projectId)
                 .orElseThrow(() -> new ProjectNotFoundException(projectId));
