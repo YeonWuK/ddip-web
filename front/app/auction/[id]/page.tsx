@@ -32,7 +32,7 @@ import { formatDateTimeInKorea } from "@/src/lib/date-utils"
 export default function AuctionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, refreshUser } = useAuth()
   const [auction, setAuction] = useState<AuctionResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -384,21 +384,25 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
       //   return
       // }
       
-      // Mock API 사용 (웹소켓 미사용 시)
+      // placeBid 응답에 최신 경매 정보 포함 (BidsResponseDto 기반, getAuction 1회 호출로 반환)
       const bidResponse = await auctionApi.placeBid(auctionId, { price: bidAmount })
-      const updatedAuction = bidResponse.auction
-      
-      // 입찰 후 경매 정보 새로고침
-      const auctionToUse = await auctionApi.getAuction(auctionId)
-      
+      const auctionToUse = bidResponse.auction
+
       setAuction(auctionToUse)
       const bidStep = auctionToUse.bidStep || 1000
       setBidAmount(auctionToUse.currentPrice + bidStep)
       
-      // 입찰 내역 새로고침
-      const bids = await auctionApi.getBidsByAuction(auctionId)
-      setBidHistory(bids)
-      
+      // 입찰 내역 새로고침 (백엔드에 GET /api/auction/{id}/bids 미구현 시 404 무시)
+      try {
+        const bids = await auctionApi.getBidsByAuction(auctionId)
+        setBidHistory(bids)
+      } catch {
+        // 입찰 내역 조회 실패 시 무시 (입찰 자체는 성공)
+      }
+
+      // 포인트 차감 반영 (네비게이션 point_balance 즉시 갱신)
+      refreshUser()
+
       if (auctionToUse.status === 'ENDED') {
         toast.success(`입찰이 완료되었습니다! 경매가 종료되었습니다. (최종가: ${auctionToUse.currentPrice.toLocaleString()}원)`)
       } else {

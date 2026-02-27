@@ -359,6 +359,7 @@ export const auctionApi = {
    * 경매 입찰
    * POST /api/bid/{auctionId}
    * Request: BidsRequestDto { price }
+   * Response: BidsResponseDto { id, user, auctionId, price }
    */
   placeBid: async (
     auctionId: number,
@@ -366,29 +367,22 @@ export const auctionApi = {
   ): Promise<BidResponse> => {
     try {
       const requestBody = { price: bidData.price };
-      console.log('[입찰 요청]', {
-        endpoint: `POST /api/bid/${auctionId}`,
-        auctionId,
-        requestDto: requestBody,
-        body: requestBody,
-      });
       const backendResponse = await apiRequest<any>(`/api/bid/${auctionId}`, {
         method: 'POST',
         body: JSON.stringify(requestBody),
       });
-      console.log('[입찰 응답]', { auctionId, response: backendResponse });
 
-      const bidId = backendResponse.bidId ?? backendResponse.id ?? 0;
-      const bidPrice = backendResponse.bidPrice ?? backendResponse.price ?? bidData.price;
-      const auction = backendResponse.auction
-        ? await auctionApi.getAuction(backendResponse.auction.id ?? backendResponse.auctionId ?? auctionId)
-        : await auctionApi.getAuction(backendResponse.auctionId ?? auctionId);
+      // BidsResponseDto: id, user, auctionId, price (auction 객체 없음 → getAuction으로 최신 경매 조회)
+      const bidId = backendResponse.id ?? backendResponse.bidId ?? 0;
+      const bidPrice = backendResponse.price ?? backendResponse.bidPrice ?? bidData.price;
+      const respAuctionId = backendResponse.auctionId ?? backendResponse.auction_id ?? auctionId;
+      const auction = await auctionApi.getAuction(respAuctionId);
 
       return {
         bidId,
         auction,
         bidPrice,
-        isHighestBidder: backendResponse.isHighestBidder ?? backendResponse.is_highest_bidder ?? false,
+        isHighestBidder: auction.currentPrice === bidPrice,
       };
     } catch (error) {
       throw error;
@@ -398,6 +392,7 @@ export const auctionApi = {
   /**
    * 특정 경매의 입찰 내역 조회
    * GET /api/auction/{auctionId}/bids
+   * Response: BidsResponseDto[] { id, user, auctionId, price }
    */
   getBidsByAuction: async (auctionId: number): Promise<BidSummary[]> => {
     try {
@@ -405,27 +400,31 @@ export const auctionApi = {
         method: 'GET',
       });
 
-      return backendResponse.map((bid: any) => ({
-        id: bid.id || 0,
-        bidder: bid.bidder ? {
-          id: bid.bidder.id || 0,
-          email: bid.bidder.email || null,
-          name: bid.bidder.name || bid.bidder.username || '',
-          nickname: bid.bidder.nickname || '',
-          profileImageUrl: bid.bidder.profileImageUrl || bid.bidder.profile_image_url || null,
-          phone: bid.bidder.phone || bid.bidder.phoneNumber || null,
-        } : {
-          id: 0,
-          email: null,
-          name: '',
-          nickname: '',
-          profileImageUrl: null,
-          phone: null,
-        },
-        bidderNickname: bid.bidderNickname || bid.bidder_nickname || bid.bidder?.nickname || '',
-        bidPrice: bid.bidPrice || bid.bid_price || 0,
-          bidAt: bid.bidAt || bid.bid_at || bid.createdAt || '',
-      }));
+      return backendResponse.map((bid: any) => {
+        // BidsResponseDto: user (UserResponseDto), price
+        const bidderData = bid.user ?? bid.bidder;
+        return {
+          id: bid.id ?? 0,
+          bidder: bidderData ? {
+            id: bidderData.id ?? 0,
+            email: bidderData.email ?? null,
+            name: bidderData.name ?? bidderData.username ?? '',
+            nickname: bidderData.nickname ?? '',
+            profileImageUrl: bidderData.profileImageUrl ?? bidderData.profile_image_url ?? null,
+            phone: bidderData.phone ?? bidderData.phoneNumber ?? null,
+          } : {
+            id: 0,
+            email: null,
+            name: '',
+            nickname: '',
+            profileImageUrl: null,
+            phone: null,
+          },
+          bidderNickname: bidderData?.nickname ?? bid.bidderNickname ?? bid.bidder_nickname ?? '',
+          bidPrice: bid.price ?? bid.bidPrice ?? bid.bid_price ?? 0,
+          bidAt: bid.createdAt ?? bid.created_at ?? bid.createdDate ?? bid.bidAt ?? bid.bid_at ?? '',
+        };
+      });
     } catch (error) {
       throw error;
     }

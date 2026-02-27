@@ -209,7 +209,7 @@ front/
 - **타입**: `src/types/api.ts`
   - `AuctionResponse`, `BidResponse`
 
-- **API**: `src/services/api.ts` (백엔드: `/api/auction`, `/api/auction/{id}/bids` 등)
+- **API**: `src/services/api.ts` (백엔드: `/api/auction`, `/api/bid/{auctionId}`, `/api/auction/{id}/bids` 등)
   - `auctionApi.getAuctions({ page, limit, status })`: 경매 목록 조회 (페이지네이션, 필터링)
   - `auctionApi.getAuction(id)`: 경매 상세 조회
   - `auctionApi.createAuction(files, data)`: 경매 생성 (multipart/form-data, S3 이미지)

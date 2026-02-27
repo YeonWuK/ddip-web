@@ -149,7 +149,7 @@
 - **기능**: 본인 경매만 삭제 가능
 
 ### 6. 입찰하기
-- **API**: `POST /api/auction/{auctionId}/bids`
+- **API**: `POST /api/bid/{auctionId}`
 - **기능**:
   - 입찰 가격 입력 (최소 100원)
   - 입찰 성공 시 경매 정보 업데이트
@@ -332,7 +332,7 @@ GET    /api/auction/{id}                - 경매 상세 조회
 POST   /api/auction                     - 경매 생성 (multipart/form-data: file, data JSON)
 PUT    /api/auction/{id}                - 경매 수정
 DELETE /api/auction/{id}                - 경매 삭제
-POST   /api/auction/{auctionId}/bids    - 입찰하기
+POST   /api/bid/{auctionId}             - 입찰하기
 GET    /api/auction/{auctionId}/bids   - 입찰 내역 조회
 GET    /api/auction/my-bids             - 내 입찰 내역 조회
 GET    /api/auction/search              - 경매 검색 (query, status, limit)
