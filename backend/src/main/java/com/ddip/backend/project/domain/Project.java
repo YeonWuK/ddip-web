@@ -146,6 +146,18 @@ public class Project extends BaseTimeEntity {
         }
     }
 
+    public void assertCancelable(){
+        if (this.status != ProjectStatus.OPEN && this.status != ProjectStatus.STOP) {
+            throw new InvalidProjectStatusException(this.status);
+        }
+    }
+
+    public void assertBulkRefundable() {
+        if (this.status != ProjectStatus.FAILED && this.status != ProjectStatus.CANCELED) {
+            throw new InvalidProjectStatusException(this.status);
+        }
+    }
+
     public void openFunding() {
         this.status = ProjectStatus.OPEN;
     }

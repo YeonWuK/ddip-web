@@ -33,6 +33,7 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
 
         Project result = queryFactory
                 .selectFrom(project)
+                .distinct()
                 .leftJoin(project.rewardTiers, rewardTier).fetchJoin()
                 .where(project.id.eq(projectId))
                 .fetchOne();
