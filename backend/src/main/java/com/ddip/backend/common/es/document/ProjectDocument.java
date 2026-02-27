@@ -16,7 +16,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Document(indexName = "project", createIndex = true)
+@Document(indexName = "auction", createIndex = true, writeTypeHint = WriteTypeHint.FALSE)
 @Setting(settingPath = "elasticsearch/tokenizer-setting.json")
 @Mapping(mappingPath = "elasticsearch/project-mapping.json")
 public class ProjectDocument {
