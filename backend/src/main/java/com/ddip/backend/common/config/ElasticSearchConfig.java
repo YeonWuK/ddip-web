@@ -2,11 +2,11 @@ package com.ddip.backend.common.config;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
-import co.elastic.clients.transport.ElasticsearchTransport;
 import co.elastic.clients.transport.rest_client.RestClientTransport;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.apache.http.HttpHost;
 import org.elasticsearch.client.RestClient;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,23 +23,34 @@ public class ElasticSearchConfig extends ElasticsearchConfiguration {
     @Value("${spring.elasticsearch.uris}")
     private String uri;
 
+    @Value("${es.port}")
+    private String port;
+
     @NotNull
     @Override
     public ClientConfiguration clientConfiguration() {
         return ClientConfiguration.builder()
-                .connectedTo(uri)
+                .connectedTo(port)
                 .build();
     }
 
     @Bean
-    public ElasticsearchClient elasticsearchClient(RestClient restClient) {
+    public JacksonJsonpMapper jacksonJsonpMapper() {
         ObjectMapper objectMapper =
                 new ObjectMapper()
                         .registerModule(new JavaTimeModule())
                         .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
-        ElasticsearchTransport transport =
-                new RestClientTransport(restClient, new JacksonJsonpMapper(objectMapper));
+        return new JacksonJsonpMapper(objectMapper);
+    }
+
+    @Bean
+    public ElasticsearchClient elasticsearchClient(JacksonJsonpMapper jacksonJsonpMapper) {
+
+        RestClient restClient = RestClient.builder(HttpHost.create(uri)).build();
+
+        RestClientTransport transport = new RestClientTransport(restClient, jacksonJsonpMapper);
+
         return new ElasticsearchClient(transport);
     }
 }
