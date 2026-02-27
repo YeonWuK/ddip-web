@@ -7,7 +7,6 @@ import {
   UserResponse,
   UserPageResponse,
   UserProfileResponse,
-  AuctionResponse,
   LoginRequest,
   RegisterRequest,
   AuthResponse,
@@ -20,7 +19,6 @@ import {
 import { tokenStorage } from '@/src/lib/auth';
 import { apiRequest, API_BASE_URL } from '@/src/services/apiClient';
 import { toS3ImageUrl } from '@/src/services/utils/imageUtils';
-import { auctionApi } from '@/src/services/auctionService';
 
 /** DB role (ADMIN | USER) 정규화 - 백엔드 role 또는 구 role_level 지원 */
 function normalizeUserRole(val: unknown): 'ADMIN' | 'USER' | undefined {
@@ -81,54 +79,57 @@ export const userApi = {
             summary: auction.summary ?? null,
           };
         }),
-        // 백엔드 UserPageResponseDto.bids = BidsSummaryDto[] (id, user, auctionId, price, auctionSummary)
-        myBids: await Promise.all((backendResponse.bids || []).map(async (bid: any) => {
-          const summary = bid.auctionSummary || bid.auction || {};
-          let auction: AuctionResponse;
-          try {
-            auction = await auctionApi.getAuction(bid.auctionId ?? bid.auction_id ?? 0);
-          } catch {
-            auction = {
-              id: bid.auctionId ?? bid.auction_id ?? 0,
-              seller: { id: 0, email: null, name: '', nickname: '', profileImageUrl: null, phone: null },
-              title: summary.title ?? '',
-              description: summary.description ?? '',
-              thumbnailImageUrl: summary.mainImageKey ? toS3ImageUrl(summary.mainImageKey) : null,
-              imageUrl: summary.mainImageKey ? toS3ImageUrl(summary.mainImageKey) : null,
-              startPrice: summary.startPrice ?? 0,
-              currentPrice: summary.currentPrice ?? 0,
-              bidStep: summary.bidStep ?? 0,
-              buyoutPrice: null,
-              status: summary.auctionStatus ?? 'SCHEDULED',
-              startAt: summary.startAt ?? '',
-              endAt: summary.endAt ?? '',
-              winner: null,
-            };
-          }
-          return {
-            bidId: bid.id ?? bid.bidId ?? bid.bid_id ?? 0,
-            auction,
-            bidPrice: bid.price ?? bid.bidPrice ?? bid.bid_price ?? 0,
-            isHighestBidder: false, // BidsSummaryDto에 없음, myMyBids에서 확인
-          };
-        })),
-        // 백엔드 UserPageResponseDto.myBids = MyBidsSummaryDto[] (auctionSummary 포함)
+        // #7: myBids(BidResponse[]) - 프로필에서 미사용. 입찰 내역은 myMyBids 사용.
+        // bids 매핑 시 getAuction N회 호출 발생 → 성능 위해 빈 배열 반환
+        myBids: [],
+        // 백엔드 UserPageResponseDto.myBids = MyBidsSummaryDto[] (auctionSummary = AuctionSummaryDto)
+        // #5: AuctionSummaryDto snake_case/camelCase 모두 지원
         myMyBids: (backendResponse.myBids || backendResponse.myMyBids || []).map((myBid: any) => {
           const summary = myBid.auctionSummary || {};
-          const thumbRaw = summary.mainImageKey ?? summary.main_image_key ?? summary.thumbnailUrl ?? summary.thumbnail_url;
+          const thumbRaw =
+            summary.mainImageKey ??
+            summary.main_image_key ??
+            summary.thumbnailImageUrl ??
+            summary.thumbnail_image_url ??
+            summary.thumbnailUrl ??
+            summary.thumbnail_url;
           const auctionThumbnailUrl = thumbRaw ? (toS3ImageUrl(thumbRaw) ?? thumbRaw) : null;
           const myStatus = myBid.myAuctionStatus ?? myBid.my_auction_status ?? 'OUTBID';
           return {
-            auctionId: myBid.auctionId ?? myBid.auction_id ?? 0,
-            auctionTitle: summary.title ?? myBid.auctionTitle ?? myBid.auction_title ?? '',
+            auctionId: myBid.auctionId ?? myBid.auction_id ?? summary.auctionId ?? summary.auction_id ?? 0,
+            auctionTitle:
+              summary.title ??
+              summary.auctionTitle ??
+              summary.auction_title ??
+              myBid.auctionTitle ??
+              myBid.auction_title ??
+              '',
             auctionThumbnailUrl,
-            auctionStatus: summary.auctionStatus ?? summary.auction_status ?? myBid.auctionStatus ?? 'SCHEDULED',
+            auctionStatus:
+              summary.auctionStatus ??
+              summary.auction_status ??
+              summary.status ??
+              myBid.auctionStatus ??
+              myBid.auction_status ??
+              'SCHEDULED',
             myAuctionStatus: myStatus,
             lastBidPrice: myBid.lastBidPrice ?? myBid.last_bid_price ?? 0,
-            currentPrice: summary.currentPrice ?? summary.current_price ?? myBid.currentPrice ?? 0,
+            currentPrice:
+              summary.currentPrice ??
+              summary.current_price ??
+              myBid.currentPrice ??
+              myBid.current_price ??
+              0,
             isHighestBidder: myStatus === 'HIGHEST_BIDDER',
             lastBidAt: myBid.lastBidAt ?? myBid.last_bid_at ?? '',
-            auctionEndAt: summary.endAt ?? summary.end_at ?? myBid.auctionEndAt ?? myBid.auction_end_at ?? '',
+            auctionEndAt:
+              summary.endAt ??
+              summary.end_at ??
+              summary.auctionEndAt ??
+              summary.auction_end_at ??
+              myBid.auctionEndAt ??
+              myBid.auction_end_at ??
+              '',
             isPaid: myBid.isPaid ?? myBid.is_paid ?? false,
           };
         }),

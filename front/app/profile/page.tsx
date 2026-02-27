@@ -76,13 +76,8 @@ function ProfileTabs({ defaultTab }: { defaultTab: string }) {
       const supports = await projectApi.getMySupports(userId)
       setMySupports(supports)
       
-      // 입찰 내역: GET /api/auction/my-bids 우선, 실패 시 my-page의 myMyBids 사용
-      try {
-        const bidsFromApi = await auctionApi.getMyBids()
-        setMyBids(bidsFromApi)
-      } catch {
-        setMyBids(myPageData.myMyBids)
-      }
+      // 입찰 내역: my-page의 myMyBids 사용 (UserPageResponseDto.myBids → MyBidsSummary 매핑 완료)
+      setMyBids(myPageData.myMyBids)
       
       // 찜한 항목 로드
       const wishlist = getWishlist()

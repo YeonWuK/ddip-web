@@ -304,8 +304,8 @@ export interface MyBidsSummary {
 export interface UserPageResponse {
   user: UserResponse;
   auctions: AuctionSummary[]; // 내가 생성한 경매 목록
-  myBids: BidResponse[]; // 내 입찰 응답 목록 (BidsResponseDto)
-  myMyBids: MyBidsSummary[]; // 내 입찰 현황 목록 (MyBidsSummaryDto)
+  myBids: BidResponse[]; // 백엔드 bids → 미사용(프로필은 myMyBids 사용)
+  myMyBids: MyBidsSummary[]; // 내 입찰 현황 (백엔드 myBids → 입찰 내역 탭)
 }
 
 // 프로필 상세 응답 타입 (다른 사용자 프로필 보기용)
