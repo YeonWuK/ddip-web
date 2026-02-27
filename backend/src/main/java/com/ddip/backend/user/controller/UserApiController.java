@@ -1,6 +1,7 @@
 package com.ddip.backend.user.controller;
 
 import com.ddip.backend.user.dto.user.*;
+import com.ddip.backend.common.exception.ErrorResponse;
 import com.ddip.backend.common.security.auth.CustomUserDetails;
 import com.ddip.backend.common.security.auth.JwtUtils;
 import com.ddip.backend.common.service.SmsService;
@@ -8,6 +9,8 @@ import com.ddip.backend.common.security.service.TokenBlackListService;
 import com.ddip.backend.user.service.UserService;
 import com.ddip.backend.common.validation.CustomValidators;
 import com.ddip.backend.common.validation.ValidationSequence;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -44,8 +47,16 @@ public class UserApiController {
     @PostMapping("/register")
     @Operation(summary = "회원가입", description = "신규 사용자를 등록합니다.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "회원가입 성공"),
-            @ApiResponse(responseCode = "400", description = "요청 값 오류")
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "회원가입 성공",
+                    content = @Content(schema = @Schema(implementation = UserResponseDto.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "요청 값 오류",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+            )
     })
     public ResponseEntity<?> registerUser(@Validated(ValidationSequence.class) @RequestBody UserRequestDto dto,
                                           BindingResult bindingResult) {
@@ -124,8 +135,16 @@ public class UserApiController {
     @GetMapping("/profile")
     @Operation(summary = "프로필 조회", description = "내 프로필 정보를 조회합니다.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "조회 성공"),
-            @ApiResponse(responseCode = "401", description = "인증 필요")
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "조회 성공",
+                    content = @Content(schema = @Schema(implementation = UserResponseDto.class))
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "인증 필요",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+            )
     })
     public ResponseEntity<?> getProfile(@AuthenticationPrincipal CustomUserDetails customUserDetails) {
 
@@ -140,8 +159,16 @@ public class UserApiController {
     @GetMapping("/my-page")
     @Operation(summary = "마이페이지 조회", description = "내 마이페이지 정보를 조회합니다.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "조회 성공"),
-            @ApiResponse(responseCode = "401", description = "인증 필요")
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "조회 성공",
+                    content = @Content(schema = @Schema(implementation = UserPageResponseDto.class))
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "인증 필요",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+            )
     })
     public ResponseEntity<?> getMyPage(@AuthenticationPrincipal CustomUserDetails customUserDetails) {
 
@@ -181,7 +208,11 @@ public class UserApiController {
     @PostMapping("/logout")
     @Operation(summary = "로그아웃", description = "액세스 토큰을 블랙리스트 처리하고 로그아웃합니다.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "로그아웃 성공")
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "로그아웃 성공",
+                    content = @Content(schema = @Schema(implementation = String.class))
+            )
     })
     public ResponseEntity<?> logout(HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");
