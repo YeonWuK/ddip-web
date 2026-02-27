@@ -79,7 +79,6 @@ public class Pledge extends BaseTimeEntity {
         }
     }
 
-
     public void confirmedFunding(){
         this.status = PledgeStatus.CONFIRMED;
     }
