@@ -176,7 +176,7 @@ export default function AuctionsPage() {
       image: auction.imageUrl || "/placeholder.svg",
       category: "경매",
       currentBid: auction.currentPrice,
-      bidCount: 0,
+      bidCount: auction.bidCount ?? 0,
       timeLeft,
       isLive: auction.status === "RUNNING",
     }

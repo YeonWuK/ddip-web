@@ -76,8 +76,13 @@ function ProfileTabs({ defaultTab }: { defaultTab: string }) {
       const supports = await projectApi.getMySupports(userId)
       setMySupports(supports)
       
-      // 입찰 내역은 myMyBids 사용
-      setMyBids(myPageData.myMyBids)
+      // 입찰 내역: GET /api/auction/my-bids 우선, 실패 시 my-page의 myMyBids 사용
+      try {
+        const bidsFromApi = await auctionApi.getMyBids()
+        setMyBids(bidsFromApi)
+      } catch {
+        setMyBids(myPageData.myMyBids)
+      }
       
       // 찜한 항목 로드
       const wishlist = getWishlist()
@@ -650,34 +655,68 @@ function ProfileTabs({ defaultTab }: { defaultTab: string }) {
                   <EmptyState
                     icon={Gavel}
                     title="입찰 내역이 없습니다"
+                    description="경매에 입찰한 내역이 여기에 표시됩니다"
                   />
                 ) : (
                   myBids.map((bid) => (
                     <Card key={bid.auctionId}>
                       <CardContent className="pt-6">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h3 className="font-semibold mb-1">{bid.auctionTitle}</h3>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                              <Calendar className="size-4" />
-                              <span>
-                                {new Date(bid.lastBidAt).toLocaleDateString("ko-KR", {
-                                  year: "numeric",
-                                  month: "long",
-                                  day: "numeric",
-                                })}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-lg font-semibold text-primary">
-                              {bid.lastBidPrice.toLocaleString()}원
-                            </p>
-                            <Link href={`/auction/${bid.auctionId}`}>
-                              <Button variant="link" size="sm" className="mt-2">
-                                경매 보기
-                              </Button>
+                        <div className="flex gap-4">
+                          {bid.auctionThumbnailUrl && (
+                            <Link href={`/auction/${bid.auctionId}`} className="shrink-0">
+                              <div className="relative size-20 rounded-lg overflow-hidden bg-muted">
+                                <Image
+                                  src={bid.auctionThumbnailUrl}
+                                  alt={bid.auctionTitle}
+                                  fill
+                                  className="object-cover"
+                                  sizes="80px"
+                                />
+                              </div>
                             </Link>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <h3 className="font-semibold mb-1">{bid.auctionTitle}</h3>
+                                <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                                  <span className="flex items-center gap-1">
+                                    <Calendar className="size-4" />
+                                    {bid.lastBidAt
+                                      ? new Date(bid.lastBidAt).toLocaleDateString("ko-KR", {
+                                          year: "numeric",
+                                          month: "short",
+                                          day: "numeric",
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                        })
+                                      : "-"}
+                                  </span>
+                                  {bid.isHighestBidder && (
+                                    <Badge variant="default" className="text-xs">최고 입찰자</Badge>
+                                  )}
+                                  {bid.auctionStatus === "ENDED" && (
+                                    <Badge variant="secondary">종료</Badge>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <p className="text-sm text-muted-foreground">내 입찰가</p>
+                                <p className="text-lg font-semibold text-primary">
+                                  {bid.lastBidPrice.toLocaleString()}원
+                                </p>
+                                {bid.currentPrice > bid.lastBidPrice && (
+                                  <p className="text-xs text-destructive mt-0.5">
+                                    현재가 {bid.currentPrice.toLocaleString()}원
+                                  </p>
+                                )}
+                                <Link href={`/auction/${bid.auctionId}`}>
+                                  <Button variant="link" size="sm" className="mt-2 px-0">
+                                    경매 보기
+                                  </Button>
+                                </Link>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </CardContent>

@@ -81,49 +81,57 @@ export const userApi = {
             summary: auction.summary ?? null,
           };
         }),
-        myBids: await Promise.all((backendResponse.myBids || []).map(async (bid: any) => {
+        // 백엔드 UserPageResponseDto.bids = BidsSummaryDto[] (id, user, auctionId, price, auctionSummary)
+        myBids: await Promise.all((backendResponse.bids || []).map(async (bid: any) => {
+          const summary = bid.auctionSummary || bid.auction || {};
           let auction: AuctionResponse;
-          if (bid.auction) {
-            auction = await auctionApi.getAuction(bid.auction.id || bid.auctionId || bid.auction_id);
-          } else {
-            // auction 정보가 없으면 빈 경매 객체 반환
+          try {
+            auction = await auctionApi.getAuction(bid.auctionId ?? bid.auction_id ?? 0);
+          } catch {
             auction = {
-              id: bid.auctionId || bid.auction_id || 0,
+              id: bid.auctionId ?? bid.auction_id ?? 0,
               seller: { id: 0, email: null, name: '', nickname: '', profileImageUrl: null, phone: null },
-              title: '',
-              description: '',
-              thumbnailImageUrl: null,
-              imageUrl: null,
-              startPrice: 0,
-              currentPrice: 0,
-              bidStep: 0,
+              title: summary.title ?? '',
+              description: summary.description ?? '',
+              thumbnailImageUrl: summary.mainImageKey ? toS3ImageUrl(summary.mainImageKey) : null,
+              imageUrl: summary.mainImageKey ? toS3ImageUrl(summary.mainImageKey) : null,
+              startPrice: summary.startPrice ?? 0,
+              currentPrice: summary.currentPrice ?? 0,
+              bidStep: summary.bidStep ?? 0,
               buyoutPrice: null,
-              status: 'SCHEDULED',
-              startAt: '',
-              endAt: '',
+              status: summary.auctionStatus ?? 'SCHEDULED',
+              startAt: summary.startAt ?? '',
+              endAt: summary.endAt ?? '',
               winner: null,
             };
           }
           return {
-            bidId: bid.bidId || bid.bid_id || 0,
+            bidId: bid.id ?? bid.bidId ?? bid.bid_id ?? 0,
             auction,
-            bidPrice: bid.bidPrice || bid.bid_price || 0,
-            isHighestBidder: bid.isHighestBidder !== undefined ? bid.isHighestBidder : (bid.is_highest_bidder !== undefined ? bid.is_highest_bidder : false),
+            bidPrice: bid.price ?? bid.bidPrice ?? bid.bid_price ?? 0,
+            isHighestBidder: false, // BidsSummaryDto에 없음, myMyBids에서 확인
           };
         })),
-        myMyBids: (backendResponse.myMyBids || []).map((myBid: any) => ({
-          auctionId: myBid.auctionId || myBid.auction_id || 0,
-          auctionTitle: myBid.auctionTitle || myBid.auction_title || '',
-          auctionThumbnailUrl: myBid.auctionThumbnailUrl || myBid.auction_thumbnail_url || null,
-          auctionStatus: myBid.auctionStatus || myBid.auction_status || 'SCHEDULED',
-          myAuctionStatus: myBid.myAuctionStatus || myBid.my_auction_status || 'OUTBID',
-          lastBidPrice: myBid.lastBidPrice || myBid.last_bid_price || 0,
-          currentPrice: myBid.currentPrice || myBid.current_price || 0,
-          isHighestBidder: myBid.isHighestBidder !== undefined ? myBid.isHighestBidder : (myBid.is_highest_bidder !== undefined ? myBid.is_highest_bidder : false),
-          lastBidAt: myBid.lastBidAt || myBid.last_bid_at || '',
-          auctionEndAt: myBid.auctionEndAt || myBid.auction_end_at || '',
-          isPaid: myBid.isPaid !== undefined ? myBid.isPaid : (myBid.is_paid !== undefined ? myBid.is_paid : false),
-        })),
+        // 백엔드 UserPageResponseDto.myBids = MyBidsSummaryDto[] (auctionSummary 포함)
+        myMyBids: (backendResponse.myBids || backendResponse.myMyBids || []).map((myBid: any) => {
+          const summary = myBid.auctionSummary || {};
+          const thumbRaw = summary.mainImageKey ?? summary.main_image_key ?? summary.thumbnailUrl ?? summary.thumbnail_url;
+          const auctionThumbnailUrl = thumbRaw ? (toS3ImageUrl(thumbRaw) ?? thumbRaw) : null;
+          const myStatus = myBid.myAuctionStatus ?? myBid.my_auction_status ?? 'OUTBID';
+          return {
+            auctionId: myBid.auctionId ?? myBid.auction_id ?? 0,
+            auctionTitle: summary.title ?? myBid.auctionTitle ?? myBid.auction_title ?? '',
+            auctionThumbnailUrl,
+            auctionStatus: summary.auctionStatus ?? summary.auction_status ?? myBid.auctionStatus ?? 'SCHEDULED',
+            myAuctionStatus: myStatus,
+            lastBidPrice: myBid.lastBidPrice ?? myBid.last_bid_price ?? 0,
+            currentPrice: summary.currentPrice ?? summary.current_price ?? myBid.currentPrice ?? 0,
+            isHighestBidder: myStatus === 'HIGHEST_BIDDER',
+            lastBidAt: myBid.lastBidAt ?? myBid.last_bid_at ?? '',
+            auctionEndAt: summary.endAt ?? summary.end_at ?? myBid.auctionEndAt ?? myBid.auction_end_at ?? '',
+            isPaid: myBid.isPaid ?? myBid.is_paid ?? false,
+          };
+        }),
       };
     } catch (error) {
       throw error;

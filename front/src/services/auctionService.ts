@@ -440,10 +440,13 @@ export const auctionApi = {
         method: 'GET',
       });
 
-      return backendResponse.map((myBid: any) => ({
+      return backendResponse.map((myBid: any) => {
+        const thumbRaw = myBid.auctionThumbnailUrl || myBid.auction_thumbnail_url || myBid.mainImageKey || myBid.main_image_key;
+        const auctionThumbnailUrl = thumbRaw ? (toS3ImageUrl(thumbRaw) ?? thumbRaw) : null;
+        return {
         auctionId: myBid.auctionId || myBid.auction_id || 0,
         auctionTitle: myBid.auctionTitle || myBid.auction_title || '',
-        auctionThumbnailUrl: myBid.auctionThumbnailUrl || myBid.auction_thumbnail_url || null,
+        auctionThumbnailUrl,
         auctionStatus: myBid.auctionStatus || myBid.auction_status || 'SCHEDULED',
         myAuctionStatus: myBid.myAuctionStatus || myBid.my_auction_status || 'OUTBID',
         lastBidPrice: myBid.lastBidPrice || myBid.last_bid_price || 0,
@@ -452,7 +455,8 @@ export const auctionApi = {
         lastBidAt: myBid.lastBidAt || myBid.last_bid_at || '',
         auctionEndAt: myBid.auctionEndAt || myBid.auction_end_at || '',
         isPaid: myBid.isPaid !== undefined ? myBid.isPaid : (myBid.is_paid !== undefined ? myBid.is_paid : false),
-      }));
+      };
+      });
     } catch (error) {
       throw error;
     }
