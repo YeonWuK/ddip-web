@@ -13,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/bid")
@@ -38,5 +40,13 @@ public class BiddingController {
         BidsResponseDto bidsResponseDto = bidsService.createBid(customUserDetails.getUserId(), auctionId, dto);
 
         return ResponseEntity.ok(bidsResponseDto);
+    }
+
+    @GetMapping("/{auctionId}")
+    public ResponseEntity<?> getBidding(@PathVariable Long auctionId) {
+
+        List<BidsResponseDto> bids = bidsService.getAllBids(auctionId);
+
+        return ResponseEntity.ok(bids);
     }
 }

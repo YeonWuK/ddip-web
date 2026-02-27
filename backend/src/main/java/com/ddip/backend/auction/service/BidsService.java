@@ -29,6 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.aspectj.runtime.internal.Conversions.intValue;
 
@@ -76,7 +77,7 @@ public class BidsService {
 
         // 해당 유저의 MyBids 가 없으면 생성, 있으면 갱신
         MyBids myBids = myBidsRepository.findByUserIdAndAuctionId(userId, auctionId)
-                        .orElseGet(() -> MyBids.from(createMyBidsDto));
+                .orElseGet(() -> myBidsRepository.save(MyBids.from(createMyBidsDto)));
 
         User currentWinner = auction.getCurrentWinner();
 
@@ -128,6 +129,12 @@ public class BidsService {
         publisher.publishEvent(new AuctionEsEvent(auction.getId()));
 
         return BidsResponseDto.from(saved);
+    }
+
+    public List<BidsResponseDto> getAllBids(Long auctionId) {
+        return bidsRepository.findByAuctionId(auctionId).stream()
+                .map(BidsResponseDto::from)
+                .collect(Collectors.toList());
     }
 
     public List<Bids> getBidsByUser(Long userId) {
