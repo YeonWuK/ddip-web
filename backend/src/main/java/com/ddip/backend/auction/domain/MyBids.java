@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "my_auction")
+@Table(name = "my_bids")
 public class MyBids extends BaseTimeEntity {
 
     @Id
