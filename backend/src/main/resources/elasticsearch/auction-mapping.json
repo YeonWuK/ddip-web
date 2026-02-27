@@ -21,7 +21,7 @@
       "type": "text"
     },
     "seller": {
-      "type": "text"
+      "type": "keyword"
     },
     "startPrice": {
       "type": "long"
@@ -30,15 +30,15 @@
       "type": "long"
     },
     "status": {
-      "type": "text"
+      "type": "keyword"
     },
     "startAt": {
       "type": "date",
-      "format": "yyyy-MM-dd'T'HH:mm:ss.SSS||epoch_millis"
+      "format": "strict_date_optional_time||epoch_millis"
     },
     "endAt": {
       "type": "date",
-      "format": "yyyy-MM-dd'T'HH:mm:ss.SSS||epoch_millis"
+      "format": "strict_date_optional_time||epoch_millis"
     }
   }
 }

@@ -27,11 +27,11 @@
     },
     "startAt": {
       "type": "date",
-      "format": "yyyy-MM-dd||epoch_millis"
+      "format": "strict_date_optional_time||epoch_millis"
     },
     "endAt": {
       "type": "date",
-      "format": "yyyy-MM-dd||epoch_millis"
+      "format": "strict_date_optional_time||epoch_millis"
     }
   }
 }
