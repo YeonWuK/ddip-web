@@ -15,7 +15,7 @@ public class ProjectSchedulerService {
 
     private final ProjectCloseBatchService projectCloseBatchService;
 
-    @Scheduled(cron = "59 59 23 * * *", zone = "Asia/Seoul")
+    @Scheduled(cron = "0 * * * * *", zone = "Asia/Seoul")
     public void closeExpireProjects() {
         log.info("Cleaning up expired projects");
         LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
