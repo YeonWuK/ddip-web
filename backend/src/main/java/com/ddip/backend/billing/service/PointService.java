@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -62,7 +63,7 @@ public class PointService {
 
         long after = user.getPointBalance();
 
-        String referenceKey = buildReferenceKey(source, type, referenceId);
+        String referenceKey = buildNonIdempotentReferenceKey(source, type, referenceId, user.getId());
 
         PointLedger ledger = PointLedger.toEntity(user, delta, after, type, source, referenceKey, referenceId, description);
 
@@ -131,8 +132,8 @@ public class PointService {
         return pointLedgerRepository.findByUserOrderByIdDesc(user, pageable);
     }
 
-    private String buildReferenceKey(PointLedgerSource source, PointLedgerType type, Long referenceId) {
-        return source + ":" + type + ":" + referenceId;
+    private String buildNonIdempotentReferenceKey(PointLedgerSource source, PointLedgerType type, Long referenceId, Long userId) {
+        return source + ":" + type + ":" + referenceId + ":" + userId + ":" + UUID.randomUUID();
     }
 
     private String buildPledgeRefundKey(Long pledgeId) {
