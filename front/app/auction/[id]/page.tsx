@@ -392,7 +392,7 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
       const bidStep = auctionToUse.bidStep || 1000
       setBidAmount(auctionToUse.currentPrice + bidStep)
       
-      // 입찰 내역 새로고침 (백엔드에 GET /api/auction/{id}/bids 미구현 시 404 무시)
+      // 입찰 내역 새로고침 (GET /api/bid/{auctionId})
       try {
         const bids = await auctionApi.getBidsByAuction(auctionId)
         setBidHistory(bids)

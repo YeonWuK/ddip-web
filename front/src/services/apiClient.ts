@@ -58,7 +58,9 @@ export async function apiRequest<T>(
     }
 
     // 4xx 에러 시 상세 로그 (디버깅용)
-    if (response.status >= 400 && response.status < 500) {
+    // OAuth 로그인 직후 프로필 미완성 시 403은 정상 흐름이므로 로그 생략
+    const isExpectedOAuthFlow = response.status === 403 && endpoint.startsWith('/api/users/profile');
+    if (response.status >= 400 && response.status < 500 && !isExpectedOAuthFlow) {
       console.error(`[apiClient] ${response.status} ${endpoint}:`, errorJson ?? errorText);
     }
 

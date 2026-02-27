@@ -391,12 +391,12 @@ export const auctionApi = {
 
   /**
    * 특정 경매의 입찰 내역 조회
-   * GET /api/auction/{auctionId}/bids
+   * GET /api/bid/{auctionId}
    * Response: BidsResponseDto[] { id, user, auctionId, price }
    */
   getBidsByAuction: async (auctionId: number): Promise<BidSummary[]> => {
     try {
-      const backendResponse = await apiRequest<any[]>(`/api/auction/${auctionId}/bids`, {
+      const backendResponse = await apiRequest<any[]>(`/api/bid/${auctionId}`, {
         method: 'GET',
       });
 

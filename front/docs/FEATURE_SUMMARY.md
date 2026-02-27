@@ -333,7 +333,7 @@ POST   /api/auction                     - 경매 생성 (multipart/form-data: fi
 PUT    /api/auction/{id}                - 경매 수정
 DELETE /api/auction/{id}                - 경매 삭제
 POST   /api/bid/{auctionId}             - 입찰하기
-GET    /api/auction/{auctionId}/bids   - 입찰 내역 조회
+GET    /api/bid/{auctionId}            - 입찰 내역 조회
 GET    /api/auction/my-bids             - 내 입찰 내역 조회
 GET    /api/auction/search              - 경매 검색 (query, status, limit)
 ```
