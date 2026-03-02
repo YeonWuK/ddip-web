@@ -39,14 +39,4 @@ public class ElasticSearchConfig extends ElasticsearchConfiguration {
 
         return new JacksonJsonpMapper(objectMapper);
     }
-
-    @Bean
-    public ElasticsearchClient elasticsearchClient(JacksonJsonpMapper jacksonJsonpMapper) {
-
-        RestClient restClient = RestClient.builder(uri).build();
-
-        RestClientTransport transport = new RestClientTransport(restClient, jacksonJsonpMapper);
-
-        return new ElasticsearchClient(transport);
-    }
 }
