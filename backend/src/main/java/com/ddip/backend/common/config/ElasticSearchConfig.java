@@ -1,6 +1,7 @@
 package com.ddip.backend.common.config;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.json.JsonpMapper;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import co.elastic.clients.transport.ElasticsearchTransport;
 import co.elastic.clients.transport.rest_client.RestClientTransport;
@@ -32,15 +33,14 @@ public class ElasticSearchConfig extends ElasticsearchConfiguration {
                 .build();
     }
 
-    @Bean
-    public ElasticsearchClient elasticsearchClient(RestClient restClient) {
-        ObjectMapper objectMapper =
-                new ObjectMapper()
-                        .registerModule(new JavaTimeModule())
-                        .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    @NotNull
+    @Override
+    public JsonpMapper jsonpMapper() {
+        ObjectMapper objectMapper = new ObjectMapper()
+                .registerModule(new JavaTimeModule())
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
-        ElasticsearchTransport transport = new RestClientTransport(restClient, new JacksonJsonpMapper(objectMapper));
+        return new JacksonJsonpMapper(objectMapper);
 
-        return new ElasticsearchClient(transport);
     }
 }
