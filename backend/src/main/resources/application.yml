@@ -76,8 +76,8 @@ spring:
         enabled: true
 
   elasticsearch:
-    uris: ${ES_URIS}
-    username: ${ES_USERNAME}
+    uris: ${SPRING_ELASTICSEARCH_URIS}
+    username: ${SPRING_ELASTICSEARCH_USERNAME}
 
   cloud:
     aws:
