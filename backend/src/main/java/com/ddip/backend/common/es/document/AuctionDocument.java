@@ -31,7 +31,7 @@ public class AuctionDocument {
     @Field(type = FieldType.Text)
     private String description;
 
-    @Field(type = FieldType.Text)
+    @Field(type = FieldType.Keyword)
     private String seller;
 
     @Field(type = FieldType.Long)
@@ -40,7 +40,7 @@ public class AuctionDocument {
     @Field(type = FieldType.Long)
     private Long currentPrice;
 
-    @Field(type = FieldType.Text)
+    @Field(type = FieldType.Keyword)
     private String status;
 
     @Field(type = FieldType.Date, format = {DateFormat.date_hour_minute_second_millis, DateFormat.epoch_millis})
