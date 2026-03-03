@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -28,6 +29,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/users")
@@ -259,6 +261,8 @@ public class UserApiController {
 
         String email = jwtUtils.extractUserEmail(refreshToken);
         String newAccessToken = jwtUtils.generateToken(email);
+
+        log.info("Successfully generated new AccessToken {}", newAccessToken);
 
         return ResponseEntity.ok("{\"newAccessToken\": \"" + newAccessToken + "\"}");
     }
