@@ -23,6 +23,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
 
+  // 세션 만료 이벤트 (액세스 토큰 만료 + refresh 실패 시 apiClient에서 발생)
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      tokenStorage.clearAll()
+      setIsAuthenticated(false)
+      setUser(null)
+    }
+    window.addEventListener('auth:sessionExpired', handleSessionExpired)
+    return () => window.removeEventListener('auth:sessionExpired', handleSessionExpired)
+  }, [])
+
   // 초기 로드 시 저장된 사용자 정보 확인
   useEffect(() => {
     const initAuth = async () => {

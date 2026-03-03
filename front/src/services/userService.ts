@@ -476,9 +476,12 @@ export const authApi = {
         throw new Error(errorMessage);
       }
 
-      // 응답에서 새로운 액세스 토큰 추출
+      // 응답에서 새로운 액세스 토큰 추출 (백엔드: newAccessToken 또는 access_token/accessToken)
       const responseData = await response.json();
-      const newAccessToken = responseData.access_token || responseData.accessToken;
+      const newAccessToken =
+        responseData.newAccessToken ||
+        responseData.access_token ||
+        responseData.accessToken;
       
       if (!newAccessToken) {
         throw new Error('토큰 갱신 응답에 액세스 토큰이 없습니다');
