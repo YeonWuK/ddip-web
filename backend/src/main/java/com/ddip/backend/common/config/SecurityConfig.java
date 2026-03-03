@@ -1,6 +1,7 @@
 package com.ddip.backend.common.config;
 
 import com.ddip.backend.common.handler.OAuth2SuccessHandler;
+import com.ddip.backend.common.security.auth.CustomUserDetailsService;
 import com.ddip.backend.common.security.utils.CustomAccessDeniedHandler;
 import com.ddip.backend.common.security.utils.CustomAuthenticationEntryPoint;
 import com.ddip.backend.common.security.auth.JwtAuthenticationFilter;
@@ -18,7 +19,6 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfiguration;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -37,12 +37,12 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtUtils jwtUtils;
-    private final JwtTokenFilter jwtTokenFilter;
     private final CustomAuthenticationEntryPoint entryPoint;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
     private final TokenBlackListService tokenBlackListService;
     private final CustomAccessDeniedHandler accessDeniedHandler;
     private final CustomOAuth2UserService customOAuth2UserService;
+    private final CustomUserDetailsService customUserDetailsService;
     private final ProfileCompleteAuthorizationManager profileCompleteAuthorizationManager;
 
 
@@ -50,6 +50,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         AuthenticationManager authenticationManager = authenticationManager(http.getSharedObject(AuthenticationConfiguration.class));
         JwtAuthenticationFilter jwtAuthenticationFilter = new JwtAuthenticationFilter(authenticationManager, tokenBlackListService, jwtUtils);
+        JwtTokenFilter jwtTokenFilter = new JwtTokenFilter(jwtUtils, tokenBlackListService, customUserDetailsService);
 
         http.csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
