@@ -40,7 +40,7 @@ public class SecurityConfig {
     private final CustomAuthenticationEntryPoint entryPoint;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
     private final TokenBlackListService tokenBlackListService;
-    private final CustomAccessDeniedHandler  accessDeniedHandler;
+    private final CustomAccessDeniedHandler accessDeniedHandler;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final ProfileCompleteAuthorizationManager profileCompleteAuthorizationManager;
 
