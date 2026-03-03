@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/ta
 import { Input } from "@/src/components/ui/input"
 import { useState, useEffect, Suspense, use, useMemo } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { searchApi, type ProjectSearchResponse, type AuctionSearchResponse, type SearchAutoCompleteResponse } from "@/src/services/api"
+import { searchApi, toS3ImageUrl, type ProjectSearchResponse, type AuctionSearchResponse, type SearchAutoCompleteResponse } from "@/src/services/api"
 import { useFilterStore } from "@/src/stores/filterStore"
 import { Loader2, Search, Package, Gavel, Sparkles } from "lucide-react"
 
@@ -110,7 +110,7 @@ function SearchContent() {
       id: String(project.id),
       title: project.title,
       description: project.title, // 검색 결과는 description 없음
-      image: project.thumbnailUrl || "/placeholder.svg",
+      image: toS3ImageUrl(project.thumbnailUrl) || "/placeholder.svg",
       category: "프로젝트",
       currentAmount: project.currentAmount,
       goalAmount: project.targetAmount,

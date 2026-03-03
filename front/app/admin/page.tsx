@@ -287,6 +287,22 @@ export default function AdminPage() {
     }
   };
 
+  // 프로젝트 강제 취소
+  const handleForceCancelProject = async () => {
+    if (!selectedProject || !actionDialog.reason) {
+      toast.error("취소 사유를 입력하세요");
+      return;
+    }
+    try {
+      await adminApi.forceCancelProject(selectedProject.id, actionDialog.reason);
+      toast.success("프로젝트가 강제 취소되었습니다");
+      setActionDialog({ ...actionDialog, open: false, reason: '' });
+      loadProjects(projectPage);
+    } catch (error) {
+      toast.error("강제 취소에 실패했습니다");
+    }
+  };
+
   if (authLoading || (isAuthenticated && user?.role !== 'ADMIN')) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -968,6 +984,7 @@ export default function AdminPage() {
                   if (selectedProject) handleStopProject();
                   else if (selectedAuction) handleForceCloseAuction();
                 }
+                else if (actionDialog.type === 'cancel') handleForceCancelProject();
               }}
               variant={actionDialog.type === 'approve' ? 'default' : 'destructive'}
             >
