@@ -3,6 +3,7 @@ package com.ddip.backend.common.security.auth;
 import com.ddip.backend.common.exception.security.BlackListedTokenException;
 import com.ddip.backend.common.exception.security.TokenExpiredException;
 import com.ddip.backend.common.security.service.TokenBlackListService;
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -45,36 +46,36 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             throw new BlackListedTokenException("Token is blacklisted");
         }
 
-        String email = jwtUtils.extractUserEmail(token);
+        try {
+            String email = jwtUtils.extractUserEmail(token);
 
-        log.info("user: {} ", email);
+            log.info("user: {} ", email);
 
-        if (email == null) {
-            log.info("Invalid token, Incorrect username");
+            if (email == null) {
+                log.info("Invalid token, Incorrect username");
+                filterChain.doFilter(request, response);
+                return;
+            }
+
+            Authentication existing = SecurityContextHolder.getContext().getAuthentication();
+
+            if (existing != null && existing.isAuthenticated()
+                    && !(existing instanceof AnonymousAuthenticationToken)) {
+                log.info("SecurityContext already has authenticated user, skip");
+                filterChain.doFilter(request, response);
+                return;
+            }
+
+            CustomUserDetails userDetails = (CustomUserDetails) userDetailsService.loadUserByUsername(email);
+
+            log.info("Successfully validate token");
+            setAuthentication(userDetails, request);
+
             filterChain.doFilter(request, response);
-            return;
+
+        } catch (ExpiredJwtException e) {
+            throw  new TokenExpiredException("Token is expired");
         }
-
-
-        Authentication existing = SecurityContextHolder.getContext().getAuthentication();
-
-        if (existing != null && existing.isAuthenticated()
-                && !(existing instanceof AnonymousAuthenticationToken)) {
-            log.info("SecurityContext already has authenticated user, skip");
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        CustomUserDetails userDetails = (CustomUserDetails) userDetailsService.loadUserByUsername(email);
-
-        if (!jwtUtils.isValidToken(token, userDetails.getEmail())) {
-            throw new TokenExpiredException("invalid token or Expired");
-        }
-
-        log.info("Successfully validate token");
-        setAuthentication(userDetails, request);
-
-        filterChain.doFilter(request, response);
     }
 
     private void setAuthentication(CustomUserDetails customUserDetails, HttpServletRequest request) {
