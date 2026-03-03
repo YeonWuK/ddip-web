@@ -31,7 +31,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
 
 @Configuration
-@EnableWebSecurity(debug = true)
+@EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
 @RequiredArgsConstructor
 public class SecurityConfig {
@@ -49,8 +49,12 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         AuthenticationManager authenticationManager = authenticationManager(http.getSharedObject(AuthenticationConfiguration.class));
-        JwtAuthenticationFilter jwtAuthenticationFilter = new JwtAuthenticationFilter(authenticationManager, tokenBlackListService, jwtUtils);
-        JwtTokenFilter jwtTokenFilter = new JwtTokenFilter(jwtUtils, tokenBlackListService, customUserDetailsService);
+
+        JwtAuthenticationFilter jwtAuthenticationFilter =
+                new JwtAuthenticationFilter(authenticationManager, tokenBlackListService, jwtUtils);
+
+        JwtTokenFilter jwtTokenFilter =
+                new JwtTokenFilter(jwtUtils, tokenBlackListService, customUserDetailsService);
 
         http.csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))

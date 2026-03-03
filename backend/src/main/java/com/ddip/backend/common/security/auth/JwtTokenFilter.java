@@ -2,8 +2,12 @@ package com.ddip.backend.common.security.auth;
 
 import com.ddip.backend.common.exception.security.BlackListedTokenException;
 import com.ddip.backend.common.exception.security.TokenExpiredException;
+import com.ddip.backend.common.exception.security.TokenMalformedException;
+import com.ddip.backend.common.exception.security.TokenSignatureException;
 import com.ddip.backend.common.security.service.TokenBlackListService;
 import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -72,7 +76,17 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
 
         } catch (ExpiredJwtException e) {
-            throw new TokenExpiredException("Token is expired");
+            TokenExpiredException exception = new TokenExpiredException("Token is expired");
+            request.setAttribute("exception", exception);
+            throw exception;
+        } catch (MalformedJwtException e) {
+            TokenMalformedException exception = new TokenMalformedException("Token is malformed");
+            request.setAttribute("exception", exception);
+            throw exception;
+        } catch (SignatureException e) {
+            TokenSignatureException exception = new TokenSignatureException("Token signature exception");
+            request.setAttribute("exception", exception);
+            throw exception;
         }
     }
 
