@@ -28,7 +28,7 @@ public class ProjectDocument {
     @Field(type = FieldType.Text)
     private String title;
 
-    @Field(type = FieldType.Text)
+    @Field(type = FieldType.Keyword, index = false)
     private String thumbnailUrl;
 
     @Field(type = FieldType.Long)
