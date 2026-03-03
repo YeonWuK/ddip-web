@@ -28,8 +28,12 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
                          @NonNull HttpServletResponse response,
                          @NonNull AuthenticationException authException) throws IOException, ServletException {
 
-        log.info("EntryPoint called: {}", authException.getClass().getName());
+        Exception exception = (Exception) request.getAttribute("exception");
 
-        resolver.resolveException(request, response, null, authException);
+        if (exception == null) {
+            exception = authException;
+        }
+
+        resolver.resolveException(request, response, null, exception);
     }
 }
