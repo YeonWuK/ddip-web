@@ -1,3 +1,7 @@
+logging:
+  level:
+    org.springframework.security.web.FilterChainProxy: DEBUG
+
 spring:
   servlet:
     multipart:
