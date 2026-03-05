@@ -10,6 +10,16 @@ import Image from "next/image"
 import { useState, useEffect } from "react"
 import { isInWishlist, toggleWishlist } from "@/src/lib/wishlist"
 import { toast } from "sonner"
+import type { ProjectStatus } from "@/src/types/api"
+
+const STATUS_LABELS: Record<string, string> = {
+  SUCCESS: "성공",
+  FAILED: "실패",
+  CANCELED: "취소됨",
+  REJECTED: "거절됨",
+  STOP: "일시정지",
+  DRAFT: "오픈 전",
+}
 
 interface ProjectCardProps {
   id: string
@@ -21,6 +31,7 @@ interface ProjectCardProps {
   goalAmount: number
   backers: number
   daysLeft: number
+  status?: ProjectStatus
 }
 
 export function ProjectCard({
@@ -33,8 +44,12 @@ export function ProjectCard({
   goalAmount,
   backers,
   daysLeft,
+  status,
 }: ProjectCardProps) {
-  const progress = (currentAmount / goalAmount) * 100
+  const progress = goalAmount > 0 ? (currentAmount / goalAmount) * 100 : 0
+  const normalizedStatus = (status || "").toUpperCase()
+  const isNonOpen = normalizedStatus && normalizedStatus !== "OPEN"
+  const statusLabel = isNonOpen ? STATUS_LABELS[normalizedStatus] ?? normalizedStatus : null
   const [isFavorite, setIsFavorite] = useState(false)
 
   useEffect(() => {
@@ -58,7 +73,11 @@ export function ProjectCard({
 
   return (
     <Link href={`/project/${id}`}>
-      <Card className="group overflow-hidden transition-all hover:shadow-lg">
+      <Card
+        className={`group overflow-hidden transition-all hover:shadow-lg ${
+          isNonOpen ? "opacity-90" : ""
+        }`}
+      >
         <div className="relative aspect-video overflow-hidden bg-muted">
           <Image
             src={image || "/placeholder.svg"}
@@ -67,6 +86,19 @@ export function ProjectCard({
             className="object-cover transition-transform duration-300 group-hover:scale-105"
           />
           <div className="absolute right-3 top-3 flex gap-2">
+            {statusLabel && (
+              <Badge
+                variant={
+                  normalizedStatus === "FAILED"
+                    ? "destructive"
+                    : normalizedStatus === "SUCCESS"
+                      ? "default"
+                      : "secondary"
+                }
+              >
+                {statusLabel}
+              </Badge>
+            )}
             <Badge>{category}</Badge>
             <Button
               variant="secondary"

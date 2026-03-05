@@ -25,30 +25,37 @@ export default function HomePage() {
         setLoading(true)
         
         // 인기 프로젝트/경매 로드 (인기순 정렬, 각 8개)
-        // 백엔드에서 상태 관리를 하므로 클라이언트에서 상태 체크 불필요
         const [allProjects, allAuctions] = await Promise.all([
           projectApi.getProjects({ limit: 50 }),
           auctionApi.getAuctions({ limit: 50 }).catch(() => [] as AuctionSummary[]),
         ])
         
-        // 인기 프로젝트: 후원자 수 기준 정렬
-        const sortedByPopularity = [...allProjects].sort((a, b) => {
+        // 메인 화면에는 OPEN(진행 중) 프로젝트, RUNNING(진행 중) 경매만 표시
+        const openProjects = allProjects.filter(
+          p => (p.status || '').toUpperCase() === 'OPEN'
+        )
+        const runningAuctions = allAuctions.filter(
+          a => (a.status || '').toUpperCase() === 'RUNNING'
+        )
+        
+        // 인기 프로젝트: OPEN만, 후원자 수 기준 정렬
+        const sortedByPopularity = [...openProjects].sort((a, b) => {
           const backersA = (a.rewardTiers ?? []).reduce((sum, tier) => sum + tier.soldQuantity, 0)
           const backersB = (b.rewardTiers ?? []).reduce((sum, tier) => sum + tier.soldQuantity, 0)
           return backersB - backersA
         })
         setPopularProjects(sortedByPopularity.slice(0, 8))
         
-        // 인기 경매: 입찰 수 기준 (현재는 ID 순으로 대체)
-        const sortedAuctions = [...allAuctions].sort((a, b) => b.id - a.id)
+        // 인기 경매: RUNNING만, ID 순 정렬
+        const sortedAuctions = [...runningAuctions].sort((a, b) => b.id - a.id)
         setPopularAuctions(sortedAuctions.slice(0, 8))
         
-        // 마감 임박 프로젝트: 24시간 이내 마감
+        // 마감 임박 프로젝트: OPEN만, 24시간 이내 마감
         const now = new Date().getTime()
-        const urgentProj = allProjects.filter(project => {
+        const urgentProj = openProjects.filter(project => {
           const endTime = new Date(project.endAt).getTime()
           const hoursLeft = (endTime - now) / (1000 * 60 * 60)
-          return hoursLeft <= 24 && hoursLeft > 0 && project.status === 'OPEN'
+          return hoursLeft <= 24 && hoursLeft > 0
         })
         urgentProj.sort((a, b) => {
           const endTimeA = new Date(a.endAt).getTime()
@@ -57,11 +64,11 @@ export default function HomePage() {
         })
         setUrgentProjects(urgentProj.slice(0, 8))
         
-        // 마감 임박 경매: 24시간 이내 마감
-        const urgentAuc = allAuctions.filter(auction => {
+        // 마감 임박 경매: RUNNING만, 24시간 이내 마감
+        const urgentAuc = runningAuctions.filter(auction => {
           const endTime = new Date(auction.endAt).getTime()
           const hoursLeft = (endTime - now) / (1000 * 60 * 60)
-          return hoursLeft <= 24 && hoursLeft > 0 && (auction.status === 'RUNNING' || auction.status === 'SCHEDULED')
+          return hoursLeft <= 24 && hoursLeft > 0
         })
         urgentAuc.sort((a, b) => {
           const endTimeA = new Date(a.endAt).getTime()
@@ -93,23 +100,30 @@ export default function HomePage() {
           auctionApi.getAuctions({ limit: 50 }).catch(() => [] as AuctionSummary[]),
         ])
         
+        const openProjects = allProjects.filter(
+          p => (p.status || '').toUpperCase() === 'OPEN'
+        )
+        const runningAuctions = allAuctions.filter(
+          a => (a.status || '').toUpperCase() === 'RUNNING'
+        )
+        
         // 인기 프로젝트 정렬
-        const sortedByPopularity = [...allProjects].sort((a, b) => {
+        const sortedByPopularity = [...openProjects].sort((a, b) => {
           const backersA = (a.rewardTiers ?? []).reduce((sum, tier) => sum + tier.soldQuantity, 0)
           const backersB = (b.rewardTiers ?? []).reduce((sum, tier) => sum + tier.soldQuantity, 0)
           return backersB - backersA
         })
         setPopularProjects(sortedByPopularity.slice(0, 8))
         
-        const sortedAuctions = [...allAuctions].sort((a, b) => b.id - a.id)
+        const sortedAuctions = [...runningAuctions].sort((a, b) => b.id - a.id)
         setPopularAuctions(sortedAuctions.slice(0, 8))
         
         // 마감 임박 항목 업데이트
         const now = new Date().getTime()
-        const urgentProj = allProjects.filter(project => {
+        const urgentProj = openProjects.filter(project => {
           const endTime = new Date(project.endAt).getTime()
           const hoursLeft = (endTime - now) / (1000 * 60 * 60)
-          return hoursLeft <= 24 && hoursLeft > 0 && project.status === 'OPEN'
+          return hoursLeft <= 24 && hoursLeft > 0
         })
         urgentProj.sort((a, b) => {
           const endTimeA = new Date(a.endAt).getTime()
@@ -118,10 +132,10 @@ export default function HomePage() {
         })
         setUrgentProjects(urgentProj.slice(0, 8))
         
-        const urgentAuc = allAuctions.filter(auction => {
+        const urgentAuc = runningAuctions.filter(auction => {
           const endTime = new Date(auction.endAt).getTime()
           const hoursLeft = (endTime - now) / (1000 * 60 * 60)
-          return hoursLeft <= 24 && hoursLeft > 0 && (auction.status === 'RUNNING' || auction.status === 'SCHEDULED')
+          return hoursLeft <= 24 && hoursLeft > 0
         })
         urgentAuc.sort((a, b) => {
           const endTimeA = new Date(a.endAt).getTime()

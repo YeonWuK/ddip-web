@@ -9,6 +9,13 @@ import Image from "next/image"
 import { useState, useEffect } from "react"
 import { isInWishlist, toggleWishlist } from "@/src/lib/wishlist"
 import { toast } from "sonner"
+import type { AuctionStatus } from "@/src/types/api"
+
+const AUCTION_STATUS_LABELS: Record<string, string> = {
+  SCHEDULED: "예정",
+  ENDED: "종료",
+  CANCELED: "취소됨",
+}
 
 interface AuctionCardProps {
   id: string
@@ -20,6 +27,7 @@ interface AuctionCardProps {
   bidCount: number
   timeLeft: string
   isLive: boolean
+  status?: AuctionStatus
 }
 
 export function AuctionCard({
@@ -32,8 +40,12 @@ export function AuctionCard({
   bidCount,
   timeLeft,
   isLive,
+  status,
 }: AuctionCardProps) {
   const [isFavorite, setIsFavorite] = useState(false)
+  const normalizedStatus = (status || "").toUpperCase()
+  const isNonRunning = normalizedStatus && normalizedStatus !== "RUNNING"
+  const statusLabel = isNonRunning ? AUCTION_STATUS_LABELS[normalizedStatus] ?? normalizedStatus : null
 
   useEffect(() => {
     setIsFavorite(isInWishlist(Number(id), "auction"))
@@ -56,7 +68,11 @@ export function AuctionCard({
 
   return (
     <Link href={`/auction/${id}`}>
-      <Card className="group overflow-hidden transition-all hover:shadow-lg">
+      <Card
+        className={`group overflow-hidden transition-all hover:shadow-lg ${
+          isNonRunning ? "opacity-90" : ""
+        }`}
+      >
         <div className="relative aspect-video overflow-hidden bg-muted">
           <Image
             src={image || "/placeholder.svg"}
@@ -65,6 +81,17 @@ export function AuctionCard({
             className="object-cover transition-transform duration-300 group-hover:scale-105"
           />
           <div className="absolute right-3 top-3 flex gap-2">
+            {statusLabel && (
+              <Badge
+                variant={
+                  normalizedStatus === "CANCELED"
+                    ? "destructive"
+                    : "secondary"
+                }
+              >
+                {statusLabel}
+              </Badge>
+            )}
             <Badge className="bg-secondary text-secondary-foreground">{category}</Badge>
             {isLive && <Badge className="animate-pulse bg-destructive text-destructive-foreground">LIVE</Badge>}
             <Button

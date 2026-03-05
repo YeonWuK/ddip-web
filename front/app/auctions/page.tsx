@@ -179,6 +179,7 @@ export default function AuctionsPage() {
       bidCount: auction.bidCount ?? 0,
       timeLeft,
       isLive: auction.status === "RUNNING",
+      status: auction.status,
     }
   })
 
