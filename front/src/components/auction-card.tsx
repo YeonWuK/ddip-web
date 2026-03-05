@@ -82,17 +82,10 @@ export function AuctionCard({
           />
           <div className="absolute right-3 top-3 flex gap-2">
             {statusLabel && (
-              <Badge
-                variant={
-                  normalizedStatus === "CANCELED"
-                    ? "destructive"
-                    : "secondary"
-                }
-              >
+              <Badge className="bg-black text-white border-black">
                 {statusLabel}
               </Badge>
             )}
-            <Badge className="bg-secondary text-secondary-foreground">{category}</Badge>
             {isLive && <Badge className="animate-pulse bg-destructive text-destructive-foreground">LIVE</Badge>}
             <Button
               variant="secondary"

@@ -172,6 +172,7 @@ export default function HomePage() {
       goalAmount: project.targetAmount,
       backers,
       daysLeft: daysLeft > 0 ? daysLeft : 0,
+      status: project.status,
     }
   })
 
@@ -194,6 +195,7 @@ export default function HomePage() {
       goalAmount: project.targetAmount,
       backers,
       daysLeft: daysLeft > 0 ? daysLeft : 0,
+      status: project.status,
     }
   })
 

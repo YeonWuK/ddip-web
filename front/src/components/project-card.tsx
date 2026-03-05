@@ -86,20 +86,16 @@ export function ProjectCard({
             className="object-cover transition-transform duration-300 group-hover:scale-105"
           />
           <div className="absolute right-3 top-3 flex gap-2">
+            {normalizedStatus === "OPEN" && (
+              <Badge className="bg-primary text-primary-foreground border-primary">
+                진행 중
+              </Badge>
+            )}
             {statusLabel && (
-              <Badge
-                variant={
-                  normalizedStatus === "FAILED"
-                    ? "destructive"
-                    : normalizedStatus === "SUCCESS"
-                      ? "default"
-                      : "secondary"
-                }
-              >
+              <Badge className="bg-black text-white border-black">
                 {statusLabel}
               </Badge>
             )}
-            <Badge>{category}</Badge>
             <Button
               variant="secondary"
               size="icon"
