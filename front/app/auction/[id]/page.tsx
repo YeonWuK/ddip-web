@@ -23,7 +23,7 @@ import { formatIncrement } from "@/src/lib/format-amount"
 import { isInWishlist, toggleWishlist } from "@/src/lib/wishlist"
 import { canEditAuction, canBidAuction, isAuctionSeller } from "@/src/lib/permissions"
 import { showAuctionNotificationIfNeeded } from "@/src/lib/auction-notifications"
-import { formatDateTimeInKorea } from "@/src/lib/date-utils"
+import { formatDateTimeInKorea, formatBidDateTime } from "@/src/lib/date-utils"
 // 웹소켓 관련 (백엔드 준비되면 주석 해제)
 // import { useAuctionSocket } from "@/src/hooks/useAuctionSocket"
 // import { RealtimeBidList } from "@/src/components/realtime-bid-list"
@@ -928,13 +928,7 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
                                   )}
                                 </div>
                                 <div className="text-xs text-muted-foreground">
-                                  {new Date(bid.bidAt).toLocaleString("ko-KR", {
-                                    month: "short",
-                                    day: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                    second: "2-digit",
-                                  })}
+                                  {formatBidDateTime(bid.bidAt)}
                                 </div>
                               </div>
                             </div>

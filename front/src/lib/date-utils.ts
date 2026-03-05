@@ -113,6 +113,19 @@ export function isoToDateLocal(isoString: string): string {
   return `${year}-${month}-${day}`;
 }
 
+/** 입찰 시각 등 짧은 포맷 (유효하지 않으면 "-" 반환) */
+export function formatBidDateTime(dateString: string | null | undefined): string {
+  const date = parseDate(dateString);
+  if (!isValidDate(date)) return '-';
+  return date.toLocaleString('ko-KR', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 /**
  * 날짜·시간을 한국어 형식으로 포맷 (백엔드 서버가 한국 시간이면 그대로 표시)
  */

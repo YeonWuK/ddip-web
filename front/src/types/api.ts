@@ -143,7 +143,8 @@ export interface ProjectResponse {
 
 // 경매 상태 타입
 export type AuctionStatus = 'SCHEDULED' | 'RUNNING' | 'ENDED' | 'CANCELED';
-export type MyAuctionStatus = 'HIGHEST_BIDDER' | 'OUTBID' | 'ENDED_WON' | 'ENDED_LOST';
+/** Swagger MyBidsSummaryDto.myAuctionStatus */
+export type MyAuctionStatus = 'LEADING' | 'OUTBID' | 'WON' | 'LOST' | 'CANCELED';
 
 // 경매 생성 요청 타입
 export interface AuctionCreateRequest {

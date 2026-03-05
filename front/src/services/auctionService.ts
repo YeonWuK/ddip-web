@@ -104,7 +104,7 @@ export const auctionApi = {
         .filter((url: string | null): url is string => url != null);
       // 백엔드가 id 없이 이미지만 반환한 경우 fallback (Edit 시 표시용, deleteImageIds는 id>0만 전송)
       if (imageItems.length === 0 && imageUrlsFromS3.length > 0) {
-        imageUrlsFromS3.forEach((url, i) => imageItems.push({ id: i + 1, url }));
+        imageUrlsFromS3.forEach((url: string, i: number) => imageItems.push({ id: i + 1, url }));
       }
       const firstImageUrl =
         imageUrlsFromS3[0] ??
@@ -451,7 +451,10 @@ export const auctionApi = {
         myAuctionStatus: myBid.myAuctionStatus || myBid.my_auction_status || 'OUTBID',
         lastBidPrice: myBid.lastBidPrice || myBid.last_bid_price || 0,
         currentPrice: myBid.currentPrice || myBid.current_price || 0,
-        isHighestBidder: myBid.isHighestBidder !== undefined ? myBid.isHighestBidder : (myBid.is_highest_bidder !== undefined ? myBid.is_highest_bidder : false),
+        isHighestBidder: (() => {
+          const s = myBid.myAuctionStatus ?? myBid.my_auction_status ?? '';
+          return s === 'LEADING' || (myBid.isHighestBidder === true) || (myBid.is_highest_bidder === true);
+        })(),
         lastBidAt: myBid.lastBidAt || myBid.last_bid_at || '',
         auctionEndAt: myBid.auctionEndAt || myBid.auction_end_at || '',
         isPaid: myBid.isPaid !== undefined ? myBid.isPaid : (myBid.is_paid !== undefined ? myBid.is_paid : false),

@@ -113,15 +113,15 @@ export const userApi = {
               myBid.auction_status ??
               'SCHEDULED',
             myAuctionStatus: myStatus,
-            lastBidPrice: myBid.lastBidPrice ?? myBid.last_bid_price ?? 0,
+            lastBidPrice: myBid.lastBidPrice ?? myBid.last_bid_price ?? myBid.myBidPrice ?? myBid.bidPrice ?? myBid.bid_price ?? myBid.amount ?? myBid.price ?? 0,
             currentPrice:
               summary.currentPrice ??
               summary.current_price ??
               myBid.currentPrice ??
               myBid.current_price ??
               0,
-            isHighestBidder: myStatus === 'HIGHEST_BIDDER',
-            lastBidAt: myBid.lastBidAt ?? myBid.last_bid_at ?? '',
+            isHighestBidder: myStatus === 'LEADING',
+            lastBidAt: myBid.lastBidAt ?? myBid.last_bid_at ?? myBid.bidAt ?? myBid.bid_at ?? myBid.createdAt ?? myBid.created_at ?? '',
             auctionEndAt:
               summary.endAt ??
               summary.end_at ??
@@ -723,7 +723,7 @@ function mapAddressResponse(raw: any, fallbackId = 0): AddressResponse {
     zipCode: raw.zipCode ?? raw.zip_code ?? '',
     address: raw.address1 ?? raw.address ?? '',
     detailAddress: raw.address2 ?? raw.detailAddress ?? raw.detail_address ?? '',
-    isDefault: raw.isDefault ?? raw.is_default ?? false,
+    isDefault: raw.isDefault ?? raw.is_default ?? raw.default ?? false,
   };
 }
 

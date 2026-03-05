@@ -22,6 +22,7 @@ import { projectApi, auctionApi, userApi, addressApi } from "@/src/services/api"
 import { ProjectResponse, AuctionResponse, AuctionSummary, SupportResponse, MyBidsSummary, UserPageResponse, AddressResponse, AddressCreateRequest, AddressUpdateRequest } from "@/src/types/api"
 import { getWishlist } from "@/src/lib/wishlist"
 import { canEditProject, canCancelProject, canEditAuction, canCancelAuction } from "@/src/lib/permissions"
+import { formatBidDateTime } from "@/src/lib/date-utils"
 import Link from "next/link"
 import Image from "next/image"
 import { toast } from "sonner"
@@ -76,7 +77,7 @@ function ProfileTabs({ defaultTab }: { defaultTab: string }) {
       const supports = await projectApi.getMySupports(userId)
       setMySupports(supports)
       
-      // 입찰 내역: my-page의 myMyBids 사용 (UserPageResponseDto.myBids → MyBidsSummary 매핑 완료)
+      // 입찰 내역: my-page의 myMyBids 사용
       setMyBids(myPageData.myMyBids)
       
       // 찜한 항목 로드
@@ -677,18 +678,10 @@ function ProfileTabs({ defaultTab }: { defaultTab: string }) {
                                 <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                                   <span className="flex items-center gap-1">
                                     <Calendar className="size-4" />
-                                    {bid.lastBidAt
-                                      ? new Date(bid.lastBidAt).toLocaleDateString("ko-KR", {
-                                          year: "numeric",
-                                          month: "short",
-                                          day: "numeric",
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                        })
-                                      : "-"}
+                                    {formatBidDateTime(bid.lastBidAt)}
                                   </span>
                                   {bid.isHighestBidder && (
-                                    <Badge variant="default" className="text-xs">최고 입찰자</Badge>
+                                    <Badge variant="default" className="text-xs">최고 입찰가</Badge>
                                   )}
                                   {bid.auctionStatus === "ENDED" && (
                                     <Badge variant="secondary">종료</Badge>
