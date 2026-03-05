@@ -28,6 +28,8 @@ interface AuctionCardProps {
   timeLeft: string
   isLive: boolean
   status?: AuctionStatus
+  /** Wadiz 스타일 컴팩트 카드 (리스트 페이지용) */
+  compact?: boolean
 }
 
 export function AuctionCard({
@@ -41,6 +43,7 @@ export function AuctionCard({
   timeLeft,
   isLive,
   status,
+  compact = false,
 }: AuctionCardProps) {
   const [isFavorite, setIsFavorite] = useState(false)
   const normalizedStatus = (status || "").toUpperCase()
@@ -70,8 +73,8 @@ export function AuctionCard({
     <Link href={`/auction/${id}`}>
       <Card
         className={`group overflow-hidden transition-all hover:shadow-lg ${
-          isNonRunning ? "opacity-90" : ""
-        }`}
+          compact ? "py-3 gap-4" : ""
+        } ${isNonRunning ? "opacity-90" : ""}`}
       >
         <div className="relative aspect-video overflow-hidden bg-muted">
           <Image
@@ -80,21 +83,21 @@ export function AuctionCard({
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
           />
-          <div className="absolute right-3 top-3 flex gap-2">
+          <div className={`absolute flex gap-1.5 ${compact ? "right-2 top-2" : "right-3 top-3 gap-2"}`}>
             {statusLabel && (
-              <Badge className="bg-black text-white border-black">
+              <Badge className={compact ? "bg-black text-white border-black text-xs" : "bg-black text-white border-black"}>
                 {statusLabel}
               </Badge>
             )}
-            {isLive && <Badge className="animate-pulse bg-destructive text-destructive-foreground">LIVE</Badge>}
+            {isLive && <Badge className={compact ? "animate-pulse bg-destructive text-destructive-foreground text-xs" : "animate-pulse bg-destructive text-destructive-foreground"}>LIVE</Badge>}
             <Button
               variant="secondary"
               size="icon"
-              className="size-8 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background"
+              className={compact ? "size-6 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background" : "size-8 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background"}
               onClick={handleHeartClick}
             >
               <Heart
-                className={`size-4 transition-colors ${
+                className={`transition-colors ${compact ? "size-3" : "size-4"} ${
                   isFavorite ? "fill-red-500 text-red-500" : "text-muted-foreground"
                 }`}
               />
@@ -102,28 +105,28 @@ export function AuctionCard({
           </div>
         </div>
 
-        <CardHeader className="pb-3">
-          <h3 className="line-clamp-2 text-balance text-lg font-semibold leading-tight">{title}</h3>
-          <p className="line-clamp-2 text-pretty text-sm text-muted-foreground">{description}</p>
+        <CardHeader className={compact ? "pb-2 px-4" : "pb-3"}>
+          <h3 className={`line-clamp-2 text-balance font-semibold leading-tight ${compact ? "text-base" : "text-lg"}`}>{title}</h3>
+          <p className={`line-clamp-2 text-pretty text-muted-foreground ${compact ? "text-xs" : "text-sm"}`}>{description}</p>
         </CardHeader>
 
-        <CardContent className="space-y-3">
+        <CardContent className={compact ? "space-y-2 px-4" : "space-y-3"}>
           <div>
-            <p className="mb-1 text-xs text-muted-foreground">현재 입찰가</p>
+            <p className={`text-muted-foreground ${compact ? "mb-0.5 text-xs" : "mb-1 text-xs"}`}>현재 입찰가</p>
             <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-bold text-secondary">{currentBid.toLocaleString()}</span>
-              <span className="text-sm text-muted-foreground">원</span>
+              <span className={`font-bold text-secondary ${compact ? "text-lg" : "text-2xl"}`}>{currentBid.toLocaleString()}</span>
+              <span className={`text-muted-foreground ${compact ? "text-xs" : "text-sm"}`}>원</span>
             </div>
           </div>
         </CardContent>
 
-        <CardFooter className="flex items-center justify-between border-t pt-4 text-sm text-muted-foreground">
+        <CardFooter className={`flex items-center justify-between border-t text-muted-foreground ${compact ? "pt-2 px-4 text-xs" : "pt-4 text-sm"}`}>
           <div className="flex items-center gap-1">
-            <Gavel className="size-4" />
+            <Gavel className={compact ? "size-3" : "size-4"} />
             <span>{bidCount}회 입찰</span>
           </div>
           <div className="flex items-center gap-1">
-            <Clock className="size-4" />
+            <Clock className={compact ? "size-3" : "size-4"} />
             <span>{timeLeft}</span>
           </div>
         </CardFooter>

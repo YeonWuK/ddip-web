@@ -225,9 +225,9 @@ export default function AuctionsPage() {
           )
         ) : (
           <>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mb-8">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
               {auctionCards.map((auction) => (
-                <AuctionCard key={auction.id} {...auction} />
+                <AuctionCard key={auction.id} {...auction} compact />
               ))}
             </div>
             

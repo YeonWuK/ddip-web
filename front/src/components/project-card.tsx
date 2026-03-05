@@ -32,6 +32,8 @@ interface ProjectCardProps {
   backers: number
   daysLeft: number
   status?: ProjectStatus
+  /** Wadiz 스타일 컴팩트 카드 (리스트 페이지용) */
+  compact?: boolean
 }
 
 export function ProjectCard({
@@ -45,6 +47,7 @@ export function ProjectCard({
   backers,
   daysLeft,
   status,
+  compact = false,
 }: ProjectCardProps) {
   const progress = goalAmount > 0 ? (currentAmount / goalAmount) * 100 : 0
   const normalizedStatus = (status || "").toUpperCase()
@@ -75,8 +78,8 @@ export function ProjectCard({
     <Link href={`/project/${id}`}>
       <Card
         className={`group overflow-hidden transition-all hover:shadow-lg ${
-          isNonOpen ? "opacity-90" : ""
-        }`}
+          compact ? "py-3 gap-4" : ""
+        } ${isNonOpen ? "opacity-90" : ""}`}
       >
         <div className="relative aspect-video overflow-hidden bg-muted">
           <Image
@@ -85,25 +88,25 @@ export function ProjectCard({
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
           />
-          <div className="absolute right-3 top-3 flex gap-2">
+          <div className={`absolute flex gap-1.5 ${compact ? "right-2 top-2" : "right-3 top-3 gap-2"}`}>
             {normalizedStatus === "OPEN" && (
-              <Badge className="bg-primary text-primary-foreground border-primary">
+              <Badge className={compact ? "bg-primary text-primary-foreground border-primary text-xs" : "bg-primary text-primary-foreground border-primary"}>
                 진행 중
               </Badge>
             )}
             {statusLabel && (
-              <Badge className="bg-black text-white border-black">
+              <Badge className={compact ? "bg-black text-white border-black text-xs" : "bg-black text-white border-black"}>
                 {statusLabel}
               </Badge>
             )}
             <Button
               variant="secondary"
               size="icon"
-              className="size-8 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background"
+              className={compact ? "size-6 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background" : "size-8 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background"}
               onClick={handleHeartClick}
             >
               <Heart
-                className={`size-4 transition-colors ${
+                className={`transition-colors ${compact ? "size-3" : "size-4"} ${
                   isFavorite ? "fill-red-500 text-red-500" : "text-muted-foreground"
                 }`}
               />
@@ -111,31 +114,31 @@ export function ProjectCard({
           </div>
         </div>
 
-        <CardHeader className="pb-3">
-          <h3 className="line-clamp-2 text-balance text-lg font-semibold leading-tight">{title}</h3>
-          <p className="line-clamp-2 text-pretty text-sm text-muted-foreground">{description}</p>
+        <CardHeader className={compact ? "pb-2 px-4" : "pb-3"}>
+          <h3 className={`line-clamp-2 text-balance font-semibold leading-tight ${compact ? "text-base" : "text-lg"}`}>{title}</h3>
+          <p className={`line-clamp-2 text-pretty text-muted-foreground ${compact ? "text-xs" : "text-sm"}`}>{description}</p>
         </CardHeader>
 
-        <CardContent className="space-y-3">
+        <CardContent className={compact ? "space-y-2 px-4" : "space-y-3"}>
           <div>
-            <div className="mb-2 flex items-baseline justify-between">
+            <div className={`flex items-baseline justify-between ${compact ? "mb-1" : "mb-2"}`}>
               <div>
-                <span className="text-2xl font-bold text-primary">{currentAmount.toLocaleString()}</span>
-                <span className="ml-1 text-sm text-muted-foreground">원</span>
+                <span className={`font-bold text-primary ${compact ? "text-lg" : "text-2xl"}`}>{currentAmount.toLocaleString()}</span>
+                <span className={`ml-1 text-muted-foreground ${compact ? "text-xs" : "text-sm"}`}>원</span>
               </div>
-              <span className="text-sm font-medium text-muted-foreground">{progress.toFixed(0)}%</span>
+              <span className={`font-medium text-muted-foreground ${compact ? "text-xs" : "text-sm"}`}>{progress.toFixed(0)}%</span>
             </div>
-            <Progress value={progress} className="h-2" />
+            <Progress value={progress} className={compact ? "h-1.5" : "h-2"} />
           </div>
         </CardContent>
 
-        <CardFooter className="flex items-center justify-between border-t pt-4 text-sm text-muted-foreground">
+        <CardFooter className={`flex items-center justify-between border-t text-muted-foreground ${compact ? "pt-2 px-4 text-xs" : "pt-4 text-sm"}`}>
           <div className="flex items-center gap-1">
-            <TrendingUp className="size-4" />
+            <TrendingUp className={compact ? "size-3" : "size-4"} />
             <span>{backers.toLocaleString()}명 참여</span>
           </div>
           <div className="flex items-center gap-1">
-            <Clock className="size-4" />
+            <Clock className={compact ? "size-3" : "size-4"} />
             <span>{daysLeft}일 남음</span>
           </div>
         </CardFooter>
