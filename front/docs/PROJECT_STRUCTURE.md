@@ -123,7 +123,9 @@ front/
 │   │   └── filterStore.ts      # 필터/정렬 상태 관리 (localStorage persist)
 │   │
 │   └── types/                   # TypeScript 타입 정의
-│       ├── api.ts              # API 요청/응답 타입
+│       ├── api.ts              # API 요청/응답 타입 (수동 정의)
+│       ├── api.generated.ts    # Swagger → openapi-typescript 자동 생성
+│       ├── api-aliases.ts      # 생성 타입 별칭 (호환용)
 │       └── websocket.ts        # 웹소켓 이벤트 타입
 │
 ├── lib/                         # 루트 레벨 유틸리티 (shadcn/ui용)
@@ -133,14 +135,9 @@ front/
 │
 ├── docs/                        # 프로젝트 문서
 │   ├── API_REFACTORING_JOURNEY.md     # API 서비스 대규모 리팩토링 기술 문서
-│   ├── BACKEND_MIGRATION_CHECKLIST.md # 백엔드 연동 전/후 체크리스트
-│   ├── FEATURE_SUMMARY.md             # 기능 및 API 엔드포인트 정리
-│   ├── GEMINI_FEEDBACK_ANALYSIS.md    # Gemini 피드백 분석
 │   ├── INTERVIEW_POINTS.md            # 면접 포인트 정리
-│   ├── MVP_STATUS.md                  # MVP 완료 상태
-│   ├── OAUTH_API_SPEC.md              # OAuth API 명세
 │   ├── PROJECT_STRUCTURE.md           # 프로젝트 구조 문서 (이 파일)
-│   └── retrospective-mock-api.md      # Mock API 회고 및 백엔드 전환
+│   └── TECH_RETROSPECTIVE.md          # 기술 회고록 (면접용 필살기 3개 등)
 │
 ├── components.json              # shadcn/ui 설정
 ├── next.config.ts               # Next.js 설정 (이미지 도메인 등)
@@ -177,10 +174,10 @@ front/
 ---
 
 ### 2. **크라우드펀딩 프로젝트** (`project`)
-- **타입**: `src/types/api.ts`
+- **타입**: `src/types/api.ts`, `api.generated.ts`
   - `ProjectResponse`, `RewardTierResponse`, `SupportRequest`, `SupportResponse`
 
-- **API**: `src/services/api.ts` (백엔드: `/api/crowd`, `/api/crowd/pledges` 등)
+- **API**: `src/services/crowdService.ts` (projectApi, 백엔드: `/api/crowd`, `/api/crowd/pledges`)
   - `projectApi.getProjects({ page, limit, status })`: 프로젝트 목록 조회 (페이지네이션, 필터링)
   - `projectApi.getProject(id)`: 프로젝트 상세 조회
   - `projectApi.createProject()`: 프로젝트 생성
@@ -202,14 +199,15 @@ front/
   - `src/components/project-card.tsx`: 프로젝트 카드 (위시리스트 하트 버튼)
   - `src/components/reward-card.tsx`: 리워드 티어 카드
   - `src/components/reward-tier-form.tsx`: 리워드 티어 입력 폼
+- **배송지 입력**: 리워드 구매 시 `react-daum-postcode` (useDaumPostcodePopup)로 우편번호·주소 검색
 
 ---
 
 ### 3. **경매 시스템** (`auction`)
-- **타입**: `src/types/api.ts`
+- **타입**: `src/types/api.ts`, `api.generated.ts`
   - `AuctionResponse`, `BidResponse`
 
-- **API**: `src/services/api.ts` (백엔드: `/api/auction`, `/api/bid/{auctionId}`, `/api/auction/{id}/bids` 등)
+- **API**: `src/services/auctionService.ts` (auctionApi, 백엔드: `/api/auction`, `/api/auction/{id}/bids`, `/api/auction/my-bids` 등)
   - `auctionApi.getAuctions({ page, limit, status })`: 경매 목록 조회 (페이지네이션, 필터링)
   - `auctionApi.getAuction(id)`: 경매 상세 조회
   - `auctionApi.createAuction(files, data)`: 경매 생성 (multipart/form-data, S3 이미지)
@@ -330,8 +328,8 @@ front/
   - `hero-banner.tsx`: 메인 페이지 배너 (검색바, 카테고리, 통계, CTA 버튼)
   - `empty-state.tsx`: 빈 상태 컴포넌트 (데이터 없을 때 표시)
   - `filter-bar.tsx`: 필터/정렬 바
-  - `image-upload.tsx`: 단일 이미지 업로드 (base64 변환)
-  - `multi-image-upload.tsx`: 다중 이미지 업로드 (최대 3장)
+  - `image-upload.tsx`: 단일 이미지 업로드 (FormData multipart, S3)
+  - `multi-image-upload.tsx`: 다중 이미지 업로드 (FormData multipart, S3)
   - `protected-route.tsx`: 인증 보호 컴포넌트
   - `wishlist-monitor.tsx`: 찜한 경매 모니터링 (전역)
 
@@ -420,7 +418,8 @@ src/services/
 - **스타일링**: Tailwind CSS 4.1.9
 - **알림**: Sonner (Toast)
 - **날짜**: date-fns 4.1.0, react-day-picker 9.8.0
-- **웹소켓**: socket.io-client 4.8.3 (준비됨, 미활성화)
+- **주소 검색**: react-daum-postcode 3.2.0 (배송지 우편번호 검색)
+- **웹소켓**: socket.io-client 4.8.3 (준비됨, 백엔드 STOMP라 미활성화)
 
 ### `tsconfig.json`
 - **Path Alias**: `@/*` → 루트 디렉토리
@@ -441,7 +440,7 @@ src/services/
 
 ### 2. **프로젝트 생성 흐름**
 ```
-프로젝트 생성 폼 → Zod 검증 → projectApi.createProject() → localStorage 저장 → 목록 업데이트
+프로젝트 생성 폼 → Zod 검증 → projectApi.createProject() (multipart/form-data) → 백엔드 API → S3 업로드 → 목록 업데이트
 ```
 
 ### 3. **위시리스트 흐름**
@@ -451,7 +450,7 @@ src/services/
 
 ### 4. **입찰 흐름**
 ```
-입찰 버튼 클릭 → auctionApi.placeBid() → bidStore 저장 → 경매 가격 업데이트 → 입찰 내역 새로고침
+입찰 버튼 클릭 → auctionApi.placeBid() → 백엔드 API → 경매 가격 업데이트 → 입찰 내역 새로고침
 ```
 
 ### 5. **필터/정렬 흐름**
@@ -483,7 +482,7 @@ WishlistMonitor (전역) → useWishlistAuctionMonitor → 1분마다 찜한 경
 - 무한 스크롤 (프로젝트/경매 목록)
 - 경매 알림 시스템 (찜한 경매 시작/종료 알림)
 - 실시간 입찰 내역 표시
-- 이미지 업로드 (단일/다중, base64)
+- 이미지 업로드 (단일/다중, FormData multipart → S3)
 - 날짜 검증 및 포맷팅
 - 금액 포맷팅 (만원, 억원)
 - 빈 상태 컴포넌트
@@ -499,14 +498,9 @@ WishlistMonitor (전역) → useWishlistAuctionMonitor → 1분마다 찜한 경
 ## 📝 참고 문서
 
 - `WEBSOCKET_SETUP.md`: 웹소켓 설정 가이드
-- `docs/API_REFACTORING_JOURNEY.md`: **API 서비스 대규모 리팩토링 기술 문서** ⭐ NEW
-- `docs/FEATURE_SUMMARY.md`: 기능 및 API 엔드포인트 정리
-- `docs/OAUTH_API_SPEC.md`: OAuth API 명세
-- `docs/BACKEND_MIGRATION_CHECKLIST.md`: 백엔드 연동 전/후 체크리스트
-- `docs/MVP_STATUS.md`: MVP 완료 상태
+- `docs/API_REFACTORING_JOURNEY.md`: API 서비스 대규모 리팩토링 기술 문서
 - `docs/INTERVIEW_POINTS.md`: 면접 포인트 정리
-- `docs/GEMINI_FEEDBACK_ANALYSIS.md`: Gemini 피드백 분석
-- `docs/retrospective-mock-api.md`: Mock API 회고 및 백엔드 전환
+- `docs/TECH_RETROSPECTIVE.md`: 기술 회고록 (면접용 필살기 3개, 꼬리 질문 대응)
 
 ---
 
@@ -564,8 +558,8 @@ WishlistMonitor (전역) → useWishlistAuctionMonitor → 1분마다 찜한 경
 
 ---
 
-**마지막 업데이트**: 2026년 2월 13일  
+**마지막 업데이트**: 2026년 3월 6일  
 **프로젝트명**: DDIP (크라우드펀딩 & 경매 플랫폼)  
 **버전**: 0.1.0  
-**API**: 백엔드 연동 완료 (fetch, Bearer 토큰, S3 이미지)  
+**API**: 백엔드 연동 완료 (fetch, Bearer 토큰, S3 이미지, multipart/form-data)  
 **아키텍처**: Domain-Driven Design (DDD) - 2,300줄 단일 파일 → 7개 도메인 모듈 ✅
