@@ -1,9 +1,6 @@
 package com.ddip.backend.common.security.auth;
 
-import com.ddip.backend.common.exception.security.BlackListedTokenException;
-import com.ddip.backend.common.exception.security.TokenExpiredException;
-import com.ddip.backend.common.exception.security.TokenMalformedException;
-import com.ddip.backend.common.exception.security.TokenSignatureException;
+import com.ddip.backend.common.exception.security.*;
 import com.ddip.backend.common.security.service.TokenBlackListService;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
@@ -76,17 +73,13 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
 
         } catch (ExpiredJwtException e) {
-            TokenExpiredException exception = new TokenExpiredException("Token is expired");
-            request.setAttribute("exception", exception);
-            throw exception;
+            request.setAttribute("exception", new TokenExpiredException("Token is expired"));
         } catch (MalformedJwtException e) {
-            TokenMalformedException exception = new TokenMalformedException("Token is malformed");
-            request.setAttribute("exception", exception);
-            throw exception;
+            request.setAttribute("exception", new TokenMalformedException("Token is malformed"));
         } catch (SignatureException e) {
-            TokenSignatureException exception = new TokenSignatureException("Token signature exception");
-            request.setAttribute("exception", exception);
-            throw exception;
+            request.setAttribute("exception", new TokenSignatureException("Token signature exception"));
+        } catch (CustomAuthenticationException e) {
+            request.setAttribute("exception", e);
         }
     }
 
