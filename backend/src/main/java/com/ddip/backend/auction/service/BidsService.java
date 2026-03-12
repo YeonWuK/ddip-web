@@ -1,5 +1,6 @@
 package com.ddip.backend.auction.service;
 
+import com.ddip.backend.auction.event.AuctionUpdateEvent;
 import com.ddip.backend.billing.service.PointService;
 import com.ddip.backend.common.aop.DistributedLock;
 import com.ddip.backend.auction.dto.bids.BidsRequestDto;
@@ -69,8 +70,6 @@ public class BidsService {
             throw new InvalidBidStepException(intValue(dto.getPrice()));
         }
 
-        auction.updateCurrentPrice(dto.getPrice());
-
         CreateBidsDto createBidsDto = new CreateBidsDto(user, auctionId, dto.getPrice());
 
         CreateMyBidsDto createMyBidsDto = new CreateMyBidsDto(user, auction.getId());
@@ -93,6 +92,8 @@ public class BidsService {
             myBids.updateLastBidPrice(dto.getPrice());
 
             auction.updateCurrentPrice(dto.getPrice());
+
+
 
         } else {
 
@@ -127,6 +128,7 @@ public class BidsService {
 
         // after commit
         publisher.publishEvent(new AuctionEsEvent(auction.getId()));
+        publisher.publishEvent(new AuctionUpdateEvent(auction.getId()));
 
         return BidsResponseDto.from(saved);
     }
