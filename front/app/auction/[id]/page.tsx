@@ -36,7 +36,7 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
   const [auction, setAuction] = useState<AuctionResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [bidAmount, setBidAmount] = useState(0)
+  const [bidAmountStr, setBidAmountStr] = useState("")
   const [timeLeft, setTimeLeft] = useState("")
   const [isBidding, setIsBidding] = useState(false)
   const [bidHistory, setBidHistory] = useState<BidSummary[]>([])
@@ -86,7 +86,7 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
         setAuction(data)
         // bidStep이 없을 경우 기본값 사용 (1000원)
         const bidStep = data.bidStep || 1000
-        setBidAmount(data.currentPrice + bidStep)
+        setBidAmountStr(String(data.currentPrice + bidStep))
         
         // 입찰 내역도 함께 로드
         try {
@@ -133,7 +133,7 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
           // 상태가 변경되었으면 경매 정보 새로고침
           setAuction(updatedAuction)
           const bidStep = updatedAuction.bidStep || 1000
-          setBidAmount(updatedAuction.currentPrice + bidStep)
+          setBidAmountStr(String(updatedAuction.currentPrice + bidStep))
         
         // 입찰 내역도 새로고침
         try {
@@ -289,12 +289,11 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
 
   const handleQuickBid = (increment: number) => {
     if (!auction) return
-    setBidAmount((prev) => {
-      const newAmount = prev + increment
-      const bidStep = auction.bidStep || 1000
-      const minBid = auction.currentPrice + bidStep
-      return Math.max(newAmount, minBid)
-    })
+    const bidStep = auction.bidStep || 1000
+    const minBid = auction.currentPrice + bidStep
+    const current = parseInt(bidAmountStr.replace(/\D/g, ""), 10) || minBid
+    const newAmount = Math.max(current + increment, minBid)
+    setBidAmountStr(String(newAmount))
   }
 
   // 경매 삭제 핸들러 (판매자만 노출, DELETE /api/auction/{auctionId})
@@ -336,8 +335,9 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
 
     const bidStep = auction.bidStep || 1000
     const minBid = auction.currentPrice + bidStep
+    const bidAmount = parseInt(bidAmountStr.replace(/\D/g, ""), 10)
     // delta 0 방지: 입찰가는 반드시 현재가보다 높아야 함
-    if (bidAmount <= auction.currentPrice) {
+    if (isNaN(bidAmount) || bidAmount <= auction.currentPrice) {
       toast.error(`입찰가는 현재가(${auction.currentPrice.toLocaleString()}원)보다 높아야 합니다`)
       return
     }
@@ -354,7 +354,7 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
       if (latestAuction.currentPrice !== auction.currentPrice) {
         setAuction(latestAuction)
         const newMinBid = latestAuction.currentPrice + (latestAuction.bidStep || 1000)
-        setBidAmount(newMinBid)
+        setBidAmountStr(String(newMinBid))
         toast.error(`경매 가격이 변경되었습니다. 최소 입찰가가 ${newMinBid.toLocaleString()}원으로 업데이트되었습니다.`)
         return
       }
@@ -390,7 +390,7 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
 
       setAuction(auctionToUse)
       const bidStep = auctionToUse.bidStep || 1000
-      setBidAmount(auctionToUse.currentPrice + bidStep)
+      setBidAmountStr(String(auctionToUse.currentPrice + bidStep))
       
       // 입찰 내역 새로고침 (GET /api/bid/{auctionId})
       try {
@@ -735,11 +735,15 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
                         <div className="relative">
                           <Input
                             id="bid-amount"
-                            type="number"
-                            value={bidAmount}
-                            onChange={(e) => setBidAmount(Number(e.target.value))}
-                            min={auction.currentPrice + bidStep}
-                            step={bidStep}
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            value={bidAmountStr}
+                            onChange={(e) => {
+                              const v = e.target.value.replace(/\D/g, "").replace(/^0+/, "")
+                              setBidAmountStr(v)
+                            }}
+                            placeholder={String(auction.currentPrice + bidStep)}
                             className="pr-12 text-lg font-semibold"
                             disabled={isBidding}
                           />
@@ -789,7 +793,7 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
                           size="lg" 
                           className="w-full" 
                           onClick={handleBid}
-                          disabled={isBidding || bidAmount < auction.currentPrice + bidStep}
+                          disabled={isBidding || (parseInt(bidAmountStr.replace(/\D/g, ""), 10) || 0) < auction.currentPrice + bidStep}
                         >
                         {isBidding ? (
                           <>
