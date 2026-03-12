@@ -77,6 +77,9 @@ public class AfterCommitEventHandler {
         AuctionResponseDto auctionResponseDto = AuctionResponseDto.from(auction);
 
         messagingTemplate.convertAndSend("/topic/auction/" + auction.getId(), auctionResponseDto);
+        log.info("Successfully send: {}", auctionResponseDto.getAuctionId());
+
         messagingTemplate.convertAndSend("/topic/auction/list", auctionResponseDto);
+        log.info("Successfully send home page: {}", auctionResponseDto.getAuctionId());
     }
 }
