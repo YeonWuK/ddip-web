@@ -6,6 +6,7 @@ import {
   UseAuctionSocketReturn,
   SocketConnectionStatus,
   WebSocketBidEvent,
+  AuctionUpdateWsMessage,
   AuctionEndedEventDto,
   isBidEvent,
   isAuctionEndedEvent,
@@ -26,7 +27,7 @@ export function useAuctionSocket(): UseAuctionSocketReturn {
   const currentAuctionIdRef = useRef<number | null>(null)
   const pendingAuctionIdRef = useRef<number | null>(null)
 
-  const bidCallbackRef = useRef<((data: WebSocketBidEvent) => void) | null>(null)
+  const bidCallbackRef = useRef<((data: AuctionUpdateWsMessage) => void) | null>(null)
   const endedCallbackRef = useRef<((data: AuctionEndedEventDto) => void) | null>(null)
 
   const handleMessage = useCallback((message: IMessage) => {
@@ -116,7 +117,7 @@ export function useAuctionSocket(): UseAuctionSocketReturn {
   )
 
   /** 입찰 수신 콜백 등록 */
-  const onBidPlaced = useCallback((callback: (data: WebSocketBidEvent) => void) => {
+  const onBidPlaced = useCallback((callback: (data: AuctionUpdateWsMessage) => void) => {
     bidCallbackRef.current = callback
     return () => {
       bidCallbackRef.current = null

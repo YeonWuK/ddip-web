@@ -6,7 +6,7 @@
 import { UserResponse } from './api'
 
 /**
- * BidsResponseDto - 웹소켓 입찰 수신
+ * BidsResponseDto - 웹소켓 입찰 수신 (bidsResponseDto 내부)
  */
 export interface WebSocketBidEvent {
   id: number
@@ -14,6 +14,19 @@ export interface WebSocketBidEvent {
   user: UserResponse
   auctionId: number
   price: number
+}
+
+/**
+ * AuctionUpdateEventDto - 웹소켓으로 실제 수신하는 메시지
+ * { auctionResponseDto: {...}, bidsResponseDto: {...} }
+ */
+export interface AuctionUpdateWsMessage {
+  auctionResponseDto: {
+    auctionId?: number
+    currentPrice?: number
+    auctionStatus?: 'RUNNING' | 'ENDED' | 'CANCELED'
+  }
+  bidsResponseDto: WebSocketBidEvent
 }
 
 /**
@@ -34,15 +47,14 @@ export interface AuctionEndedEventDto {
 export type AuctionTopicMessage = WebSocketBidEvent | AuctionEndedEventDto
 
 /**
- * WebSocketBidEvent 여부 확인
+ * AuctionUpdateWsMessage 여부 확인 (백엔드 AuctionUpdateEventDto 구조)
  */
-export function isBidEvent(msg: unknown): msg is WebSocketBidEvent {
+export function isBidEvent(msg: unknown): msg is AuctionUpdateWsMessage {
   return (
     typeof msg === 'object' &&
     msg !== null &&
-    'price' in msg &&
-    'creationDate' in msg &&
-    'user' in msg
+    'auctionResponseDto' in msg &&
+    'bidsResponseDto' in msg
   )
 }
 
@@ -91,7 +103,7 @@ export interface UseAuctionSocketReturn {
   connectionStatus: SocketConnectionStatus
   joinAuction: (auctionId: number) => void
   leaveAuction: (auctionId: number) => void
-  onBidPlaced: (callback: (data: WebSocketBidEvent) => void) => () => void
+  onBidPlaced: (callback: (data: AuctionUpdateWsMessage) => void) => () => void
   onAuctionEnded: (callback: (data: AuctionEndedEventDto) => void) => () => void
   disconnect: () => void
 }

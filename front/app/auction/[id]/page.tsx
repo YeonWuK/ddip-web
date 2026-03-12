@@ -120,22 +120,25 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
 
     const unbindBid = onBidPlaced((data) => {
       const current = auctionRef.current
-      setRealtimeBids((prev) => [data, ...prev])
-      setAuction((prev) =>
-        prev ? { ...prev, currentPrice: data.price } : null
-      )
-      setBidAmountStr(String((current?.bidStep ?? 1000) + data.price))
+      const bid = data.bidsResponseDto
+      const newPrice = data.auctionResponseDto?.currentPrice ?? bid.price
 
-      // 입찰 내역에 실시간 반영 (중복 방지: id로 체크)
-      const newBid: BidSummary = {
-        id: data.id,
-        bidder: data.user,
-        bidderNickname: data.user?.nickname ?? '',
-        bidPrice: data.price,
-        bidAt: data.creationDate,
-      }
+      setRealtimeBids((prev) => [bid, ...prev])
+      setAuction((prev) =>
+        prev ? { ...prev, currentPrice: newPrice } : null
+      )
+      setBidAmountStr(String((current?.bidStep ?? 1000) + newPrice))
+
+      // 사이드바 입찰 내역 실시간 반영 (중복 방지)
       setBidHistory((prev) => {
-        if (prev.some((b) => b.id === data.id)) return prev
+        if (prev.some((b) => b.id === bid.id)) return prev
+        const newBid: BidSummary = {
+          id: bid.id,
+          bidder: bid.user ?? { id: 0, email: null, name: '', nickname: '', profileImageUrl: null, phone: null },
+          bidderNickname: bid.user?.nickname ?? '',
+          bidPrice: bid.price,
+          bidAt: bid.creationDate ?? '',
+        }
         return [newBid, ...prev]
       })
     })
@@ -818,7 +821,7 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {loadingBids ? (
+                  {loadingBids && bidHistory.length === 0 ? (
                     <div className="flex items-center justify-center py-8">
                       <Loader2 className="size-6 animate-spin text-muted-foreground" />
                     </div>
@@ -830,7 +833,7 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
                     <div className="max-h-[400px] space-y-2 overflow-y-auto">
                       {bidHistory.map((bid, index) => {
                         const isMyBid = user?.id === bid.bidder.id
-                        const isHighest = index === 0 && bid.bidPrice === auction.currentPrice
+                        const isHighest = bid.bidPrice === auction.currentPrice
                         
                         return (
                           <div
@@ -877,7 +880,6 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
                               </div>
                               {index < bidHistory.length - 1 && (() => {
                                 // 다음 입찰가 (더 오래된 입찰, index가 클수록 오래됨)
-                                // 입찰 내역이 최신순으로 정렬되어 있으므로, index가 큰 것이 더 오래된 입찰
                                 const nextBid = bidHistory[index + 1]
                                 // 증가액 계산 (현재 입찰가 - 다음 입찰가(더 오래된 입찰))
                                 const increase = bid.bidPrice - nextBid.bidPrice
