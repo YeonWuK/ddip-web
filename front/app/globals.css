@@ -125,3 +125,22 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* 경매 카드 입찰가 업데이트 시각 효과 */
+@keyframes price-flash {
+  0% {
+    background-color: oklch(0.85 0.12 85 / 0.6);
+    transform: scale(1.02);
+  }
+  50% {
+    background-color: oklch(0.9 0.1 85 / 0.4);
+  }
+  100% {
+    background-color: transparent;
+    transform: scale(1);
+  }
+}
+
+.animate-price-flash {
+  animation: price-flash 1.2s ease-out forwards;
+}

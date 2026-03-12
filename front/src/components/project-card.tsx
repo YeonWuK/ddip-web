@@ -4,7 +4,7 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/src/components/ui/c
 import { Badge } from "@/src/components/ui/badge"
 import { Progress } from "@/src/components/ui/progress"
 import { Button } from "@/src/components/ui/button"
-import { Clock, TrendingUp, Heart } from "lucide-react"
+import { Clock, Heart } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useState, useEffect } from "react"
@@ -132,11 +132,7 @@ export function ProjectCard({
           </div>
         </CardContent>
 
-        <CardFooter className={`flex items-center justify-between border-t text-muted-foreground ${compact ? "pt-2 px-4 text-xs" : "pt-4 text-sm"}`}>
-          <div className="flex items-center gap-1">
-            <TrendingUp className={compact ? "size-3" : "size-4"} />
-            <span>{backers.toLocaleString()}명 참여</span>
-          </div>
+        <CardFooter className={`flex items-center justify-end border-t text-muted-foreground ${compact ? "pt-2 px-4 text-xs" : "pt-4 text-sm"}`}>
           <div className="flex items-center gap-1">
             <Clock className={compact ? "size-3" : "size-4"} />
             <span>{daysLeft}일 남음</span>

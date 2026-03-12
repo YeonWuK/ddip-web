@@ -6,6 +6,7 @@ import { EmptyState } from "@/src/components/empty-state"
 import { FilterBar } from "@/src/components/filter-bar"
 import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { auctionApi } from "@/src/services/api"
+import { useAuctionListSocket } from "@/src/hooks/useAuctionListSocket"
 import { AuctionSummary } from "@/src/types/api"
 import { useFilterStore, filterAndSortAuctions } from "@/src/stores/filterStore"
 import { Loader2, Gavel } from "lucide-react"
@@ -15,11 +16,44 @@ export default function AuctionsPage() {
   const [loading, setLoading] = useState(true)
   const [hasMore, setHasMore] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
+  const [priceJustUpdatedIds, setPriceJustUpdatedIds] = useState<Set<number>>(new Set())
+  const clearFlashRef = useRef<Record<number, ReturnType<typeof setTimeout>>>({})
   const pageRef = useRef(1)
   const observerTarget = useRef<HTMLDivElement>(null)
   const PAGE_SIZE = 20
-  
+
+  const { onBidUpdate } = useAuctionListSocket()
   const { auctionStatus, auctionSort } = useFilterStore()
+
+  const applyBidUpdate = useCallback(({ auctionId, price, bidCount }: { auctionId: number; price: number; bidCount?: number }) => {
+    setAuctions((prev) => {
+      if (!prev.some((a) => a.id === auctionId)) return prev
+      return prev.map((a) =>
+        a.id === auctionId
+          ? { ...a, currentPrice: price, ...(bidCount != null ? { bidCount } : {}) }
+          : a
+      )
+    })
+    setPriceJustUpdatedIds((prev) => new Set(prev).add(auctionId))
+    if (clearFlashRef.current[auctionId]) clearTimeout(clearFlashRef.current[auctionId])
+    clearFlashRef.current[auctionId] = setTimeout(() => {
+      setPriceJustUpdatedIds((p) => {
+        const next = new Set(p)
+        next.delete(auctionId)
+        return next
+      })
+      delete clearFlashRef.current[auctionId]
+    }, 1500)
+  }, [])
+
+  useEffect(() => {
+    const unsubscribe = onBidUpdate(applyBidUpdate)
+    return () => {
+      unsubscribe()
+      Object.values(clearFlashRef.current).forEach(clearTimeout)
+      clearFlashRef.current = {}
+    }
+  }, [onBidUpdate, applyBidUpdate])
 
   // 초기 데이터 로드 및 필터/정렬 변경 시 초기화
   useEffect(() => {
@@ -180,6 +214,7 @@ export default function AuctionsPage() {
       timeLeft,
       isLive: auction.status === "RUNNING",
       status: auction.status,
+      priceJustUpdated: priceJustUpdatedIds.has(auction.id),
     }
   })
 

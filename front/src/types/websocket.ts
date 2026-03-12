@@ -60,6 +60,25 @@ export function isAuctionEndedEvent(msg: unknown): msg is AuctionEndedEventDto {
 }
 
 /**
+ * AuctionListBidUpdate - /topic/auction/list 입찰가 업데이트 DTO
+ * (WebSocketBidEvent와 동일 구조일 수 있음 - auctionId, price 필수)
+ */
+export interface AuctionListBidUpdate {
+  auctionId: number
+  price: number
+  bidCount?: number
+}
+
+/**
+ * /topic/auction/list 입찰 업데이트 수신 여부 확인
+ * WebSocketBidEvent 또는 AuctionListBidUpdate 형태 모두 수용
+ */
+export function isAuctionListUpdate(msg: unknown): msg is AuctionListBidUpdate {
+  if (typeof msg !== 'object' || msg === null) return false
+  return 'auctionId' in msg && 'price' in msg && typeof (msg as { auctionId: unknown }).auctionId === 'number' && typeof (msg as { price: unknown }).price === 'number'
+}
+
+/**
  * 웹소켓 연결 상태
  */
 export type SocketConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error'

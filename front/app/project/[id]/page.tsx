@@ -665,10 +665,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     <div>
                       <div className="mb-1 flex items-center gap-2 text-muted-foreground">
                         <TrendingUp className="size-4" />
-                        <span className="text-xs">참여자</span>
+                        <span className="text-xs">참여 건수</span>
                       </div>
                       <p className="text-xl font-bold">
-                        {(project.backerCount ?? project.rewardTiers.reduce((sum, tier) => sum + tier.soldQuantity, 0)).toLocaleString()}명
+                        {project.rewardTiers.reduce((sum, tier) => sum + tier.soldQuantity, 0).toLocaleString()}건
                       </p>
                     </div>
                     <div>

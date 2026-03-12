@@ -170,7 +170,7 @@ export default function ProjectsPage() {
     const daysLeft = isNaN(endTime.getTime()) 
       ? 0 
       : Math.ceil((endTime.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-    const backers = project.rewardTiers.reduce((sum, tier) => sum + tier.soldQuantity, 0)
+    const backers = ((project.rewardTiers ?? []).reduce((sum, tier) => sum + tier.soldQuantity, 0) || project.backerCount) ?? 0
 
     return {
       id: String(project.id),

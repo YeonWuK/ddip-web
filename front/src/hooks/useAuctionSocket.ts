@@ -24,9 +24,23 @@ export function useAuctionSocket(): UseAuctionSocketReturn {
   const clientRef = useRef<Client | null>(null)
   const subscriptionRef = useRef<{ id: string; unsubscribe: () => void } | null>(null)
   const currentAuctionIdRef = useRef<number | null>(null)
+  const pendingAuctionIdRef = useRef<number | null>(null)
 
   const bidCallbackRef = useRef<((data: WebSocketBidEvent) => void) | null>(null)
   const endedCallbackRef = useRef<((data: AuctionEndedEventDto) => void) | null>(null)
+
+  const handleMessage = useCallback((message: IMessage) => {
+    try {
+      const body = JSON.parse(message.body) as unknown
+      if (isBidEvent(body)) {
+        bidCallbackRef.current?.(body)
+      } else if (isAuctionEndedEvent(body)) {
+        endedCallbackRef.current?.(body)
+      }
+    } catch {
+      // ignore parse errors
+    }
+  }, [])
 
   // STOMP 클라이언트 연결
   useEffect(() => {
@@ -42,6 +56,14 @@ export function useAuctionSocket(): UseAuctionSocketReturn {
 
     client.onConnect = () => {
       setConnectionStatus('connected')
+      const pid = pendingAuctionIdRef.current
+      if (pid !== null) {
+        pendingAuctionIdRef.current = null
+        leaveAuction()
+        currentAuctionIdRef.current = pid
+        const sub = client.subscribe(`/topic/auction/${pid}`, handleMessage)
+        subscriptionRef.current = { id: sub.id, unsubscribe: sub.unsubscribe }
+      }
     }
 
     client.onStompError = () => {
@@ -56,6 +78,7 @@ export function useAuctionSocket(): UseAuctionSocketReturn {
     clientRef.current = client
 
     return () => {
+      pendingAuctionIdRef.current = null
       subscriptionRef.current?.unsubscribe()
       subscriptionRef.current = null
       currentAuctionIdRef.current = null
@@ -65,31 +88,24 @@ export function useAuctionSocket(): UseAuctionSocketReturn {
     }
   }, [])
 
-  const handleMessage = useCallback((message: IMessage) => {
-    try {
-      const body = JSON.parse(message.body) as unknown
-      if (isBidEvent(body)) {
-        bidCallbackRef.current?.(body)
-      } else if (isAuctionEndedEvent(body)) {
-        endedCallbackRef.current?.(body)
-      }
-    } catch {
-      // ignore parse errors
-    }
-  }, [])
-
   /** 구독 해제 (leave) - auctionId는 호환용, 현재 구독만 해제 */
   const leaveAuction = useCallback((_auctionId?: number) => {
+    pendingAuctionIdRef.current = null
     subscriptionRef.current?.unsubscribe()
     subscriptionRef.current = null
     currentAuctionIdRef.current = null
   }, [])
 
-  /** 경매 구독 (join) */
+  /** 경매 구독 (join) - 연결 전 호출 시 대기 후 onConnect에서 구독 */
   const joinAuction = useCallback(
     (auctionId: number) => {
       const client = clientRef.current
-      if (!client || !client.active) return
+      if (!client) return
+
+      if (!client.connected) {
+        pendingAuctionIdRef.current = auctionId
+        return
+      }
 
       leaveAuction()
       currentAuctionIdRef.current = auctionId
@@ -116,6 +132,7 @@ export function useAuctionSocket(): UseAuctionSocketReturn {
   }, [])
 
   const disconnect = useCallback(() => {
+    pendingAuctionIdRef.current = null
     leaveAuction()
     clientRef.current?.deactivate()
     clientRef.current = null

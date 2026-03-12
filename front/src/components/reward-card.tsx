@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/src/components/ui/card"
 import { Button } from "@/src/components/ui/button"
 import { Badge } from "@/src/components/ui/badge"
-import { CheckCircle2, Users, Clock } from "lucide-react"
+import { CheckCircle2, Clock } from "lucide-react"
 
 interface RewardCardProps {
   id: string
@@ -72,10 +72,6 @@ export function RewardCard({
           <div className="flex items-center gap-2 text-muted-foreground">
             <Clock className="size-4" />
             <span>예상 배송: {estimatedDelivery}</span>
-          </div>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Users className="size-4" />
-            <span>{backers}명 참여</span>
           </div>
           {limited && remaining !== undefined && (
             <div className="mt-2 text-xs">

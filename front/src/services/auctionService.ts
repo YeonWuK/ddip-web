@@ -422,7 +422,7 @@ export const auctionApi = {
           },
           bidderNickname: bidderData?.nickname ?? bid.bidderNickname ?? bid.bidder_nickname ?? '',
           bidPrice: bid.price ?? bid.bidPrice ?? bid.bid_price ?? 0,
-          bidAt: bid.createdAt ?? bid.created_at ?? bid.createdDate ?? bid.bidAt ?? bid.bid_at ?? '',
+          bidAt: bid.creationDate ?? '',
         };
       });
     } catch (error) {

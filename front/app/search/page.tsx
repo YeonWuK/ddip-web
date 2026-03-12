@@ -8,10 +8,11 @@ import { FilterBar } from "@/src/components/filter-bar"
 import { Button } from "@/src/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs"
 import { Input } from "@/src/components/ui/input"
-import { useState, useEffect, Suspense, use, useMemo } from "react"
+import { useState, useEffect, Suspense, use, useMemo, useCallback, useRef } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { searchApi, toS3ImageUrl, type ProjectSearchResponse, type AuctionSearchResponse, type SearchAutoCompleteResponse } from "@/src/services/api"
 import { useFilterStore } from "@/src/stores/filterStore"
+import { useAuctionListSocket } from "@/src/hooks/useAuctionListSocket"
 import { Loader2, Search, Package, Gavel, Sparkles } from "lucide-react"
 
 function SearchContent() {
@@ -25,9 +26,37 @@ function SearchContent() {
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<"all" | "projects" | "auctions">("all")
-  
-  // Zustand 필터 상태
+  const [priceJustUpdatedIds, setPriceJustUpdatedIds] = useState<Set<number>>(new Set())
+  const clearFlashRef = useRef<Record<number, ReturnType<typeof setTimeout>>>({})
+
+  const { onBidUpdate } = useAuctionListSocket()
   const { projectStatus, projectSort, auctionStatus, auctionSort } = useFilterStore()
+
+  const applyBidUpdate = useCallback(({ auctionId, price }: { auctionId: number; price: number }) => {
+    setAuctions((prev) => {
+      if (!prev.some((a) => a.id === auctionId)) return prev
+      return prev.map((a) => (a.id === auctionId ? { ...a, currentPrice: price } : a))
+    })
+    setPriceJustUpdatedIds((prev) => new Set(prev).add(auctionId))
+    if (clearFlashRef.current[auctionId]) clearTimeout(clearFlashRef.current[auctionId])
+    clearFlashRef.current[auctionId] = setTimeout(() => {
+      setPriceJustUpdatedIds((p) => {
+        const next = new Set(p)
+        next.delete(auctionId)
+        return next
+      })
+      delete clearFlashRef.current[auctionId]
+    }, 1500)
+  }, [])
+
+  useEffect(() => {
+    const unsubscribe = onBidUpdate(applyBidUpdate)
+    return () => {
+      unsubscribe()
+      Object.values(clearFlashRef.current).forEach(clearTimeout)
+      clearFlashRef.current = {}
+    }
+  }, [onBidUpdate, applyBidUpdate])
 
   useEffect(() => {
     setSearchQuery(query)
@@ -155,6 +184,7 @@ function SearchContent() {
       bidCount: 0,
       timeLeft,
       isLive: auction.status === "RUNNING",
+      priceJustUpdated: priceJustUpdatedIds.has(auction.id),
     }
   })
 

@@ -30,6 +30,8 @@ interface AuctionCardProps {
   status?: AuctionStatus
   /** Wadiz 스타일 컴팩트 카드 (리스트 페이지용) */
   compact?: boolean
+  /** 입찰가가 막 업데이트됐을 때 시각 효과 표시 */
+  priceJustUpdated?: boolean
 }
 
 export function AuctionCard({
@@ -44,6 +46,7 @@ export function AuctionCard({
   isLive,
   status,
   compact = false,
+  priceJustUpdated = false,
 }: AuctionCardProps) {
   const [isFavorite, setIsFavorite] = useState(false)
   const normalizedStatus = (status || "").toUpperCase()
@@ -111,7 +114,11 @@ export function AuctionCard({
         </CardHeader>
 
         <CardContent className={compact ? "space-y-2 px-4" : "space-y-3"}>
-          <div>
+          <div
+            className={`rounded-md px-2 py-1 -mx-2 -my-1 transition-colors ${
+              priceJustUpdated ? "animate-price-flash" : ""
+            }`}
+          >
             <p className={`text-muted-foreground ${compact ? "mb-0.5 text-xs" : "mb-1 text-xs"}`}>현재 입찰가</p>
             <div className="flex items-baseline gap-1">
               <span className={`font-bold text-secondary ${compact ? "text-lg" : "text-2xl"}`}>{currentBid.toLocaleString()}</span>
@@ -121,10 +128,12 @@ export function AuctionCard({
         </CardContent>
 
         <CardFooter className={`flex items-center justify-between border-t text-muted-foreground ${compact ? "pt-2 px-4 text-xs" : "pt-4 text-sm"}`}>
-          <div className="flex items-center gap-1">
-            <Gavel className={compact ? "size-3" : "size-4"} />
-            <span>{bidCount}회 입찰</span>
-          </div>
+          {bidCount > 0 && (
+            <div className="flex items-center gap-1">
+              <Gavel className={compact ? "size-3" : "size-4"} />
+              <span>{bidCount}회 입찰</span>
+            </div>
+          )}
           <div className="flex items-center gap-1">
             <Clock className={compact ? "size-3" : "size-4"} />
             <span>{timeLeft}</span>

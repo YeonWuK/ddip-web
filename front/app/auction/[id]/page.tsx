@@ -43,12 +43,6 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
   const [isFavorite, setIsFavorite] = useState(false)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   
-  // 알림 표시 여부 추적 (중복 알림 방지)
-  const notificationShownRef = useRef<{
-    started?: boolean
-    ended?: boolean
-  }>({})
-  
   // 페이지 가시성 추적 (백그라운드에서는 알림 표시 안 함)
   const [isPageVisible, setIsPageVisible] = useState(true)
   
@@ -110,102 +104,6 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
     }
   }, [])
 
-  // 경매 상태 주기적 체크 (종료 시간에 따라 동적으로 조정)
-  useEffect(() => {
-    if (!auction) return
-
-    let timeoutId: NodeJS.Timeout | null = null
-
-    const checkStatus = async () => {
-      const auctionId = parseInt(id, 10)
-      if (isNaN(auctionId)) return
-
-        const updatedAuction = await auctionApi.checkAndUpdateAuctionStatus(auctionId)
-        if (updatedAuction && updatedAuction.status !== auction.status) {
-          // 상태가 변경되었으면 경매 정보 새로고침
-          setAuction(updatedAuction)
-          const bidStep = updatedAuction.bidStep || 1000
-          setBidAmountStr(String(updatedAuction.currentPrice + bidStep))
-        
-        // 입찰 내역도 새로고침
-        try {
-          const bids = await auctionApi.getBidsByAuction(auctionId)
-          setBidHistory(bids)
-        } catch {
-          // 입찰 내역 로드 실패 시 무시
-        }
-
-        // 상태 변경 알림 (페이지가 보이고, 최초 한 번만 표시)
-        if (isPageVisible) {
-          showAuctionNotificationIfNeeded(
-            updatedAuction.id,
-            updatedAuction.title,
-            updatedAuction.status,
-            auction.status
-          )
-          
-          // 로컬 ref 업데이트 (중복 방지용)
-          if (updatedAuction.status === 'ENDED') {
-            notificationShownRef.current.ended = true
-          } else if (updatedAuction.status === 'RUNNING') {
-            notificationShownRef.current.started = true
-          }
-        }
-      }
-
-      // 다음 체크 주기 계산
-      const now = new Date().getTime()
-      const startTime = new Date(auction.startAt).getTime()
-      const endTime = new Date(auction.endAt).getTime()
-      
-      // 시작 시간까지의 거리
-      const distanceToStart = startTime - now
-      // 종료 시간까지의 거리
-      const distanceToEnd = endTime - now
-      
-      // 가장 가까운 이벤트 시간까지의 거리
-      const minDistance = Math.min(
-        distanceToStart > 0 ? distanceToStart : Infinity,
-        distanceToEnd > 0 ? distanceToEnd : Infinity
-      )
-      
-      let checkInterval: number
-      
-      // 1분 미만: 1초마다 (정확한 타이밍)
-      if (minDistance < 60 * 1000) {
-        checkInterval = 1000
-      }
-      // 5분 미만: 2초마다
-      else if (minDistance < 5 * 60 * 1000) {
-        checkInterval = 2000
-      }
-      // 10분 미만: 5초마다
-      else if (minDistance < 10 * 60 * 1000) {
-        checkInterval = 5000
-      }
-      // 30분 미만: 10초마다
-      else if (minDistance < 30 * 60 * 1000) {
-        checkInterval = 10000
-      }
-      // 그 외: 30초마다
-      else {
-        checkInterval = 30000
-      }
-      
-      // 다음 체크 예약
-      timeoutId = setTimeout(checkStatus, checkInterval)
-    }
-
-    // 즉시 한 번 체크
-    checkStatus()
-
-    return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId)
-      }
-    }
-  }, [id, auction, isPageVisible])
-
   // 찜하기 상태 동기화
   useEffect(() => {
     if (auction) {
@@ -227,6 +125,19 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
         prev ? { ...prev, currentPrice: data.price } : null
       )
       setBidAmountStr(String((current?.bidStep ?? 1000) + data.price))
+
+      // 입찰 내역에 실시간 반영 (중복 방지: id로 체크)
+      const newBid: BidSummary = {
+        id: data.id,
+        bidder: data.user,
+        bidderNickname: data.user?.nickname ?? '',
+        bidPrice: data.price,
+        bidAt: data.creationDate,
+      }
+      setBidHistory((prev) => {
+        if (prev.some((b) => b.id === data.id)) return prev
+        return [newBid, ...prev]
+      })
     })
 
     const unbindEnded = onAuctionEnded((data) => {
@@ -747,11 +658,6 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
                       </span>
                       <span className="text-sm text-muted-foreground">원</span>
                     </div>
-                    {auction.winner && (
-                      <div className="mt-2 text-sm text-muted-foreground">
-                        낙찰자: {auction.winner.nickname}
-                      </div>
-                    )}
                   </div>
 
                   <Separator />

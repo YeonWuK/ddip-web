@@ -7,8 +7,9 @@ import { AuctionCard } from "@/src/components/auction-card"
 import { EmptyState } from "@/src/components/empty-state"
 import { Button } from "@/src/components/ui/button"
 import Link from "next/link"
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { projectApi, auctionApi } from "@/src/services/api"
+import { useAuctionListSocket } from "@/src/hooks/useAuctionListSocket"
 import { ProjectResponse, AuctionSummary, AuctionResponse } from "@/src/types/api"
 import { Loader2, Package, Gavel, Clock, ArrowRight, Sparkles } from "lucide-react"
 
@@ -18,6 +19,39 @@ export default function HomePage() {
   const [urgentProjects, setUrgentProjects] = useState<ProjectResponse[]>([])
   const [urgentAuctions, setUrgentAuctions] = useState<AuctionSummary[]>([])
   const [loading, setLoading] = useState(true)
+  const [priceJustUpdatedIds, setPriceJustUpdatedIds] = useState<Set<number>>(new Set())
+  const clearFlashRef = useRef<Record<number, ReturnType<typeof setTimeout>>>({})
+
+  const { onBidUpdate } = useAuctionListSocket()
+
+  const applyBidUpdate = useCallback(({ auctionId, price, bidCount }: { auctionId: number; price: number; bidCount?: number }) => {
+    const updateAuction = (a: AuctionSummary) =>
+      a.id === auctionId
+        ? { ...a, currentPrice: price, ...(bidCount != null ? { bidCount } : {}) }
+        : a
+    setPopularAuctions((prev) => (prev.some((a) => a.id === auctionId) ? prev.map(updateAuction) : prev))
+    setUrgentAuctions((prev) => (prev.some((a) => a.id === auctionId) ? prev.map(updateAuction) : prev))
+
+    setPriceJustUpdatedIds((prev) => new Set(prev).add(auctionId))
+    if (clearFlashRef.current[auctionId]) clearTimeout(clearFlashRef.current[auctionId])
+    clearFlashRef.current[auctionId] = setTimeout(() => {
+      setPriceJustUpdatedIds((p) => {
+        const next = new Set(p)
+        next.delete(auctionId)
+        return next
+      })
+      delete clearFlashRef.current[auctionId]
+    }, 1500)
+  }, [])
+
+  useEffect(() => {
+    const unsubscribe = onBidUpdate(applyBidUpdate)
+    return () => {
+      unsubscribe()
+      Object.values(clearFlashRef.current).forEach(clearTimeout)
+      clearFlashRef.current = {}
+    }
+  }, [onBidUpdate, applyBidUpdate])
 
   useEffect(() => {
     const loadData = async () => {
@@ -160,7 +194,7 @@ export default function HomePage() {
     const daysLeft = isNaN(endTime.getTime()) 
       ? 0 
       : Math.ceil((endTime.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-    const backers = (project.rewardTiers ?? []).reduce((sum, tier) => sum + tier.soldQuantity, 0)
+    const backers = ((project.rewardTiers ?? []).reduce((sum, tier) => sum + tier.soldQuantity, 0) || project.backerCount) ?? 0
 
     return {
       id: String(project.id),
@@ -183,7 +217,7 @@ export default function HomePage() {
     const daysLeft = isNaN(endTime.getTime()) 
       ? 0 
       : Math.ceil((endTime.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-    const backers = (project.rewardTiers ?? []).reduce((sum, tier) => sum + tier.soldQuantity, 0)
+    const backers = ((project.rewardTiers ?? []).reduce((sum, tier) => sum + tier.soldQuantity, 0) || project.backerCount) ?? 0
 
     return {
       id: String(project.id),
@@ -199,7 +233,7 @@ export default function HomePage() {
     }
   })
 
-  // 인기 경매 카드
+  // 인기 경매 카드 (priceJustUpdated는 렌더 시점에 전달)
   const popularAuctionCards = popularAuctions.map((auction) => {
     const endTime = new Date(auction.endAt)
     const now = new Date()
@@ -231,6 +265,7 @@ export default function HomePage() {
       bidCount: auction.bidCount ?? 0,
       timeLeft,
       isLive: auction.status === "RUNNING",
+      priceJustUpdated: priceJustUpdatedIds.has(auction.id),
     }
   })
 
@@ -310,6 +345,7 @@ export default function HomePage() {
                             bidCount={auction.bidCount ?? 0}
                             timeLeft={timeLeft}
                             isLive={auction.status === "RUNNING"}
+                            priceJustUpdated={priceJustUpdatedIds.has(auction.id)}
                           />
                         )
                       })}
