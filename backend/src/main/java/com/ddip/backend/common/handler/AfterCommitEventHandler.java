@@ -2,6 +2,8 @@ package com.ddip.backend.common.handler;
 
 import com.ddip.backend.auction.dto.auction.AuctionEndedEventDto;
 import com.ddip.backend.auction.domain.Auction;
+import com.ddip.backend.auction.dto.auction.AuctionResponseDto;
+import com.ddip.backend.auction.event.AuctionUpdateEvent;
 import com.ddip.backend.common.es.document.AuctionDocument;
 import com.ddip.backend.common.es.document.ProjectDocument;
 import com.ddip.backend.common.es.repository.AuctionElasticsearchRepository;
@@ -65,5 +67,16 @@ public class AfterCommitEventHandler {
         AuctionEndedEventDto auctionEndedEventDto = AuctionEndedEventDto.from(auction);
 
         messagingTemplate.convertAndSend("/topic/auction/" + auction.getId(), auctionEndedEventDto);
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void auctionUpdateEventHandler(AuctionUpdateEvent event) {
+        Auction auction = auctionRepository.findById(event.auctionId())
+                .orElseThrow(() -> new AuctionNotFoundException(event.auctionId()));
+
+        AuctionResponseDto auctionResponseDto = AuctionResponseDto.from(auction);
+
+        messagingTemplate.convertAndSend("/topic/auction/" + auction.getId(), auctionResponseDto);
+        messagingTemplate.convertAndSend("/topic/auction/list", auctionResponseDto);
     }
 }
