@@ -1,9 +1,14 @@
 package com.ddip.backend.common.handler;
 
+import com.ddip.backend.auction.domain.Bids;
 import com.ddip.backend.auction.dto.auction.AuctionEndedEventDto;
 import com.ddip.backend.auction.domain.Auction;
 import com.ddip.backend.auction.dto.auction.AuctionResponseDto;
+import com.ddip.backend.auction.dto.auction.AuctionUpdateEventDto;
+import com.ddip.backend.auction.dto.bids.BidsResponseDto;
 import com.ddip.backend.auction.event.AuctionUpdateEvent;
+import com.ddip.backend.auction.service.AuctionService;
+import com.ddip.backend.auction.service.BidsService;
 import com.ddip.backend.common.es.document.AuctionDocument;
 import com.ddip.backend.common.es.document.ProjectDocument;
 import com.ddip.backend.common.es.repository.AuctionElasticsearchRepository;
@@ -12,9 +17,7 @@ import com.ddip.backend.common.es.repository.ProjectElasticsearchRepository;
 import com.ddip.backend.auction.event.AuctionEndEvent;
 import com.ddip.backend.auction.event.AuctionEsEvent;
 import com.ddip.backend.project.event.ProjectEsEvent;
-import com.ddip.backend.auction.validation.auction.AuctionNotFoundException;
 import com.ddip.backend.project.exception.project.ProjectNotFoundException;
-import com.ddip.backend.auction.repository.AuctionRepository;
 import com.ddip.backend.project.repository.ProjectRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,8 +31,9 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @RequiredArgsConstructor
 public class AfterCommitEventHandler {
 
+    private final BidsService bidsService;
+    private final AuctionService auctionService;
     private final ProjectRepository projectRepository;
-    private final AuctionRepository auctionRepository;
     private final ProjectElasticsearchRepository projectElasticsearchRepository;
     private final AuctionElasticsearchRepository auctionElasticSearchRepository;
 
@@ -37,8 +41,8 @@ public class AfterCommitEventHandler {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void auctionDocumentHandler(AuctionEsEvent event) {
-        Auction auction = auctionRepository.findById(event.auctionId())
-                .orElseThrow(() -> new AuctionNotFoundException(event.auctionId()));
+
+        Auction auction = auctionService.getAuctionById(event.auctionId());
 
         AuctionDocument auctionDocument = AuctionDocument.from(auction, auction.getMainImagKey());
 
@@ -61,8 +65,7 @@ public class AfterCommitEventHandler {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void auctionEventHandler(AuctionEndEvent event) {
-        Auction auction = auctionRepository.findById(event.auctionId())
-                .orElseThrow(() -> new AuctionNotFoundException(event.auctionId()));
+        Auction auction = auctionService.getAuctionById(event.auctionId());
 
         AuctionEndedEventDto auctionEndedEventDto = AuctionEndedEventDto.from(auction);
 
@@ -71,12 +74,16 @@ public class AfterCommitEventHandler {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void auctionUpdateEventHandler(AuctionUpdateEvent event) {
-        Auction auction = auctionRepository.findById(event.auctionId())
-                .orElseThrow(() -> new AuctionNotFoundException(event.auctionId()));
+
+        Auction auction = auctionService.getAuctionById(event.auctionId());
+
+        Bids bids = bidsService.getBidsById(event.BidId());
 
         AuctionResponseDto auctionResponseDto = AuctionResponseDto.from(auction);
 
-        messagingTemplate.convertAndSend("/topic/auction/" + auction.getId(), auctionResponseDto);
+        AuctionUpdateEventDto auctionUpdateEventDto = AuctionUpdateEventDto.from(auction, bids);
+
+        messagingTemplate.convertAndSend("/topic/auction/" + auction.getId(), auctionUpdateEventDto);
         log.info("Successfully send: {}", auctionResponseDto.getAuctionId());
 
         messagingTemplate.convertAndSend("/topic/auction/list", auctionResponseDto);
