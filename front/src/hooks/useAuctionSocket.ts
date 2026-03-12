@@ -33,13 +33,17 @@ export function useAuctionSocket(): UseAuctionSocketReturn {
   const handleMessage = useCallback((message: IMessage) => {
     try {
       const body = JSON.parse(message.body) as unknown
+      console.log('[WS] 메시지 수신:', JSON.stringify(body))
+      console.log('[WS] isBidEvent:', isBidEvent(body))
+      console.log('[WS] isAuctionEndedEvent:', isAuctionEndedEvent(body))
       if (isBidEvent(body)) {
+        console.log('[WS] bid 콜백 호출, callback 존재:', !!bidCallbackRef.current)
         bidCallbackRef.current?.(body)
       } else if (isAuctionEndedEvent(body)) {
         endedCallbackRef.current?.(body)
       }
-    } catch {
-      // ignore parse errors
+    } catch (e) {
+      console.log('[WS] 파싱 오류:', e)
     }
   }, [])
 
@@ -56,6 +60,7 @@ export function useAuctionSocket(): UseAuctionSocketReturn {
     })
 
     client.onConnect = () => {
+      console.log('[WS] STOMP 연결 성공')
       setConnectionStatus('connected')
       const pid = pendingAuctionIdRef.current
       if (pid !== null) {
@@ -110,6 +115,7 @@ export function useAuctionSocket(): UseAuctionSocketReturn {
 
       leaveAuction()
       currentAuctionIdRef.current = auctionId
+      console.log('[WS] 구독:', `/topic/auction/${auctionId}`)
       const sub = client.subscribe(`/topic/auction/${auctionId}`, handleMessage)
       subscriptionRef.current = { id: sub.id, unsubscribe: sub.unsubscribe }
     },
