@@ -52,7 +52,7 @@ public class BidsService {
      * 경매 참여
      */
     @DistributedLock(key = "'auction:' + #auctionId")
-    public BidsResponseDto createBid(Long userId, Long auctionId, BidsRequestDto dto) {
+    public void createBid(Long userId, Long auctionId, BidsRequestDto dto) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
@@ -128,15 +128,18 @@ public class BidsService {
 
         // after commit
         publisher.publishEvent(new AuctionEsEvent(auction.getId()));
-        publisher.publishEvent(new AuctionUpdateEvent(auction.getId()));
-
-        return BidsResponseDto.from(saved);
+        publisher.publishEvent(new AuctionUpdateEvent(auction.getId(), saved.getId()));
     }
 
     public List<BidsResponseDto> getAllBids(Long auctionId) {
         return bidsRepository.findByAuctionId(auctionId).stream()
                 .map(BidsResponseDto::from)
                 .collect(Collectors.toList());
+    }
+
+    public Bids getBidsById(Long bidsId) {
+        return bidsRepository.findById(bidsId)
+                .orElseThrow(() -> new IllegalArgumentException("Bids Not Found Exception"));
     }
 
     public List<Bids> getBidsByUser(Long userId) {
