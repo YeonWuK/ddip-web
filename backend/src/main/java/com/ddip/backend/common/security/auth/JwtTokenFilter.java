@@ -102,11 +102,15 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             return true;
         }
 
+        if (path.startsWith("/ws")) {
+            return true;
+        }
+
         if ("GET".equalsIgnoreCase(method)) {
-            if (path.equals("/api/crowd") || path.equals("^/api/crowd/\\d+$")) {
+            if (path.equals("/api/crowd") || path.matches("^/api/crowd/\\d+$")) {
                 return true;
             }
-            if (path.equals("/api/auction") || path.equals("^/api/auction/\\d+$")) {
+            if (path.equals("/api/auction") || path.matches("^/api/auction/\\d+$")) {
                 return true;
             }
         }
