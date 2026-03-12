@@ -31,7 +31,7 @@ import { WebSocketBidEvent } from "@/src/types/websocket"
 export default function AuctionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
-  const { user, refreshUser } = useAuth()
+  const { isAuthenticated, user, refreshUser } = useAuth()
   const [auction, setAuction] = useState<AuctionResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -419,9 +419,9 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
       <Navigation />
 
       <main className="container mx-auto px-4 py-8">
-        <div className="grid gap-8 lg:grid-cols-3">
+        <div className="grid gap-8 xl:grid-cols-3">
           {/* Main content */}
-          <div className="lg:col-span-2">
+          <div className="xl:col-span-2">
             {/* Hero image gallery */}
             {(() => {
               const images = auction.imageUrls && auction.imageUrls.length > 0
@@ -506,23 +506,30 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
               <p className="mb-4 text-pretty text-lg text-muted-foreground">{auction.description}</p>
 
               <div className="flex flex-wrap gap-3">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => {
-                    if (!auction) return
-                    const newState = toggleWishlist(auction.id, "auction")
-                    setIsFavorite(newState)
-                    if (newState) {
-                      toast.success("찜하기에 추가되었습니다")
-                    } else {
-                      toast.info("찜하기에서 제거되었습니다")
-                    }
-                  }}
-                >
-                  <Heart className={`mr-2 size-4 ${isFavorite ? "fill-red-500 text-red-500" : ""}`} />
-                  찜하기
-                </Button>
+                {isAuthenticated && (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="size-9 shrink-0 rounded-full"
+                    onClick={() => {
+                      if (!auction) return
+                      toggleWishlist(auction.id, "auction")
+                      const nowInWishlist = isInWishlist(auction.id, "auction")
+                      setIsFavorite(nowInWishlist)
+                      if (nowInWishlist) {
+                        toast.success("찜하기에 추가되었습니다")
+                      } else {
+                        toast.info("찜하기에서 제거되었습니다")
+                      }
+                    }}
+                  >
+                    <Heart
+                      className={`size-5 transition-colors ${
+                        isFavorite ? "fill-red-500 text-red-500" : "text-muted-foreground"
+                      }`}
+                    />
+                  </Button>
+                )}
                 <Button variant="outline" size="sm">
                   <Share2 className="mr-2 size-4" />
                   공유하기
@@ -639,8 +646,8 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
           </div>
 
           {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-20 space-y-6">
+          <div className="xl:col-span-1">
+            <div className="space-y-6 xl:sticky xl:top-20">
               {/* Bidding card */}
               <Card className="border-primary shadow-lg">
                 <CardHeader className="bg-primary/5">

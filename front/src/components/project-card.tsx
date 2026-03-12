@@ -8,7 +8,7 @@ import { Clock, Heart } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useState, useEffect } from "react"
-import { isInWishlist, toggleWishlist } from "@/src/lib/wishlist"
+import { isInWishlist, toggleWishlist, WISHLIST_CHANGED_EVENT } from "@/src/lib/wishlist"
 import { toast } from "sonner"
 import type { ProjectStatus } from "@/src/types/api"
 
@@ -50,21 +50,34 @@ export function ProjectCard({
   compact = false,
 }: ProjectCardProps) {
   const progress = goalAmount > 0 ? (currentAmount / goalAmount) * 100 : 0
+  const numericId = Number(id)
   const normalizedStatus = (status || "").toUpperCase()
   const isNonOpen = normalizedStatus && normalizedStatus !== "OPEN"
   const statusLabel = isNonOpen ? STATUS_LABELS[normalizedStatus] ?? normalizedStatus : null
   const [isFavorite, setIsFavorite] = useState(false)
 
   useEffect(() => {
-    setIsFavorite(isInWishlist(Number(id), "project"))
-  }, [id])
+    setIsFavorite(isInWishlist(numericId, "project"))
+
+    const handleWishlistChanged = (event: Event) => {
+      const customEvent = event as CustomEvent<{ id: number; type: "project" | "auction"; inWishlist: boolean }>
+      if (customEvent.detail?.type === "project" && customEvent.detail?.id === numericId) {
+        setIsFavorite(customEvent.detail.inWishlist)
+      }
+    }
+
+    window.addEventListener(WISHLIST_CHANGED_EVENT, handleWishlistChanged)
+    return () => {
+      window.removeEventListener(WISHLIST_CHANGED_EVENT, handleWishlistChanged)
+    }
+  }, [numericId])
 
   const handleHeartClick = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     
-    const projectId = Number(id)
-    const newState = toggleWishlist(projectId, "project")
+    toggleWishlist(numericId, "project")
+    const newState = isInWishlist(numericId, "project")
     setIsFavorite(newState)
     
     if (newState) {

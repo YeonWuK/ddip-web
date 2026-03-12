@@ -4,11 +4,21 @@
  */
 
 const WISHLIST_STORAGE_KEY = "ddip_wishlist"
+export const WISHLIST_CHANGED_EVENT = "ddip:wishlist-changed"
 
 export interface WishlistItem {
   id: number
   type: "project" | "auction"
   addedAt: string
+}
+
+function emitWishlistChanged(id: number, type: "project" | "auction", inWishlist: boolean) {
+  if (typeof window === "undefined") return
+  window.dispatchEvent(
+    new CustomEvent(WISHLIST_CHANGED_EVENT, {
+      detail: { id, type, inWishlist },
+    })
+  )
 }
 
 /**
@@ -49,6 +59,7 @@ export function addToWishlist(id: number, type: "project" | "auction"): boolean 
     })
     
     localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(wishlist))
+    emitWishlistChanged(id, type, true)
     return true
   } catch {
     return false
@@ -68,6 +79,7 @@ export function removeFromWishlist(id: number, type: "project" | "auction"): boo
     )
     
     localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(filtered))
+    emitWishlistChanged(id, type, false)
     return true
   } catch {
     return false
@@ -84,11 +96,14 @@ export function isInWishlist(id: number, type: "project" | "auction"): boolean {
 
 /**
  * 위시리스트 토글 (있으면 제거, 없으면 추가)
+ * @returns 토글 후 현재 위시리스트 포함 여부
  */
 export function toggleWishlist(id: number, type: "project" | "auction"): boolean {
   if (isInWishlist(id, type)) {
-    return removeFromWishlist(id, type)
+    removeFromWishlist(id, type)
+    return isInWishlist(id, type)
   } else {
-    return addToWishlist(id, type)
+    addToWishlist(id, type)
+    return isInWishlist(id, type)
   }
 }
