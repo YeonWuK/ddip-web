@@ -78,7 +78,23 @@ export function isAuctionEndedEvent(msg: unknown): msg is AuctionEndedEventDto {
 export interface AuctionListBidUpdate {
   auctionId: number
   price: number
+  currentPrice?: number
   bidCount?: number
+}
+
+/**
+ * /topic/auction/list가 AuctionUpdateEventDto 형태를 보낼 때의 래퍼
+ */
+export interface AuctionListBidUpdateEnvelope {
+  auctionResponseDto?: {
+    auctionId?: number
+    currentPrice?: number
+    bidCount?: number
+  }
+  bidsResponseDto?: {
+    auctionId?: number
+    price?: number
+  }
 }
 
 /**
@@ -87,7 +103,16 @@ export interface AuctionListBidUpdate {
  */
 export function isAuctionListUpdate(msg: unknown): msg is AuctionListBidUpdate {
   if (typeof msg !== 'object' || msg === null) return false
-  return 'auctionId' in msg && 'price' in msg && typeof (msg as { auctionId: unknown }).auctionId === 'number' && typeof (msg as { price: unknown }).price === 'number'
+  const direct = msg as { auctionId?: unknown; price?: unknown; currentPrice?: unknown }
+  const directPrice = direct.price ?? direct.currentPrice
+  if (typeof direct.auctionId === 'number' && typeof directPrice === 'number') {
+    return true
+  }
+
+  const wrapped = msg as AuctionListBidUpdateEnvelope
+  const wrappedAuctionId = wrapped.auctionResponseDto?.auctionId ?? wrapped.bidsResponseDto?.auctionId
+  const wrappedPrice = wrapped.auctionResponseDto?.currentPrice ?? wrapped.bidsResponseDto?.price
+  return typeof wrappedAuctionId === 'number' && typeof wrappedPrice === 'number'
 }
 
 /**

@@ -412,6 +412,7 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
   // 백엔드에서 내려준 상태만 사용 (서버 시간 기준으로 ENDED 전환되므로 클라이언트에서 덮어쓰지 않음)
   const actualStatus = auction.status
   const isLive = actualStatus === "RUNNING"
+  const sortedBidHistory = [...bidHistory].sort((a, b) => b.id - a.id)
 
   return (
     <div className="min-h-screen bg-background">
@@ -831,7 +832,7 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
                     </div>
                   ) : (
                     <div className="max-h-[400px] space-y-2 overflow-y-auto">
-                      {bidHistory.map((bid, index) => {
+                      {sortedBidHistory.map((bid, index) => {
                         const isMyBid = user?.id === bid.bidder.id
                         const isHighest = bid.bidPrice === auction.currentPrice
                         
@@ -878,20 +879,16 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
                               <div className="font-semibold text-lg">
                                 {bid.bidPrice.toLocaleString()}원
                               </div>
-                              {index < bidHistory.length - 1 && (() => {
-                                // 다음 입찰가 (더 오래된 입찰, index가 클수록 오래됨)
-                                const nextBid = bidHistory[index + 1]
-                                // 증가액 계산 (현재 입찰가 - 다음 입찰가(더 오래된 입찰))
+                              {index < sortedBidHistory.length - 1 && (() => {
+                                // 내림차순 정렬 기준: 다음(더 낮은) 입찰가와의 증가분 표시
+                                const nextBid = sortedBidHistory[index + 1]
                                 const increase = bid.bidPrice - nextBid.bidPrice
-                                // 입찰은 항상 증가해야 하므로 양수만 표시
-                                if (increase > 0) {
-                                  return (
-                                    <div className="text-xs font-medium text-green-600 dark:text-green-400">
-                                      +{increase.toLocaleString()}원
-                                    </div>
-                                  )
-                                }
-                                return null
+                                if (increase <= 0) return null
+                                return (
+                                  <div className="text-xs font-medium text-green-600 dark:text-green-400">
+                                    +{increase.toLocaleString()}원
+                                  </div>
+                                )
                               })()}
                             </div>
                           </div>

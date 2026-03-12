@@ -7,10 +7,10 @@ import { AuctionCard } from "@/src/components/auction-card"
 import { EmptyState } from "@/src/components/empty-state"
 import { Button } from "@/src/components/ui/button"
 import Link from "next/link"
-import { useState, useEffect, useMemo, useCallback, useRef } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { projectApi, auctionApi } from "@/src/services/api"
 import { useAuctionListSocket } from "@/src/hooks/useAuctionListSocket"
-import { ProjectResponse, AuctionSummary, AuctionResponse } from "@/src/types/api"
+import { ProjectResponse, AuctionSummary } from "@/src/types/api"
 import { Loader2, Package, Gavel, Clock, ArrowRight, Sparkles } from "lucide-react"
 
 export default function HomePage() {
@@ -124,21 +124,14 @@ export default function HomePage() {
     loadData()
   }, [])
 
-  // 데이터 주기적 새로고침 (1분마다)
+  // 데이터 주기적 새로고침 (프로젝트만 1분마다)
   useEffect(() => {
-    const refreshData = async () => {
+    const refreshProjects = async () => {
       try {
-        // 데이터 새로고침 (백엔드에서 최신 상태 반영)
-        const [allProjects, allAuctions] = await Promise.all([
-          projectApi.getProjects({ limit: 50 }),
-          auctionApi.getAuctions({ limit: 50 }).catch(() => [] as AuctionSummary[]),
-        ])
-        
+        // 프로젝트만 재조회 (경매는 웹소켓으로 즉시 반영)
+        const allProjects = await projectApi.getProjects({ limit: 50 })
         const openProjects = allProjects.filter(
           p => (p.status || '').toUpperCase() === 'OPEN'
-        )
-        const runningAuctions = allAuctions.filter(
-          a => (a.status || '').toUpperCase() === 'RUNNING'
         )
         
         // 인기 프로젝트 정렬
@@ -148,11 +141,8 @@ export default function HomePage() {
           return backersB - backersA
         })
         setPopularProjects(sortedByPopularity.slice(0, 8))
-        
-        const sortedAuctions = [...runningAuctions].sort((a, b) => b.id - a.id)
-        setPopularAuctions(sortedAuctions.slice(0, 8))
-        
-        // 마감 임박 항목 업데이트
+
+        // 마감 임박 프로젝트 업데이트
         const now = new Date().getTime()
         const urgentProj = openProjects.filter(project => {
           const endTime = new Date(project.endAt).getTime()
@@ -165,7 +155,28 @@ export default function HomePage() {
           return endTimeA - endTimeB
         })
         setUrgentProjects(urgentProj.slice(0, 8))
-        
+      } catch {
+        // 에러가 발생해도 기존 데이터 유지
+      }
+    }
+
+    const interval = setInterval(refreshProjects, 60000)
+    return () => clearInterval(interval)
+  }, [])
+
+  // 경매 정합성 보정 (웹소켓 누락/상태 변경 대비, 5분마다)
+  useEffect(() => {
+    const refreshAuctions = async () => {
+      try {
+        const allAuctions = await auctionApi.getAuctions({ limit: 50 }).catch(() => [] as AuctionSummary[])
+        const runningAuctions = allAuctions.filter(
+          a => (a.status || '').toUpperCase() === 'RUNNING'
+        )
+
+        const sortedAuctions = [...runningAuctions].sort((a, b) => b.id - a.id)
+        setPopularAuctions(sortedAuctions.slice(0, 8))
+
+        const now = new Date().getTime()
         const urgentAuc = runningAuctions.filter(auction => {
           const endTime = new Date(auction.endAt).getTime()
           const hoursLeft = (endTime - now) / (1000 * 60 * 60)
@@ -178,11 +189,11 @@ export default function HomePage() {
         })
         setUrgentAuctions(urgentAuc.slice(0, 8))
       } catch {
-        // 에러가 발생해도 기존 데이터 유지
+        // 에러 발생 시 기존 데이터 유지
       }
     }
 
-    const interval = setInterval(refreshData, 60000)
+    const interval = setInterval(refreshAuctions, 300000)
     return () => clearInterval(interval)
   }, [])
 

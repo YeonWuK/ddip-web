@@ -5,6 +5,7 @@ import { Client, IMessage } from '@stomp/stompjs'
 import {
   SocketConnectionStatus,
   AuctionListBidUpdate,
+  AuctionListBidUpdateEnvelope,
   isAuctionListUpdate,
 } from '@/src/types/websocket'
 
@@ -39,7 +40,23 @@ export function useAuctionListSocket(): UseAuctionListSocketReturn {
     try {
       const body = JSON.parse(message.body) as unknown
       if (isAuctionListUpdate(body)) {
-        const payload: AuctionListBidUpdate = body
+        const raw = body as AuctionListBidUpdate | AuctionListBidUpdateEnvelope
+        const payload: AuctionListBidUpdate = {
+          auctionId:
+            (raw as AuctionListBidUpdate).auctionId ??
+            (raw as AuctionListBidUpdateEnvelope).auctionResponseDto?.auctionId ??
+            (raw as AuctionListBidUpdateEnvelope).bidsResponseDto?.auctionId ??
+            0,
+          price:
+            (raw as AuctionListBidUpdate).price ??
+            (raw as AuctionListBidUpdate).currentPrice ??
+            (raw as AuctionListBidUpdateEnvelope).auctionResponseDto?.currentPrice ??
+            (raw as AuctionListBidUpdateEnvelope).bidsResponseDto?.price ??
+            0,
+          bidCount:
+            (raw as AuctionListBidUpdate).bidCount ??
+            (raw as AuctionListBidUpdateEnvelope).auctionResponseDto?.bidCount,
+        }
         bidUpdateCallbackRef.current?.({
           auctionId: payload.auctionId,
           price: payload.price,
