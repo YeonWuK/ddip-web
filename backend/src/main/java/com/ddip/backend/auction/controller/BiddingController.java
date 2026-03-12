@@ -57,9 +57,9 @@ public class BiddingController {
     public ResponseEntity<?> createBidding(@AuthenticationPrincipal CustomUserDetails customUserDetails,
                                            @PathVariable Long auctionId, @RequestBody BidsRequestDto dto) {
 
-        BidsResponseDto bidsResponseDto = bidsService.createBid(customUserDetails.getUserId(), auctionId, dto);
+        bidsService.createBid(customUserDetails.getUserId(), auctionId, dto);
 
-        return ResponseEntity.ok(bidsResponseDto);
+        return ResponseEntity.ok("Successfully created bid.");
     }
 
     @GetMapping("/{auctionId}")
