@@ -84,7 +84,7 @@ public class AfterCommitEventHandler {
         AuctionUpdateEventDto auctionUpdateEventDto = AuctionUpdateEventDto.from(auction, bids);
 
         messagingTemplate.convertAndSend("/topic/auction/" + auction.getId(), auctionUpdateEventDto);
-        log.info("Successfully send: {}", auctionResponseDto.getAuctionId());
+        log.info("Successfully send: {}, {}", auctionResponseDto.getAuctionId(), auctionUpdateEventDto.getBidsResponseDto().getId());
 
         messagingTemplate.convertAndSend("/topic/auction/list", auctionResponseDto);
         log.info("Successfully send home page: {}", auctionResponseDto.getAuctionId());
