@@ -8,6 +8,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Builder
 @NoArgsConstructor
@@ -15,6 +17,8 @@ import lombok.NoArgsConstructor;
 public class BidsResponseDto {
 
     private Long id;
+
+    private LocalDateTime creationDate;
 
     private UserResponseDto user;
 
@@ -28,6 +32,7 @@ public class BidsResponseDto {
                 .user(UserResponseDto.from(bids.getUser()))
                 .auctionId(bids.getAuctionId())
                 .price(bids.getPrice())
+                .creationDate(bids.getCreateTime())
                 .build();
     }
 }
