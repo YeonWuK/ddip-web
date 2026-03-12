@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -41,11 +42,13 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
         String token = header.substring(7);
 
-        if (tokenBlackListService.isBlackListed(token)) {
-            throw new BlackListedTokenException("Token is blacklisted");
-        }
-
         try {
+            if (tokenBlackListService.isBlackListed(token)) {
+                request.setAttribute("exception", new BadCredentialsException("Token is blacklisted"));
+                filterChain.doFilter(request, response);
+                return;
+            }
+
             String email = jwtUtils.extractUserEmail(token);
 
             log.info("user: {} ", email);
@@ -70,8 +73,6 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             log.info("Successfully validate token");
             setAuthentication(userDetails, request);
 
-            filterChain.doFilter(request, response);
-
         } catch (ExpiredJwtException e) {
             request.setAttribute("exception", new TokenExpiredException("Token is expired"));
         } catch (MalformedJwtException e) {
@@ -81,6 +82,8 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         } catch (CustomAuthenticationException e) {
             request.setAttribute("exception", e);
         }
+
+        filterChain.doFilter(request, response);
     }
 
     private void setAuthentication(CustomUserDetails customUserDetails, HttpServletRequest request) {
@@ -92,11 +95,22 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+        String method = request.getMethod();
+
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
             return true;
         }
 
-        String path = request.getServletPath();
+        if ("GET".equalsIgnoreCase(method)) {
+            if (path.equals("/api/crowd") || path.equals("^/api/crowd/\\d+$")) {
+                return true;
+            }
+            if (path.equals("/api/auction") || path.equals("^/api/auction/\\d+$")) {
+                return true;
+            }
+        }
+
         return path.equals("/api/users/login")
                 || path.equals("/api/users/register")
                 || path.equals("/api/users/update-password")
