@@ -4,10 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/ca
 import { Avatar, AvatarFallback, AvatarImage } from "@/src/components/ui/avatar"
 import { Badge } from "@/src/components/ui/badge"
 import { Gavel, Clock } from "lucide-react"
-import { BidPlacedEvent } from "@/src/types/websocket"
+import { WebSocketBidEvent } from "@/src/types/websocket"
 
 interface RealtimeBidListProps {
-  bids: BidPlacedEvent[]
+  bids: WebSocketBidEvent[]
   maxItems?: number
 }
 
@@ -51,29 +51,29 @@ export function RealtimeBidList({ bids, maxItems = 10 }: RealtimeBidListProps) {
         <div className="space-y-3">
           {displayBids.map((bid) => (
             <div
-              key={bid.bidId}
+              key={bid.id}
               className="flex items-center gap-3 rounded-lg border p-3 transition-colors hover:bg-accent/50"
             >
               <Avatar className="size-10">
                 <AvatarImage
-                  src={bid.bidder.profileImageUrl || undefined}
-                  alt={bid.bidder.nickname}
+                  src={bid.user?.profileImageUrl || undefined}
+                  alt={bid.user?.nickname}
                 />
                 <AvatarFallback>
-                  {bid.bidder.nickname[0]?.toUpperCase() || "U"}
+                  {bid.user?.nickname?.[0]?.toUpperCase() || "U"}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="font-semibold truncate">{bid.bidder.nickname}</p>
+                  <p className="font-semibold truncate">{bid.user?.nickname}</p>
                   <Badge variant="outline" className="text-xs">
-                    {bid.amount.toLocaleString()}원
+                    {(bid.price ?? 0).toLocaleString()}원
                   </Badge>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                   <Clock className="size-3" />
                   <span>
-                    {new Date(bid.createdAt).toLocaleTimeString("ko-KR", {
+                    {new Date(bid.creationDate).toLocaleTimeString("ko-KR", {
                       hour: "2-digit",
                       minute: "2-digit",
                       second: "2-digit",

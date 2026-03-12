@@ -24,10 +24,9 @@ import { isInWishlist, toggleWishlist } from "@/src/lib/wishlist"
 import { canEditAuction, canBidAuction, isAuctionSeller } from "@/src/lib/permissions"
 import { showAuctionNotificationIfNeeded } from "@/src/lib/auction-notifications"
 import { formatDateTimeInKorea, formatBidDateTime } from "@/src/lib/date-utils"
-// 웹소켓 관련 (백엔드 준비되면 주석 해제)
-// import { useAuctionSocket } from "@/src/hooks/useAuctionSocket"
-// import { RealtimeBidList } from "@/src/components/realtime-bid-list"
-// import { BidPlacedEvent } from "@/src/types/websocket"
+import { useAuctionSocket } from "@/src/hooks/useAuctionSocket"
+import { RealtimeBidList } from "@/src/components/realtime-bid-list"
+import { WebSocketBidEvent } from "@/src/types/websocket"
 
 export default function AuctionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -53,23 +52,16 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
   // 페이지 가시성 추적 (백그라운드에서는 알림 표시 안 함)
   const [isPageVisible, setIsPageVisible] = useState(true)
   
-  // 실시간 입찰 내역 (웹소켓 사용 시)
-  // const [realtimeBids, setRealtimeBids] = useState<BidPlacedEvent[]>([])
-  
-  // 웹소켓 연결 (백엔드 준비되면 주석 해제)
-  // const {
-  //   isConnected,
-  //   connectionStatus,
-  //   joinAuction,
-  //   leaveAuction,
-  //   placeBid: socketPlaceBid,
-  //   onBidPlaced,
-  //   onAuctionUpdated,
-  //   onBidFailed,
-  //   onAuctionEnded,
-  // } = useAuctionSocket()
-  
-  // const auctionIdRef = useRef<number | null>(null)
+  const [realtimeBids, setRealtimeBids] = useState<WebSocketBidEvent[]>([])
+  const auctionRef = useRef<AuctionResponse | null>(null)
+  const {
+    joinAuction,
+    leaveAuction,
+    onBidPlaced,
+    onAuctionEnded,
+  } = useAuctionSocket()
+
+  auctionRef.current = auction
 
   // 경매 데이터 로드
   useEffect(() => {
@@ -220,6 +212,52 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
       setIsFavorite(isInWishlist(auction.id, "auction"))
     }
   }, [auction])
+
+  // 웹소켓: 경매 구독 및 이벤트 핸들러
+  useEffect(() => {
+    const auctionId = parseInt(id, 10)
+    if (isNaN(auctionId) || !auction) return
+
+    joinAuction(auctionId)
+
+    const unbindBid = onBidPlaced((data) => {
+      const current = auctionRef.current
+      setRealtimeBids((prev) => [data, ...prev])
+      setAuction((prev) =>
+        prev ? { ...prev, currentPrice: data.price } : null
+      )
+      setBidAmountStr(String((current?.bidStep ?? 1000) + data.price))
+    })
+
+    const unbindEnded = onAuctionEnded((data) => {
+      setAuction((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: data.auctionStatus,
+              currentPrice: data.currentPrice,
+              winner: data.user,
+              endAt: data.endAt,
+            }
+          : null
+      )
+      if (isPageVisible) {
+        const prevStatus = auctionRef.current?.status
+        showAuctionNotificationIfNeeded(
+          data.auctionId,
+          data.title,
+          data.auctionStatus,
+          prevStatus ?? "RUNNING"
+        )
+      }
+    })
+
+    return () => {
+      unbindBid()
+      unbindEnded()
+      leaveAuction(auctionId)
+    }
+  }, [id, auction?.id, joinAuction, leaveAuction, onBidPlaced, onAuctionEnded, isPageVisible])
 
   // 남은 시간 계산
   useEffect(() => {
@@ -377,14 +415,7 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
     try {
       setIsBidding(true)
       
-      // 웹소켓 사용 시 (백엔드 준비되면 주석 해제)
-      // if (isConnected) {
-      //   socketPlaceBid(auctionId, bidAmount)
-      //   // 웹소켓 이벤트로 결과를 받음 (onBidPlaced, onBidFailed)
-      //   return
-      // }
-      
-      // placeBid 응답에 최신 경매 정보 포함 (BidsResponseDto 기반, getAuction 1회 호출로 반환)
+      // 입찰은 REST API만 사용 (웹소켓은 수신 전용)
       const bidResponse = await auctionApi.placeBid(auctionId, { price: bidAmount })
       const auctionToUse = bidResponse.auction
 
@@ -638,8 +669,7 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
               <TabsList className="w-full justify-start">
                 <TabsTrigger value="description">상품 설명</TabsTrigger>
                 <TabsTrigger value="info">경매 정보</TabsTrigger>
-                {/* 웹소켓 사용 시 실시간 입찰 내역 탭 추가 (백엔드 준비되면 주석 해제) */}
-                {/* <TabsTrigger value="bids">실시간 입찰 내역</TabsTrigger> */}
+                <TabsTrigger value="bids">실시간 입찰 내역</TabsTrigger>
               </TabsList>
 
               <TabsContent value="description" className="mt-6">
@@ -687,10 +717,9 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
                 </Card>
               </TabsContent>
 
-              {/* 실시간 입찰 내역 탭 (웹소켓 사용 시, 백엔드 준비되면 주석 해제) */}
-              {/* <TabsContent value="bids" className="mt-6">
+              <TabsContent value="bids" className="mt-6">
                 <RealtimeBidList bids={realtimeBids} maxItems={20} />
-              </TabsContent> */}
+              </TabsContent>
             </Tabs>
           </div>
 

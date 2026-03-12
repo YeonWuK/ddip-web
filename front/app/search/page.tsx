@@ -152,7 +152,7 @@ function SearchContent() {
       image: imageUrl,
       category: "경매",
       currentBid: auction.currentPrice,
-      bidCount: auction.bidCount ?? 0,
+      bidCount: 0,
       timeLeft,
       isLive: auction.status === "RUNNING",
     }
