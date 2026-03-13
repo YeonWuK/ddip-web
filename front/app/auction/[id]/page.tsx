@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/ta
 import { AlertCircle, Clock, Gavel, Heart, Share2, MapPin, Loader2, ChevronLeft, ChevronRight, Edit, X } from "lucide-react"
 import Image from "next/image"
 import { useState, useEffect, use, useRef } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Alert, AlertDescription } from "@/src/components/ui/alert"
 import { auctionApi } from "@/src/services/api"
 import { AuctionResponse, BidSummary } from "@/src/types/api"
@@ -31,7 +31,13 @@ import { WebSocketBidEvent } from "@/src/types/websocket"
 export default function AuctionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { isAuthenticated, user, refreshUser } = useAuth()
+  const shouldForceError = searchParams.get("forceError") === "1"
+  if (process.env.NODE_ENV !== "production" && shouldForceError) {
+    throw new Error("의도적 에러 테스트: 경매 상세 페이지")
+  }
+
   const [auction, setAuction] = useState<AuctionResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

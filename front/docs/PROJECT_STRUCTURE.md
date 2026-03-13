@@ -7,6 +7,8 @@ front/
 ├── app/                          # Next.js App Router 페이지
 │   ├── layout.tsx               # 루트 레이아웃 (AuthProvider, Toaster, WishlistMonitor 포함)
 │   ├── page.tsx                 # 메인 페이지 (큐레이션된 콘텐츠: 인기 프로젝트/경매, 마감 임박)
+│   ├── error.tsx                # 전역 에러 경계 (reset 버튼, 클라이언트 컴포넌트)
+│   ├── loading.tsx              # 전역 로딩 경계
 │   ├── globals.css              # 전역 스타일
 │   ├── favicon.ico              # 파비콘
 │   │
@@ -31,6 +33,8 @@ front/
 │   ├── project/                 # 크라우드펀딩 프로젝트
 │   │   ├── [id]/               # 프로젝트 상세 페이지
 │   │   │   ├── page.tsx
+│   │   │   ├── error.tsx       # 프로젝트 상세 에러 경계 (목록으로 이동, 다시 시도)
+│   │   │   ├── loading.tsx     # 프로젝트 상세 로딩 경계
 │   │   │   └── edit/           # 프로젝트 수정 페이지
 │   │   │       └── page.tsx
 │   │   └── create/             # 프로젝트 생성 페이지
@@ -39,6 +43,8 @@ front/
 │   ├── auction/                 # 경매
 │   │   ├── [id]/               # 경매 상세 페이지
 │   │   │   ├── page.tsx
+│   │   │   ├── error.tsx       # 경매 상세 에러 경계 (목록으로 이동, 다시 시도)
+│   │   │   ├── loading.tsx     # 경매 상세 로딩 경계
 │   │   │   └── edit/           # 경매 수정 페이지
 │   │   │       └── page.tsx
 │   │   └── create/             # 경매 생성 페이지
@@ -347,7 +353,21 @@ front/
 
 ---
 
-### 11. **데이터 관리** (`services/`)
+### 11. **에러/로딩 경계** (`error.tsx`, `loading.tsx`)
+- **전역 경계**: `app/error.tsx`, `app/loading.tsx`
+  - 렌더 에러 시 복구 UI, `reset()` 버튼
+  - 앱 전체 또는 세그먼트 로딩 중 공통 스피너
+- **세그먼트 경계**: `app/project/[id]/`, `app/auction/[id]/`
+  - 상세 페이지 에러 시 "목록으로 이동", "다시 시도" 버튼
+  - `Navigation` 포함해 레이아웃 유지
+- **역할 분리**:
+  - `error.tsx`: 예상치 못한 렌더 throw
+  - 페이지 내부 try-catch: API 실패, 비즈니스 에러
+- **의도적 에러 테스트** (개발환경 전용): `?forceError=1` 쿼리
+
+---
+
+### 12. **데이터 관리** (`services/`)
 
 #### **Domain-Driven Design 아키텍처**
 
@@ -468,6 +488,12 @@ src/services/
 WishlistMonitor (전역) → useWishlistAuctionMonitor → 1분마다 찜한 경매 상태 체크 → 상태 변경 감지 → 알림 표시 (중복 방지)
 ```
 
+### 8. **에러/로딩 경계 흐름**
+```
+라우트 진입 → loading.tsx 표시 (세그먼트 준비 전) → page.tsx 렌더
+렌더 중 throw 발생 → error.tsx 표시 → 사용자 "다시 시도" 클릭 → reset() → page.tsx 재시도
+```
+
 ---
 
 ## 🚀 주요 기능 요약
@@ -488,6 +514,7 @@ WishlistMonitor (전역) → useWishlistAuctionMonitor → 1분마다 찜한 경
 - 빈 상태 컴포넌트
 - 검색 기능
 - 페이지네이션 (API 레벨)
+- 에러/로딩 경계 (error.tsx, loading.tsx) — 전역 + 프로젝트/경매 상세 세그먼트
 
 ⏳ **준비됨 (백엔드 대기)**
 - 웹소켓 실시간 입찰 (`useAuctionSocket.ts`)
@@ -509,6 +536,8 @@ WishlistMonitor (전역) → useWishlistAuctionMonitor → 1분마다 찜한 경
 | 기능 | 파일 경로 |
 |------|----------|
 | 메인 페이지 | `app/page.tsx` |
+| 전역 에러 경계 | `app/error.tsx` |
+| 전역 로딩 경계 | `app/loading.tsx` |
 | 전체 프로젝트 목록 | `app/projects/page.tsx` |
 | 전체 경매 목록 | `app/auctions/page.tsx` |
 | 프로젝트 상세 | `app/project/[id]/page.tsx` |
@@ -558,7 +587,7 @@ WishlistMonitor (전역) → useWishlistAuctionMonitor → 1분마다 찜한 경
 
 ---
 
-**마지막 업데이트**: 2026년 3월 6일  
+**마지막 업데이트**: 2026년 3월 12일  
 **프로젝트명**: DDIP (크라우드펀딩 & 경매 플랫폼)  
 **버전**: 0.1.0  
 **API**: 백엔드 연동 완료 (fetch, Bearer 토큰, S3 이미지, multipart/form-data)  

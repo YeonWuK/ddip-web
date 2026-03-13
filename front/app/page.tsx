@@ -8,12 +8,19 @@ import { EmptyState } from "@/src/components/empty-state"
 import { Button } from "@/src/components/ui/button"
 import Link from "next/link"
 import { useState, useEffect, useCallback, useRef } from "react"
+import { useSearchParams } from "next/navigation"
 import { projectApi, auctionApi } from "@/src/services/api"
 import { useAuctionListSocket } from "@/src/hooks/useAuctionListSocket"
 import { ProjectResponse, AuctionSummary } from "@/src/types/api"
 import { Loader2, Package, Gavel, Clock, ArrowRight, Sparkles } from "lucide-react"
 
 export default function HomePage() {
+  const searchParams = useSearchParams()
+  const shouldForceError = searchParams.get("forceError") === "1"
+  if (process.env.NODE_ENV !== "production" && shouldForceError) {
+    throw new Error("의도적 에러 테스트: 홈 페이지")
+  }
+
   const [popularProjects, setPopularProjects] = useState<ProjectResponse[]>([])
   const [popularAuctions, setPopularAuctions] = useState<AuctionSummary[]>([])
   const [urgentProjects, setUrgentProjects] = useState<ProjectResponse[]>([])

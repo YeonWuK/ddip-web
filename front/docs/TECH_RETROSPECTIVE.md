@@ -158,6 +158,22 @@ FormData에 `data` 파트(JSON.stringify), `file` 파트(파일 배열)를 각�
 
 ---
 
+## 11. 에러/로딩 경계 — Next.js App Router 파일 기반
+
+### 상황
+페이지 렌더 중 예상치 못한 throw 발생 시 화면이 깨지거나 빈 화면이 됨. 로딩 상태가 라우트별로 일관되지 않음.
+
+### 해결
+1. **error.tsx**: `'use client'` 필수. `reset()` 버튼으로 재시도. 전역 + 프로젝트/경매 상세 세그먼트에 분리 적용.
+2. **loading.tsx**: 세그먼트 준비 전 Suspense fallback으로 스피너 표시.
+3. **역할 분리**: error.tsx는 렌더 throw, 페이지 내 try-catch는 API 실패.
+4. **의도적 에러 테스트**: `?forceError=1` (NODE_ENV !== production일 때만)로 경계 QA 가능.
+
+### 1분 답변
+> "Next.js App Router의 error.tsx, loading.tsx를 써서 라우트 단위로 에러·로딩 경계를 둡니다. 에러가 나면 해당 세그먼트만 깨지고, reset()으로 재시도할 수 있습니다. 예상 에러는 try-catch로, 예상치 못한 렌더 에러는 error.tsx가 처리하도록 역할을 나눴습니다."
+
+---
+
 ## 요약표
 
 | 주제 | 핵심 한 줄 |
@@ -172,3 +188,4 @@ FormData에 `data` 파트(JSON.stringify), `file` 파트(파일 배열)를 각�
 | 이미지·날짜 | mainIndex/mainImageId 구분, YYYY-MM-DD |
 | API 분리 | 도메인 단위 책임, 영향도 최소화 |
 | multipart | data(JSON) + file 파트, DTO 맞추기 |
+| 에러/로딩 경계 | error.tsx + loading.tsx, 세그먼트별 분리, reset 복구 |

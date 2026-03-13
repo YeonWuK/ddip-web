@@ -18,6 +18,11 @@ import { Loader2, Search, Package, Gavel, Sparkles } from "lucide-react"
 function SearchContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
+  const shouldForceError = searchParams.get("forceError") === "1"
+  if (process.env.NODE_ENV !== "production" && shouldForceError) {
+    throw new Error("의도적 에러 테스트: 검색 페이지")
+  }
+
   const query = searchParams.get("q") || ""
   const [searchQuery, setSearchQuery] = useState(query)
   const [projects, setProjects] = useState<ProjectSearchResponse[]>([])

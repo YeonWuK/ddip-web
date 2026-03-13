@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar, Clock, Heart, Share2, TrendingUp, MapPin, CheckCircle2, Loader2, AlertCircle, Edit, X } from "lucide-react"
 import Image from "next/image"
 import { useState, useEffect, use, useDeferredValue } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Alert, AlertDescription } from "@/src/components/ui/alert"
 import { projectApi, addressApi, adminApi } from "@/src/services/api"
@@ -52,7 +52,13 @@ function canViewProject(project: ProjectResponse, user: UserResponse | null): bo
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { isAuthenticated, user, refreshUser } = useAuth()
+  const shouldForceError = searchParams.get("forceError") === "1"
+  if (process.env.NODE_ENV !== "production" && shouldForceError) {
+    throw new Error("의도적 에러 테스트: 프로젝트 상세 페이지")
+  }
+
   const [project, setProject] = useState<ProjectResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
