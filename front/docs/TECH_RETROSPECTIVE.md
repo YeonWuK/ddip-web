@@ -174,6 +174,22 @@ FormData에 `data` 파트(JSON.stringify), `file` 파트(파일 배열)를 각�
 
 ---
 
+## 12. 메타데이터 — generateMetadata로 동적 SEO
+
+### 상황
+동적 페이지(프로젝트/경매 상세)가 공유되면 기본 title만 노출되어 정보가 부족함.
+
+### 해결
+1. **동적 라우트**: `app/project/[id]/layout.tsx`, `app/auction/[id]/layout.tsx`에서 `generateMetadata` export
+2. `params.id`로 API 호출 → 실제 title, description, 이미지 반환
+3. **openGraph**: SNS 공유 시 미리보기 표시
+4. **정적 페이지**: search, projects, auctions는 layout에 고정 metadata
+
+### 1분 답변
+> "layout.tsx는 서버 컴포넌트라서 generateMetadata를 쓸 수 있습니다. 프로젝트·경매 상세는 API로 데이터를 가져와서 title, description, openGraph 이미지를 설정했습니다. 이렇게 하면 검색 결과나 링크 공유 시 실제 콘텐츠가 보입니다."
+
+---
+
 ## 요약표
 
 | 주제 | 핵심 한 줄 |
@@ -189,3 +205,4 @@ FormData에 `data` 파트(JSON.stringify), `file` 파트(파일 배열)를 각�
 | API 분리 | 도메인 단위 책임, 영향도 최소화 |
 | multipart | data(JSON) + file 파트, DTO 맞추기 |
 | 에러/로딩 경계 | error.tsx + loading.tsx, 세그먼트별 분리, reset 복구 |
+| 메타데이터 | layout에서 generateMetadata/metadata, 동적 title/og, SEO·SNS |

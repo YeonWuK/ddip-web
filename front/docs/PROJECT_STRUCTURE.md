@@ -22,18 +22,22 @@ front/
 │   │   └── page.tsx            # 프로젝트/경매/후원/입찰/찜한 항목 관리
 │   │
 │   ├── search/                  # 검색 페이지
-│   │   └── page.tsx            # 프로젝트/경매 통합 검색 (필터/정렬 지원)
+│   │   ├── layout.tsx          # metadata (정적 SEO)
+│   │   └── page.tsx            # 프로젝트/경매 통합 검색
 │   │
 │   ├── projects/                # 전체 프로젝트 목록 페이지
+│   │   ├── layout.tsx          # metadata (정적 SEO)
 │   │   └── page.tsx            # 무한 스크롤, 필터/정렬 지원
 │   │
 │   ├── auctions/                # 전체 경매 목록 페이지
+│   │   ├── layout.tsx          # metadata (정적 SEO)
 │   │   └── page.tsx            # 무한 스크롤, 필터/정렬 지원
 │   │
 │   ├── project/                 # 크라우드펀딩 프로젝트
 │   │   ├── [id]/               # 프로젝트 상세 페이지
+│   │   │   ├── layout.tsx      # generateMetadata (동적 SEO)
 │   │   │   ├── page.tsx
-│   │   │   ├── error.tsx       # 프로젝트 상세 에러 경계 (목록으로 이동, 다시 시도)
+│   │   │   ├── error.tsx       # 프로젝트 상세 에러 경계
 │   │   │   ├── loading.tsx     # 프로젝트 상세 로딩 경계
 │   │   │   └── edit/           # 프로젝트 수정 페이지
 │   │   │       └── page.tsx
@@ -42,8 +46,9 @@ front/
 │   │
 │   ├── auction/                 # 경매
 │   │   ├── [id]/               # 경매 상세 페이지
+│   │   │   ├── layout.tsx      # generateMetadata (동적 SEO)
 │   │   │   ├── page.tsx
-│   │   │   ├── error.tsx       # 경매 상세 에러 경계 (목록으로 이동, 다시 시도)
+│   │   │   ├── error.tsx       # 경매 상세 에러 경계
 │   │   │   ├── loading.tsx     # 경매 상세 로딩 경계
 │   │   │   └── edit/           # 경매 수정 페이지
 │   │   │       └── page.tsx
@@ -353,7 +358,16 @@ front/
 
 ---
 
-### 11. **에러/로딩 경계** (`error.tsx`, `loading.tsx`)
+### 11. **메타데이터 (metadata)** — SEO·SNS 공유
+- **루트**: `app/layout.tsx` — 전체 기본 title, description, icons
+- **동적 (generateMetadata)**: `app/project/[id]/layout.tsx`, `app/auction/[id]/layout.tsx`
+  - API 호출로 실제 제목·설명·이미지를 meta에 반영
+  - openGraph: 카카오톡·트위터 등 공유 시 미리보기
+- **정적 (metadata)**: `app/search/layout.tsx`, `app/projects/layout.tsx`, `app/auctions/layout.tsx`
+
+---
+
+### 12. **에러/로딩 경계** (`error.tsx`, `loading.tsx`)
 - **전역 경계**: `app/error.tsx`, `app/loading.tsx`
   - 렌더 에러 시 복구 UI, `reset()` 버튼
   - 앱 전체 또는 세그먼트 로딩 중 공통 스피너
@@ -367,7 +381,7 @@ front/
 
 ---
 
-### 12. **데이터 관리** (`services/`)
+### 13. **데이터 관리** (`services/`)
 
 #### **Domain-Driven Design 아키텍처**
 
@@ -515,6 +529,7 @@ WishlistMonitor (전역) → useWishlistAuctionMonitor → 1분마다 찜한 경
 - 검색 기능
 - 페이지네이션 (API 레벨)
 - 에러/로딩 경계 (error.tsx, loading.tsx) — 전역 + 프로젝트/경매 상세 세그먼트
+- 메타데이터 (layout.tsx) — 정적·동적 title/description/openGraph, SEO·SNS 공유
 
 ⏳ **준비됨 (백엔드 대기)**
 - 웹소켓 실시간 입찰 (`useAuctionSocket.ts`)
