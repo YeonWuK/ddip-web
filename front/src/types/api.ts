@@ -432,8 +432,13 @@ export interface AdminProjectSearchCondition {
 export interface AdminProjectSummaryDto {
   id: number;
   creatorId: number;
-  creatorUsername: string;
-  creatorNickname: string;
+  creatorUsername?: string;
+  creatorNickname?: string;
+  creator?: {
+    creatorId?: number;
+    email?: string;
+    nickname?: string;
+  };
   title: string;
   summary?: string;
   targetAmount: number;

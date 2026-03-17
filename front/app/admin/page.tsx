@@ -100,12 +100,12 @@ export default function AdminPage() {
     open: boolean;
     type: 'approve' | 'reject' | 'point' | 'sms' | 'stop' | 'cancel' | null;
     reason: string;
-    amount: number;
+    amount: string;
   }>({
     open: false,
     type: null,
     reason: '',
-    amount: 0,
+    amount: '',
   });
 
   // 권한 체크
@@ -253,18 +253,20 @@ export default function AdminPage() {
 
   // 포인트 조정
   const handleAdjustPoint = async () => {
-    if (!selectedUser || !actionDialog.reason || actionDialog.amount === 0) {
+    const adjustPoint = Number(actionDialog.amount);
+
+    if (!selectedUser || !actionDialog.reason || !actionDialog.amount || Number.isNaN(adjustPoint) || adjustPoint === 0) {
       toast.error("포인트와 사유를 입력하세요");
       return;
     }
     try {
       await adminApi.adjustUserPoint({
         userId: selectedUser.id,
-        adjustPoint: actionDialog.amount,
+        adjustPoint,
         reason: actionDialog.reason,
       });
       toast.success("포인트가 조정되었습니다");
-      setActionDialog({ ...actionDialog, open: false, reason: '', amount: 0 });
+      setActionDialog({ ...actionDialog, open: false, reason: '', amount: '' });
       loadUsers(userPage);
     } catch (error) {
       toast.error("포인트 조정에 실패했습니다");
@@ -447,7 +449,9 @@ export default function AdminPage() {
                     <div key={project.id} className="flex items-center justify-between text-sm">
                       <div className="flex-1 truncate">
                         <p className="font-medium truncate">{project.title}</p>
-                        <p className="text-xs text-muted-foreground">{project.creatorNickname}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {project.creatorNickname ?? project.creator?.nickname ?? `ID: ${project.creatorId}`}
+                        </p>
                       </div>
                       <Badge variant={project.status === 'DRAFT' ? 'destructive' : 'outline'}>
                         {project.status}
@@ -545,7 +549,19 @@ export default function AdminPage() {
                             <div className="grid gap-2 text-sm text-muted-foreground">
                               <div className="flex items-center gap-2">
                                 <Users className="size-4" />
-                                생성자: <strong>{project.creatorNickname}</strong> ({project.creatorUsername})
+                                {(() => {
+                                  const creatorNickname =
+                                    project.creatorNickname ?? project.creator?.nickname ?? `ID: ${project.creatorId}`;
+                                  const creatorIdentity =
+                                    project.creatorUsername ?? project.creator?.email ?? "";
+
+                                  return (
+                                    <>
+                                      생성자: <strong>{creatorNickname}</strong>
+                                      {creatorIdentity ? ` (${creatorIdentity})` : ""}
+                                    </>
+                                  );
+                                })()}
                               </div>
                               <div className="flex items-center gap-2">
                                 <Target className="size-4" />
@@ -582,7 +598,7 @@ export default function AdminPage() {
                                       <DropdownMenuItem
                                         onClick={() => {
                                           setSelectedProject(project);
-                                          setActionDialog({ open: true, type: 'approve', reason: '', amount: 0 });
+                                          setActionDialog({ open: true, type: 'approve', reason: '', amount: '' });
                                         }}
                                         className="text-green-600"
                                       >
@@ -592,7 +608,7 @@ export default function AdminPage() {
                                       <DropdownMenuItem
                                         onClick={() => {
                                           setSelectedProject(project);
-                                          setActionDialog({ open: true, type: 'reject', reason: '', amount: 0 });
+                                          setActionDialog({ open: true, type: 'reject', reason: '', amount: '' });
                                         }}
                                         className="text-red-600"
                                       >
@@ -606,7 +622,7 @@ export default function AdminPage() {
                                       <DropdownMenuItem
                                         onClick={() => {
                                           setSelectedProject(project);
-                                          setActionDialog({ open: true, type: 'stop', reason: '', amount: 0 });
+                                          setActionDialog({ open: true, type: 'stop', reason: '', amount: '' });
                                         }}
                                         className="text-orange-600"
                                       >
@@ -617,7 +633,7 @@ export default function AdminPage() {
                                       <DropdownMenuItem
                                         onClick={() => {
                                           setSelectedProject(project);
-                                          setActionDialog({ open: true, type: 'cancel', reason: '', amount: 0 });
+                                          setActionDialog({ open: true, type: 'cancel', reason: '', amount: '' });
                                         }}
                                         className="text-red-600"
                                       >
@@ -753,7 +769,7 @@ export default function AdminPage() {
                                 variant="destructive"
                                 onClick={() => {
                                   setSelectedAuction(auction);
-                                  setActionDialog({ open: true, type: 'stop', reason: '', amount: 0 });
+                                  setActionDialog({ open: true, type: 'stop', reason: '', amount: '' });
                                 }}
                               >
                                 <StopCircle className="mr-1 size-4" />
@@ -879,7 +895,7 @@ export default function AdminPage() {
                               variant="outline"
                               onClick={() => {
                                 setSelectedUser(u);
-                                setActionDialog({ open: true, type: 'point', reason: '', amount: 0 });
+                                setActionDialog({ open: true, type: 'point', reason: '', amount: '' });
                               }}
                             >
                               <Coins className="mr-1 size-4" />
@@ -947,10 +963,17 @@ export default function AdminPage() {
                 <Label htmlFor="amount">포인트 (양수: 지급 / 음수: 차감)</Label>
                 <Input
                   id="amount"
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   placeholder="예: 1000 또는 -500"
                   value={actionDialog.amount}
-                  onChange={(e) => setActionDialog({ ...actionDialog, amount: parseInt(e.target.value) || 0 })}
+                  onChange={(e) => {
+                    const raw = e.target.value.trim();
+                    // 빈값/음수 부호 입력은 허용하고, 숫자는 0으로 시작하지 않도록 제한
+                    if (raw === "" || raw === "-" || /^-?[1-9]\d*$/.test(raw)) {
+                      setActionDialog({ ...actionDialog, amount: raw });
+                    }
+                  }}
                 />
               </div>
             )}
@@ -971,7 +994,7 @@ export default function AdminPage() {
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setActionDialog({ ...actionDialog, open: false, reason: '', amount: 0 })}
+              onClick={() => setActionDialog({ ...actionDialog, open: false, reason: '', amount: '' })}
             >
               취소
             </Button>
