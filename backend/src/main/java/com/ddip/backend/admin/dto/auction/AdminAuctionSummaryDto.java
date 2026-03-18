@@ -1,6 +1,7 @@
 package com.ddip.backend.admin.dto.auction;
 
 import com.ddip.backend.auction.domain.Auction;
+import com.ddip.backend.user.domain.User;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -37,14 +38,16 @@ public class AdminAuctionSummaryDto {
     private LocalDateTime createdAt;
 
     public static AdminAuctionSummaryDto from(Auction auction) {
+        User currentWinner = auction.getCurrentWinner();
+
         return AdminAuctionSummaryDto.builder()
                 .id(auction.getId())
 
                 .sellerId(auction.getSeller().getId())
                 .sellerUsername(auction.getSeller().getUsername())
 
-                .currentWinnerId(auction.getCurrentWinner().getId())
-                .currentWinnerUsername(auction.getCurrentWinner() != null ? auction.getCurrentWinner().getUsername() : null)
+                .currentWinnerId(currentWinner != null ? currentWinner.getId() : null)
+                .currentWinnerUsername(currentWinner != null ? currentWinner.getUsername() : null)
 
                 .title(auction.getTitle())
                 .startPrice(auction.getStartPrice())
