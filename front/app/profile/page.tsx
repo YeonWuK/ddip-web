@@ -178,24 +178,24 @@ function ProfileDashboard() {
           
           <section className="space-y-4">
             <SectionTitle title="내 프로젝트" count={myProjects.length} href="/profile/projects" />
-            <div className="space-y-3">
-              {myProjects.slice(0, 3).map(p => <SmallProjectCard key={p.id} project={p} />)}
-              {myProjects.length === 0 && <EmptyBox message="등록된 프로젝트가 없습니다." />}
-            </div>
+            <Card className="border-none shadow-sm overflow-hidden">
+              {myProjects.slice(0, 3).map((p, idx) => <SmallProjectCard key={p.id} project={p} isFirst={idx === 0} />)}
+              {myProjects.length === 0 && <div className="p-8 text-center text-sm text-muted-foreground">등록된 프로젝트가 없습니다.</div>}
+            </Card>
           </section>
 
           <section className="space-y-4">
             <SectionTitle title="내 경매 현황" count={myAuctions.length} href="/profile/auctions" />
-            <div className="space-y-3">
-              {myAuctions.slice(0, 3).map(a => <SmallAuctionCard key={a.id} auction={a} />)}
-              {myAuctions.length === 0 && <EmptyBox message="진행 중인 경매가 없습니다." />}
-            </div>
+            <Card className="border-none shadow-sm overflow-hidden">
+              {myAuctions.slice(0, 3).map((a, idx) => <SmallAuctionCard key={a.id} auction={a} isFirst={idx === 0} />)}
+              {myAuctions.length === 0 && <div className="p-8 text-center text-sm text-muted-foreground">진행 중인 경매가 없습니다.</div>}
+            </Card>
           </section>
 
           <section className="space-y-4">
             <SectionTitle title="입찰 내역" count={myBids.length} />
-            <Card className="divide-y border-none shadow-sm">
-              {myBids.slice(0, 5).map(b => <BidItem key={b.auctionId} bid={b} />)}
+            <Card className="border-none shadow-sm overflow-hidden">
+              {myBids.slice(0, 5).map((b, idx) => <BidItem key={b.auctionId} bid={b} isFirst={idx === 0} />)}
               {myBids.length === 0 && <div className="p-8 text-center text-sm text-muted-foreground">내역 없음</div>}
             </Card>
           </section>
@@ -203,7 +203,7 @@ function ProfileDashboard() {
           <div className="space-y-8">
             <section className="space-y-4">
               <SectionTitle title="후원 내역" count={mySupports.length} />
-              <Card className="divide-y border-none shadow-sm">
+              <Card className="divide-y border-none shadow-sm overflow-hidden">
                 {mySupports.slice(0, 3).map(s => <SupportItem key={s.id} support={s} />)}
                 {mySupports.length === 0 && <div className="p-8 text-center text-sm text-muted-foreground">내역 없음</div>}
               </Card>
@@ -211,10 +211,16 @@ function ProfileDashboard() {
 
             <section className="space-y-4">
               <SectionTitle title="찜한 항목" count={favoriteProjects.length + favoriteAuctions.length} />
-              <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-                {favoriteProjects.slice(0, 4).map(p => <FavCircle key={p.id} item={p} type="project" />)}
-                {favoriteAuctions.slice(0, 4).map(a => <FavCircle key={a.id} item={a} type="auction" />)}
-              </div>
+              {favoriteProjects.length + favoriteAuctions.length === 0 ? (
+                <Card className="border-none shadow-sm overflow-hidden">
+                  <div className="p-8 text-center text-sm text-muted-foreground">내역 없음</div>
+                </Card>
+              ) : (
+                <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+                  {favoriteProjects.slice(0, 4).map(p => <FavCircle key={p.id} item={p} type="project" />)}
+                  {favoriteAuctions.slice(0, 4).map(a => <FavCircle key={a.id} item={a} type="auction" />)}
+                </div>
+              )}
             </section>
           </div>
         </div>
@@ -310,70 +316,94 @@ function getMyAuctionStateMeta(state: string) {
   }
 }
 
-function SmallProjectCard({ project }: { project: ProjectResponse }) {
+function SmallProjectCard({ project, isFirst }: { project: ProjectResponse; isFirst: boolean }) {
   const percent = Math.round((project.currentAmount / project.targetAmount) * 100);
   return (
-    <Link href={`/project/${project.id}`}>
-      <Card className="p-3 bg-white hover:shadow-md transition-all border-none">
-        <div className="flex gap-4 items-center">
-          <div className="relative size-14 rounded-lg overflow-hidden shrink-0 bg-slate-100">
+    <Link
+      href={`/project/${project.id}`}
+      className={[
+        "block p-4 transition-colors border-t border-slate-100 hover:bg-slate-50 hover:border-t-slate-50",
+        isFirst ? "border-t-0" : "",
+      ].join(" ")}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3 min-w-0 flex-1 mr-4">
+          <div className="relative size-12 rounded-md overflow-hidden shrink-0 bg-slate-100">
             <Image src={project.imageUrl || "/placeholder.svg"} alt="" fill className="object-cover" />
           </div>
-          <div className="flex-1 min-w-0">
-            <h4 className="font-semibold text-sm truncate mb-1">{project.title}</h4>
-            <div className="flex items-center gap-3">
-              <span className="text-primary font-bold text-xs">{percent}%</span>
-              <div className="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
+          <div className="min-w-0">
+            <p className="text-sm font-medium truncate">{project.title}</p>
+            <div className="flex items-center gap-3 mt-1">
+              <span className="text-primary font-bold text-[11px]">{percent}%</span>
+              <div className="w-32 max-w-[40vw] h-1 bg-slate-100 rounded-full overflow-hidden">
                 <div className="h-full bg-primary" style={{ width: `${Math.min(percent, 100)}%` }} />
               </div>
             </div>
           </div>
         </div>
-      </Card>
+        <div className="text-right shrink-0">
+          <p className="text-[10px] text-muted-foreground uppercase">모금액</p>
+          <p className="text-sm font-bold text-primary">{project.currentAmount.toLocaleString()}원</p>
+        </div>
+      </div>
     </Link>
   )
 }
 
-function SmallAuctionCard({ auction }: { auction: AuctionSummary }) {
+function SmallAuctionCard({ auction, isFirst }: { auction: AuctionSummary; isFirst: boolean }) {
   return (
-    <Link href={`/auction/${auction.id}`}>
-      <Card className="p-3 bg-white hover:shadow-md transition-all border-none">
-        <div className="flex gap-4 items-center">
-          <div className="relative size-14 rounded-lg overflow-hidden shrink-0 bg-slate-100">
+    <Link
+      href={`/auction/${auction.id}`}
+      className={[
+        "block p-4 transition-colors border-t border-slate-100 hover:bg-slate-50 hover:border-t-slate-50",
+        isFirst ? "border-t-0" : "",
+      ].join(" ")}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3 min-w-0 flex-1 mr-4">
+          <div className="relative size-12 rounded-md overflow-hidden shrink-0 bg-slate-100">
             <Image src={auction.imageUrl || "/placeholder.svg"} alt="" fill className="object-cover" />
           </div>
-          <div className="flex-1 min-w-0">
-            <h4 className="font-semibold text-sm truncate mb-1">{auction.title}</h4>
-            <div className="flex justify-between items-end">
-              <p className="text-[10px] text-muted-foreground uppercase">현재가</p>
-              <p className="text-sm font-bold text-secondary">{auction.currentPrice.toLocaleString()}원</p>
-            </div>
+          <div className="min-w-0">
+            <p className="text-sm font-medium truncate">{auction.title}</p>
+            <p className="text-[10px] text-muted-foreground uppercase mt-1">현재가</p>
           </div>
         </div>
-      </Card>
+        <div className="text-right shrink-0">
+          <p className="text-sm font-bold text-secondary">{auction.currentPrice.toLocaleString()}원</p>
+        </div>
+      </div>
     </Link>
   )
 }
 
-function BidItem({ bid }: { bid: MyBidsSummary }) {
+function BidItem({ bid, isFirst }: { bid: MyBidsSummary; isFirst: boolean }) {
   const auctionState = getMyAuctionStateMeta(bid.myAuctionStatus)
 
   return (
-    <div className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-      <div className="flex items-center gap-3 min-w-0 flex-1 mr-4">
-        <div className="relative size-12 rounded-md overflow-hidden shrink-0 bg-slate-100">
-          <Image src={bid.auctionThumbnailUrl || "/placeholder.svg"} alt="" fill className="object-cover" />
+    <Link
+      href={`/auction/${bid.auctionId}`}
+      className={[
+        "block p-4 transition-colors border-t border-slate-100 hover:bg-slate-50 hover:border-t-slate-50",
+        isFirst ? "border-t-0" : "",
+      ].join(" ")}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3 min-w-0 flex-1 mr-4">
+          <div className="relative size-12 rounded-md overflow-hidden shrink-0 bg-slate-100">
+            <Image src={bid.auctionThumbnailUrl || "/placeholder.svg"} alt="" fill className="object-cover" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-medium truncate">{bid.auctionTitle}</p>
+            <p className="text-[10px] text-muted-foreground">{formatBidDateTime(bid.lastBidAt)}</p>
+          </div>
         </div>
-        <div className="min-w-0">
-          <p className="text-sm font-medium truncate">{bid.auctionTitle}</p>
-          <p className="text-[10px] text-muted-foreground">{formatBidDateTime(bid.lastBidAt)}</p>
+        <div className="text-right shrink-0">
+          <p className="text-sm font-bold">{bid.lastBidPrice.toLocaleString()}원</p>
+          <Badge className={`text-[9px] h-4 px-1 ${auctionState.className}`}>{auctionState.label}</Badge>
         </div>
       </div>
-      <div className="text-right shrink-0">
-        <p className="text-sm font-bold">{bid.lastBidPrice.toLocaleString()}원</p>
-        <Badge className={`text-[9px] h-4 px-1 ${auctionState.className}`}>{auctionState.label}</Badge>
-      </div>
-    </div>
+    </Link>
   )
 }
 
@@ -398,10 +428,6 @@ function FavCircle({ item, type }: { item: any, type: string }) {
       <p className="text-[10px] font-medium w-16 truncate text-slate-600">{item.title}</p>
     </Link>
   )
-}
-
-function EmptyBox({ message }: { message: string }) {
-  return <div className="p-8 border-2 border-dashed rounded-xl text-center text-muted-foreground text-xs bg-white/40">{message}</div>
 }
 
 // --- 배송지 입력 폼 (지웅님 원본 코드 유지) ---
