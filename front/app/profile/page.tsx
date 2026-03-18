@@ -24,6 +24,7 @@ import { formatBidDateTime } from "@/src/lib/date-utils"
 import Link from "next/link"
 import Image from "next/image"
 import { toast } from "sonner"
+import { useDaumPostcodePopup } from "react-daum-postcode"
 
 function ProfileDashboard() {
   const router = useRouter()
@@ -228,7 +229,7 @@ function ProfileDashboard() {
         {/* 배송지 관리 모달 (CRUD 흐름 유지) */}
         <Dialog open={addressManagerOpen} onOpenChange={setAddressManagerOpen}>
           <DialogContent className="max-w-lg max-h-[85vh] overflow-hidden flex flex-col">
-            <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b">
+            <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b pr-10">
               <DialogTitle>배송지 관리</DialogTitle>
               <Button size="sm" onClick={() => { setEditingAddress(null); setAddressFormOpen(true); }}>
                 <Plus className="size-4 mr-1" /> 추가
@@ -440,7 +441,8 @@ function AddressForm({
   onSubmit: (data: AddressCreateRequest | AddressUpdateRequest) => void
   onCancel: () => void
 }) {
-  const { register, handleSubmit, formState: { errors } } = useForm<AddressCreateRequest>({
+  const openPostcodePopup = useDaumPostcodePopup()
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<AddressCreateRequest>({
     defaultValues: address ? {
       recipientName: address.recipientName,
       phone: address.phone,
@@ -465,15 +467,44 @@ function AddressForm({
         <Input id="phone" {...register("phone", { required: "전화번호를 입력해주세요" })} placeholder="010-1234-5678" />
         {errors.phone && <p className="text-xs text-red-500">{errors.phone.message}</p>}
       </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="zipCode">우편번호 *</Label>
-          <Input id="zipCode" {...register("zipCode", { required: "우편번호 필수" })} placeholder="12345" />
+      <div className="space-y-2">
+        <Label htmlFor="zipCode">우편번호 *</Label>
+        <div className="flex gap-2">
+          <Input
+            id="zipCode"
+            {...register("zipCode", { required: "우편번호 필수" })}
+            placeholder="12345"
+            readOnly
+            className="flex-1"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              openPostcodePopup({
+                onComplete: (data) => {
+                  let fullAddress = data.address
+                  if (data.addressType === "R") {
+                    let extra = ""
+                    if (data.bname) extra += data.bname
+                    if (data.buildingName) extra += (extra ? `, ${data.buildingName}` : data.buildingName)
+                    if (extra) fullAddress += ` (${extra})`
+                  }
+                  setValue("zipCode", data.zonecode, { shouldDirty: true, shouldTouch: true, shouldValidate: true })
+                  setValue("address", fullAddress, { shouldDirty: true, shouldTouch: true, shouldValidate: true })
+                },
+              })
+            }}
+          >
+            주소 검색
+          </Button>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="address">주소 *</Label>
-          <Input id="address" {...register("address", { required: "주소 필수" })} placeholder="서울시..." />
-        </div>
+        {errors.zipCode && <p className="text-xs text-red-500">{errors.zipCode.message}</p>}
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="address">주소 *</Label>
+        <Input id="address" {...register("address", { required: "주소 필수" })} placeholder="주소 검색을 클릭하세요" />
+        {errors.address && <p className="text-xs text-red-500">{errors.address.message}</p>}
       </div>
       <div className="space-y-2">
         <Label htmlFor="detailAddress">상세주소 *</Label>
