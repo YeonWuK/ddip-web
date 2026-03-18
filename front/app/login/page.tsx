@@ -195,7 +195,7 @@ export default function LoginPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full"
+                  className="w-full bg-white text-black border-border hover:bg-white/90 hover:text-black dark:bg-white dark:text-black dark:hover:bg-white/90 dark:hover:text-black"
                   disabled={isLoading || isOAuthLoading !== null}
                   onClick={() => handleOAuthLogin('google')}
                 >
@@ -229,7 +229,7 @@ export default function LoginPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full bg-[#FEE500] hover:bg-[#FEE500]/90 text-black border-[#FEE500]"
+                  className="w-full bg-[#FEE500] hover:bg-[#FEE500]/90 text-black border-[#FEE500] dark:bg-[#FEE500] dark:hover:bg-[#FEE500]/90 dark:text-black dark:border-[#FEE500]"
                   disabled={isLoading || isOAuthLoading !== null}
                   onClick={() => handleOAuthLogin('kakao')}
                 >
@@ -248,7 +248,7 @@ export default function LoginPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full bg-[#03C75A] hover:bg-[#03C75A]/90 text-white border-[#03C75A]"
+                  className="w-full bg-[#03C75A] hover:bg-[#03C75A]/90 text-white border-[#03C75A] dark:bg-[#03C75A] dark:hover:bg-[#03C75A]/90 dark:text-white dark:border-[#03C75A]"
                   disabled={isLoading || isOAuthLoading !== null}
                   onClick={() => handleOAuthLogin('naver')}
                 >
