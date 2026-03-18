@@ -15,6 +15,12 @@ import { toast } from "sonner"
 import { Separator } from "@/src/components/ui/separator"
 import { BankType } from "@/src/types/api"
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const PASSWORD_REGEX = /^(?=.*[0-9])(?=.*[a-z])(?=.*\W)(?=\S+$).{8,16}$/
+const USERNAME_REGEX = /^[가-힣]*$/
+const NICKNAME_REGEX = /^(?=.{2,15}$)(?!.*\.{2,})[가-힣a-zA-Z0-9._-]+(?<!\.)$/
+const PHONE_REGEX = /^\d{3}\d{3,4}\d{4}$/
+
 export default function RegisterPage() {
   const router = useRouter()
   const { register, oauthLogin } = useAuth()
@@ -44,8 +50,14 @@ export default function RegisterPage() {
     e.preventDefault()
     setError(null)
 
+    const email = formData.email.trim()
+    const password = formData.password
+    const username = formData.username.trim()
+    const nickname = formData.nickname.trim()
+    const phoneNumber = formData.phoneNumber.replace(/[^0-9]/g, "")
+
     // 유효성 검사
-    if (!formData.email || !formData.password || !formData.username || !formData.nickname || !formData.phoneNumber) {
+    if (!email || !password || !username || !nickname || !phoneNumber) {
       setError("필수 항목을 모두 입력해주세요")
       return
     }
@@ -55,19 +67,39 @@ export default function RegisterPage() {
       return
     }
 
-    if (formData.password.length < 6) {
-      setError("비밀번호는 최소 6자 이상이어야 합니다")
+    if (!EMAIL_REGEX.test(email)) {
+      setError("이메일 형식이 올바르지 않습니다.")
+      return
+    }
+
+    if (!PASSWORD_REGEX.test(password)) {
+      setError("비밀번호는 8~16자 영문 소문자, 숫자, 특수문자를 사용하세요.")
+      return
+    }
+
+    if (!USERNAME_REGEX.test(username)) {
+      setError("이름은 한글만 사용 가능합니다.")
+      return
+    }
+
+    if (!NICKNAME_REGEX.test(nickname)) {
+      setError("닉네임은 2~15자, 한글/영문/숫자와 . _ - 만 가능하며, 점(.)을 연속으로 쓰거나 마지막에 쓸 수 없습니다.")
+      return
+    }
+
+    if (!PHONE_REGEX.test(phoneNumber)) {
+      setError("전화번호는 앞자리는 01이며, 중간 3~4자리, 세번째는 4자리인 전화번호를 입력해주세요.")
       return
     }
 
     try {
       setIsLoading(true)
       await register({
-        email: formData.email,
-        password: formData.password,
-        username: formData.username,
-        nickname: formData.nickname,
-        phoneNumber: formData.phoneNumber,
+        email,
+        password,
+        username,
+        nickname,
+        phoneNumber,
         account: formData.account || null,
         accountHolder: formData.accountHolder || null,
         bankType: formData.bankType && formData.bankType !== '' ? (formData.bankType as BankType) : undefined,
@@ -135,7 +167,7 @@ export default function RegisterPage() {
                   id="password"
                   name="password"
                   type="password"
-                  placeholder="최소 6자 이상"
+                  placeholder="8~16자 (소문자/숫자/특수문자 포함)"
                   value={formData.password}
                   onChange={handleChange}
                   disabled={isLoading}
@@ -191,11 +223,15 @@ export default function RegisterPage() {
                   id="phoneNumber"
                   name="phoneNumber"
                   type="tel"
-                  placeholder="010-1234-5678"
+                  placeholder="01012345678"
                   value={formData.phoneNumber}
-                  onChange={handleChange}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^0-9]/g, "")
+                    setFormData((prev) => ({ ...prev, phoneNumber: value }))
+                  }}
                   disabled={isLoading}
                   required
+                  maxLength={11}
                 />
               </div>
 

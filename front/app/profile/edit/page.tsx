@@ -148,7 +148,7 @@ export default function ProfileEditPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="username">이름(username)</Label>
+                    <Label htmlFor="username">이름</Label>
                     <Input id="username" type="text" value={form.username} disabled readOnly />
                   </div>
 

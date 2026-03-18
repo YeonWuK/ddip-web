@@ -20,6 +20,10 @@ import { authApi } from "@/src/services/api";
 import { tokenStorage } from "@/src/lib/auth";
 import { toast } from "sonner";
 
+const USERNAME_REGEX = /^[가-힣]*$/;
+const NICKNAME_REGEX = /^(?=.{2,15}$)(?!.*\.{2,})(?!.*\.$)[가-힣a-zA-Z0-9._-]+$/;
+const PHONE_REGEX = /^\d{3}\d{3,4}\d{4}$/;
+
 export default function CompleteProfilePage() {
   const router = useRouter();
   const { user, refreshUser, isAuthenticated, logout } = useAuth();
@@ -107,24 +111,35 @@ export default function CompleteProfilePage() {
     e.preventDefault();
     setError(null);
 
-    // 유효성 검사
-    if (!formData.nickname || !formData.phoneNumber || !formData.username) {
+    const username = formData.username.trim();
+    const nickname = formData.nickname.trim();
+    const phoneNumber = formData.phoneNumber.replace(/[^0-9]/g, "");
+
+    if (!nickname || !phoneNumber || !username) {
       setError("필수 항목을 모두 입력해주세요");
       return;
     }
 
-    // 전화번호 형식 검사 (숫자만 허용, 하이픈 제거)
-    const phoneNumber = formData.phoneNumber.replace(/[^0-9]/g, ""); // 하이픈 및 기타 문자 제거
-    if (phoneNumber.length < 10 || phoneNumber.length > 11) {
-      setError("전화번호는 10~11자리 숫자로 입력해주세요");
+    if (!USERNAME_REGEX.test(username)) {
+      setError("이름은 한글만 사용 가능합니다.");
+      return;
+    }
+
+    if (!NICKNAME_REGEX.test(nickname)) {
+      setError("닉네임은 2~15자, 한글/영문/숫자와 . _ - 만 가능하며, 점(.)을 연속으로 쓰거나 마지막에 쓸 수 없습니다.");
+      return;
+    }
+
+    if (!PHONE_REGEX.test(phoneNumber)) {
+      setError("전화번호는 앞자리는 01이며, 중간 3~4자리, 세번째는 4자리인 전화번호를 입력해주세요.");
       return;
     }
 
     try {
       setIsLoading(true);
       await authApi.updateProfile({
-        username: formData.username, // 백엔드 DTO: username
-        nickname: formData.nickname, // 백엔드 DTO: nickname
+        username, // 백엔드 DTO: username
+        nickname, // 백엔드 DTO: nickname
         phoneNumber: phoneNumber, // 백엔드 DTO: phoneNumber (하이픈 제거한 숫자만 전송)
       });
 
@@ -234,7 +249,7 @@ export default function CompleteProfilePage() {
                   maxLength={11}
                 />
                 <p className="text-xs text-muted-foreground">
-                  숫자만 입력해주세요 (10~11자리)
+                  숫자만 입력해주세요 (예: 01012345678)
                 </p>
               </div>
 
