@@ -25,6 +25,8 @@ public class AuctionSummaryDto {
 
     private String seller;
 
+    private String mainImageKey;
+
     private AuctionStatus auctionStatus;
 
     private LocalDateTime startAt;
@@ -39,6 +41,7 @@ public class AuctionSummaryDto {
                 .sellerId(auction.getSeller().getId())
                 .seller(auction.getSeller().getUsername())
                 .auctionStatus(auction.getAuctionStatus())
+                .mainImageKey(auction.getMainImagKey())
                 .startAt(auction.getStartAt())
                 .endAt(auction.getEndAt())
                 .build();
