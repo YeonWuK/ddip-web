@@ -9,6 +9,7 @@ import {
   UserProfileResponse,
   LoginRequest,
   FindPasswordRequest,
+  UserUpdateRequest,
   RegisterRequest,
   AuthResponse,
   OAuthProvider,
@@ -226,6 +227,26 @@ export const userApi = {
     } catch (error) {
       throw error;
     }
+  },
+
+  /**
+   * 회원정보 수정 (비밀번호 포함)
+   * PATCH /api/users/update
+   */
+  updateUserInfo: async (data: UserUpdateRequest): Promise<void> => {
+    await apiRequest('/api/users/update', {
+      method: 'PATCH',
+      body: JSON.stringify({
+        email: data.email,
+        password: data.password,
+        username: data.username,
+        nickname: data.nickname,
+        phoneNumber: data.phoneNumber,
+        account: data.account,
+        accountHolder: data.accountHolder,
+        bankType: data.bankType,
+      }),
+    });
   },
 };
 

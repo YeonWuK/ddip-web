@@ -39,6 +39,7 @@ export type {
   UserPageResponse,
   LoginRequest,
   FindPasswordRequest,
+  UserUpdateRequest,
   RegisterRequest,
   AuthResponse,
   // 후원 관련 타입

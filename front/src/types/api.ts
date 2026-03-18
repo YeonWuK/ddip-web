@@ -25,6 +25,17 @@ export interface FindPasswordRequest {
   username: string;
 }
 
+export interface UserUpdateRequest {
+  email: string;
+  password: string;
+  username: string;
+  nickname: string;
+  phoneNumber: string;
+  account?: string;
+  accountHolder?: string;
+  bankType?: BankType;
+}
+
 // 은행 타입 enum (백엔드 BankType과 일치)
 export type BankType = 'KB' | 'SHINHAN' | 'WOORI' | 'HANA' | 'NH' | 'IBK' | 'KAKAO' | 'TOSS' | null;
 

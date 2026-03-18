@@ -16,6 +16,7 @@ import {
   Gavel,
   Shield,
   Coins,
+  Settings,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -145,6 +146,12 @@ export function Navigation() {
                   <DropdownMenuItem asChild>
                     <Link href="/profile">마이페이지</Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile/edit" className="flex items-center">
+                      <Settings className="mr-2 size-4" />
+                      회원정보 수정
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="mr-2 size-4" />
                     로그아웃
@@ -205,6 +212,12 @@ export function Navigation() {
                     <Link href="/profile" className="flex items-center gap-2">
                       <User className="size-4" />
                       마이페이지
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile/edit" className="flex items-center gap-2">
+                      <Settings className="size-4" />
+                      회원정보 수정
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
