@@ -13,6 +13,15 @@ import { AlertCircle, Loader2 } from "lucide-react"
 import { useAuth } from "@/src/contexts/auth-context"
 import { toast } from "sonner"
 import { Separator } from "@/src/components/ui/separator"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/src/components/ui/dialog"
+import { authApi } from "@/src/services/api"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -22,6 +31,13 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isOAuthLoading, setIsOAuthLoading] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  const [isFindPasswordOpen, setIsFindPasswordOpen] = useState(false)
+  const [findPasswordEmail, setFindPasswordEmail] = useState("")
+  const [findPasswordUsername, setFindPasswordUsername] = useState("")
+  const [isFindPasswordLoading, setIsFindPasswordLoading] = useState(false)
+  const [findPasswordError, setFindPasswordError] = useState<string | null>(null)
+  const [findPasswordSuccess, setFindPasswordSuccess] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -57,6 +73,37 @@ export default function LoginPage() {
       setError(errorMessage)
       toast.error(errorMessage)
       setIsOAuthLoading(null)
+    }
+  }
+
+  const openFindPassword = () => {
+    setFindPasswordEmail(email)
+    setFindPasswordUsername("")
+    setFindPasswordError(null)
+    setFindPasswordSuccess(false)
+    setIsFindPasswordOpen(true)
+  }
+
+  const handleFindPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setFindPasswordError(null)
+
+    if (!findPasswordEmail || !findPasswordUsername) {
+      setFindPasswordError("이메일과 username을 입력해주세요")
+      return
+    }
+
+    try {
+      setIsFindPasswordLoading(true)
+      await authApi.findPassword({ email: findPasswordEmail, username: findPasswordUsername })
+      setFindPasswordSuccess(true)
+      toast.success("임시 비밀번호를 전송했습니다")
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "비밀번호 찾기에 실패했습니다"
+      setFindPasswordError(errorMessage)
+      toast.error(errorMessage)
+    } finally {
+      setIsFindPasswordLoading(false)
     }
   }
 
@@ -120,6 +167,15 @@ export default function LoginPage() {
                 <Link href="/register" className="text-primary hover:underline">
                   회원가입
                 </Link>
+                <span className="mx-2">·</span>
+                <button
+                  type="button"
+                  className="text-primary hover:underline"
+                  onClick={openFindPassword}
+                  disabled={isLoading || isOAuthLoading !== null}
+                >
+                  비밀번호 찾기
+                </button>
               </div>
             </form>
 
@@ -212,6 +268,88 @@ export default function LoginPage() {
           </CardContent>
         </Card>
       </main>
+
+      <Dialog
+        open={isFindPasswordOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsFindPasswordOpen(false)
+            setFindPasswordError(null)
+            setFindPasswordSuccess(false)
+            setIsFindPasswordLoading(false)
+          } else {
+            setIsFindPasswordOpen(true)
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>비밀번호 찾기</DialogTitle>
+            <DialogDescription>임시 비밀번호를 발급하고 SMS로 전송합니다.</DialogDescription>
+          </DialogHeader>
+
+          {findPasswordSuccess ? (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                요청이 접수되었습니다. 입력하신 정보가 일치하면 임시 비밀번호가 SMS로 전송됩니다.
+              </p>
+              <DialogFooter>
+                <Button type="button" onClick={() => setIsFindPasswordOpen(false)}>
+                  닫기
+                </Button>
+              </DialogFooter>
+            </div>
+          ) : (
+            <form onSubmit={handleFindPassword} className="space-y-4">
+              {findPasswordError && (
+                <Alert variant="destructive">
+                  <AlertCircle className="size-4" />
+                  <AlertDescription>{findPasswordError}</AlertDescription>
+                </Alert>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="find-password-email">이메일</Label>
+                <Input
+                  id="find-password-email"
+                  type="email"
+                  placeholder="example@email.com"
+                  value={findPasswordEmail}
+                  onChange={(e) => setFindPasswordEmail(e.target.value)}
+                  disabled={isFindPasswordLoading}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="find-password-username">username</Label>
+                <Input
+                  id="find-password-username"
+                  type="text"
+                  placeholder="이름 또는 아이디를 입력하세요"
+                  value={findPasswordUsername}
+                  onChange={(e) => setFindPasswordUsername(e.target.value)}
+                  disabled={isFindPasswordLoading}
+                  required
+                />
+              </div>
+
+              <DialogFooter>
+                <Button type="submit" disabled={isFindPasswordLoading}>
+                  {isFindPasswordLoading ? (
+                    <>
+                      <Loader2 className="mr-2 size-4 animate-spin" />
+                      처리 중...
+                    </>
+                  ) : (
+                    "임시 비밀번호 요청"
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

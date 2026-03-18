@@ -38,8 +38,11 @@ export const projectApi = {
         // Creator 정보 처리
         let creator: UserResponse;
         if (backendProject.creator) {
+          const creatorIdRaw =
+            backendProject.creator.creatorId ?? backendProject.creator.id ?? backendProject.creatorId ?? backendProject.creatorId ?? 0;
+          const creatorId = Number(creatorIdRaw) || 0;
           creator = {
-            id: backendProject.creator.creatorId || backendProject.creator.id || backendProject.creatorId || 0,
+            id: creatorId,
             email: backendProject.creator.email || null,
             name: backendProject.creator.name || backendProject.creator.username || '',
             nickname: backendProject.creator.nickname || '',
@@ -47,11 +50,12 @@ export const projectApi = {
             phone: backendProject.creator.phone || backendProject.creator.phoneNumber || null,
           };
         } else if (backendProject.creatorId) {
+          const creatorId = Number(backendProject.creatorId) || 0;
           creator = {
-            id: backendProject.creatorId,
+            id: creatorId,
             email: null,
             name: '',
-            nickname: `사용자 ${backendProject.creatorId}`,
+            nickname: `사용자 ${creatorId}`,
             profileImageUrl: null,
             phone: null,
           };
@@ -99,9 +103,11 @@ export const projectApi = {
         const endAt = backendProject.endAt || backendProject.end_at || '';
         const createdAt = backendProject.createdAt || backendProject.created_date || backendProject.createdDate || '';
 
+        const normalizedCreatorId = Number(backendProject.creatorId ?? backendProject.creator?.creatorId ?? creator.id ?? 0) || 0;
+
         return {
           id: backendProject.id,
-          creatorId: backendProject.creatorId ?? backendProject.creator?.creatorId ?? creator.id ?? 0,
+          creatorId: normalizedCreatorId,
           creator,
           title: backendProject.title || '',
           description: backendProject.description || '',

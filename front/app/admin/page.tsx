@@ -212,7 +212,8 @@ export default function AdminPage() {
     try {
       await adminApi.approveProject(selectedProject.id);
       toast.success("프로젝트가 승인되었습니다");
-      setActionDialog({ ...actionDialog, open: false });
+      setActionDialog((prev) => ({ ...prev, open: false, type: null, reason: "", amount: "" }));
+      setSelectedProject(null);
       loadProjects(projectPage);
     } catch (error) {
       toast.error("승인에 실패했습니다");
@@ -228,7 +229,8 @@ export default function AdminPage() {
     try {
       await adminApi.rejectProject(selectedProject.id, actionDialog.reason);
       toast.success("프로젝트가 거절되었습니다");
-      setActionDialog({ ...actionDialog, open: false, reason: '' });
+      setActionDialog((prev) => ({ ...prev, open: false, type: null, reason: "", amount: "" }));
+      setSelectedProject(null);
       loadProjects(projectPage);
     } catch (error) {
       toast.error("거절에 실패했습니다");
@@ -244,7 +246,8 @@ export default function AdminPage() {
     try {
       await adminApi.forceStopProject(selectedProject.id, actionDialog.reason);
       toast.success("프로젝트가 정지되었습니다");
-      setActionDialog({ ...actionDialog, open: false, reason: '' });
+      setActionDialog((prev) => ({ ...prev, open: false, type: null, reason: "", amount: "" }));
+      setSelectedProject(null);
       loadProjects(projectPage);
     } catch (error) {
       toast.error("정지에 실패했습니다");
@@ -266,7 +269,8 @@ export default function AdminPage() {
         reason: actionDialog.reason,
       });
       toast.success("포인트가 조정되었습니다");
-      setActionDialog({ ...actionDialog, open: false, reason: '', amount: '' });
+      setActionDialog((prev) => ({ ...prev, open: false, type: null, reason: "", amount: "" }));
+      setSelectedUser(null);
       loadUsers(userPage);
     } catch (error) {
       toast.error("포인트 조정에 실패했습니다");
@@ -282,7 +286,8 @@ export default function AdminPage() {
     try {
       await adminApi.forceCloseAuction(selectedAuction.id, actionDialog.reason);
       toast.success("경매가 강제 종료되었습니다");
-      setActionDialog({ ...actionDialog, open: false, reason: '' });
+      setActionDialog((prev) => ({ ...prev, open: false, type: null, reason: "", amount: "" }));
+      setSelectedAuction(null);
       loadAuctions(auctionPage);
     } catch (error) {
       toast.error("강제 종료에 실패했습니다");
@@ -298,7 +303,8 @@ export default function AdminPage() {
     try {
       await adminApi.forceCancelProject(selectedProject.id, actionDialog.reason);
       toast.success("프로젝트가 강제 취소되었습니다");
-      setActionDialog({ ...actionDialog, open: false, reason: '' });
+      setActionDialog((prev) => ({ ...prev, open: false, type: null, reason: "", amount: "" }));
+      setSelectedProject(null);
       loadProjects(projectPage);
     } catch (error) {
       toast.error("강제 취소에 실패했습니다");
@@ -939,7 +945,19 @@ export default function AdminPage() {
       </Tabs>
 
       {/* 액션 다이얼로그 */}
-      <Dialog open={actionDialog.open} onOpenChange={(open) => setActionDialog({ ...actionDialog, open })}>
+      <Dialog
+        open={actionDialog.open}
+        onOpenChange={(open) => {
+          if (!open) {
+            setActionDialog((prev) => ({ ...prev, open: false, type: null, reason: "", amount: "" }));
+            setSelectedProject(null);
+            setSelectedAuction(null);
+            setSelectedUser(null);
+            return;
+          }
+          setActionDialog((prev) => ({ ...prev, open: true }));
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
@@ -994,7 +1012,12 @@ export default function AdminPage() {
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setActionDialog({ ...actionDialog, open: false, reason: '', amount: '' })}
+              onClick={() => {
+                setActionDialog((prev) => ({ ...prev, open: false, type: null, reason: "", amount: "" }));
+                setSelectedProject(null);
+                setSelectedAuction(null);
+                setSelectedUser(null);
+              }}
             >
               취소
             </Button>

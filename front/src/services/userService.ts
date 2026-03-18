@@ -8,6 +8,7 @@ import {
   UserPageResponse,
   UserProfileResponse,
   LoginRequest,
+  FindPasswordRequest,
   RegisterRequest,
   AuthResponse,
   OAuthProvider,
@@ -345,6 +346,20 @@ export const authApi = {
       // 에러 메시지 그대로 전달
       throw error instanceof Error ? error : new Error('로그인에 실패했습니다');
     }
+  },
+
+  /**
+   * 비밀번호 찾기 (임시 비밀번호 발급 + SMS 전송)
+   * POST /api/users/find-password
+   */
+  findPassword: async (data: FindPasswordRequest): Promise<void> => {
+    await apiRequest('/api/users/find-password', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: data.email,
+        username: data.username,
+      }),
+    });
   },
 
   /**

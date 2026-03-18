@@ -317,8 +317,32 @@ function getMyAuctionStateMeta(state: string) {
   }
 }
 
+function getMyProjectStateMeta(state: string) {
+  const normalized = state?.toUpperCase?.() ?? ""
+
+  switch (normalized) {
+    case "DRAFT":
+      return { label: "승인 대기", className: "bg-orange-600" }
+    case "OPEN":
+      return { label: "진행중", className: "bg-emerald-600" }
+    case "SUCCESS":
+      return { label: "성공", className: "bg-blue-600" }
+    case "FAILED":
+      return { label: "실패", className: "bg-slate-600" }
+    case "CANCELED":
+      return { label: "취소", className: "bg-rose-600" }
+    case "REJECTED":
+      return { label: "거절", className: "bg-red-600" }
+    case "STOP":
+      return { label: "정지", className: "bg-zinc-600" }
+    default:
+      return { label: normalized || "상태없음", className: "bg-slate-400" }
+  }
+}
+
 function SmallProjectCard({ project, isFirst }: { project: ProjectResponse; isFirst: boolean }) {
   const percent = Math.round((project.currentAmount / project.targetAmount) * 100);
+  const projectState = getMyProjectStateMeta(project.status)
   return (
     <Link
       href={`/project/${project.id}`}
@@ -345,6 +369,7 @@ function SmallProjectCard({ project, isFirst }: { project: ProjectResponse; isFi
         <div className="text-right shrink-0">
           <p className="text-[10px] text-muted-foreground uppercase">모금액</p>
           <p className="text-sm font-bold text-primary">{project.currentAmount.toLocaleString()}원</p>
+          <Badge className={`text-[9px] h-4 px-1 mt-1 ${projectState.className}`}>{projectState.label}</Badge>
         </div>
       </div>
     </Link>
