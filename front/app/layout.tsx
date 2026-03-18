@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { Toaster } from "@/src/components/ui/sonner"
 import { AuthProvider } from "@/src/contexts/auth-context"
 import { WishlistMonitor } from "@/src/components/wishlist-monitor"
+import { ThemeProvider } from "@/src/components/theme-provider"
 import "./globals.css"
 
 const geistSans = Geist({
@@ -46,14 +47,16 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="ko">
+    <html lang="ko" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
-        <AuthProvider>
-          <WishlistMonitor />
-          {children}
-          <Analytics />
-          <Toaster />
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <WishlistMonitor />
+            {children}
+            <Analytics />
+            <Toaster />
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

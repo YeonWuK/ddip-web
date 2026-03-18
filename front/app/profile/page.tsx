@@ -138,14 +138,14 @@ function ProfileDashboard() {
   if (authLoading || loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary size-10" /></div>
 
   return (
-    <div className="min-h-screen bg-slate-50/50 pb-20">
+    <div className="min-h-screen bg-background pb-20">
       <Navigation />
       <main className="container mx-auto px-4 py-8 max-w-6xl">
         
         {/* 상단 프로필 및 배송지 요약 카드 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-          <Card className="md:col-span-2 flex items-center p-6 bg-white border-none shadow-sm">
-            <Avatar className="size-20 mr-6 border-2 border-white shadow-md">
+          <Card className="md:col-span-2 flex items-center border-none bg-card p-6 shadow-sm">
+            <Avatar className="mr-6 size-20 border-2 border-background shadow-md">
               <AvatarImage src={user?.profileImageUrl || ""} />
               <AvatarFallback className="text-xl">{user?.nickname?.[0]}</AvatarFallback>
             </Avatar>
@@ -155,8 +155,8 @@ function ProfileDashboard() {
             </div>
           </Card>
 
-          <Card className="p-6 bg-white border-none shadow-sm flex flex-col justify-between">
-            <div className="flex items-center justify-between mb-2 text-sm font-semibold text-slate-600">
+          <Card className="flex flex-col justify-between border-none bg-card p-6 shadow-sm">
+            <div className="mb-2 flex items-center justify-between text-sm font-semibold text-muted-foreground">
               <div className="flex items-center gap-2"><MapPin className="size-4" /> 기본 배송지</div>
               <span className="text-[10px] text-muted-foreground">{addresses.length}개 보유</span>
             </div>
@@ -244,12 +244,12 @@ function ProfileDashboard() {
                       {addr.isDefault && <Badge className="text-[10px] h-4">기본</Badge>}
                     </div>
                     <div className="flex gap-3">
-                      <button onClick={() => { setEditingAddress(addr); setAddressFormOpen(true); }} className="text-slate-400 hover:text-slate-600"><Edit className="size-4" /></button>
-                      <button onClick={() => handleDeleteAddress(addr.id)} className="text-slate-400 hover:text-red-500"><Trash2 className="size-4" /></button>
+                      <button onClick={() => { setEditingAddress(addr); setAddressFormOpen(true); }} className="text-muted-foreground hover:text-foreground"><Edit className="size-4" /></button>
+                      <button onClick={() => handleDeleteAddress(addr.id)} className="text-muted-foreground hover:text-red-500"><Trash2 className="size-4" /></button>
                     </div>
                   </div>
-                  <p className="text-slate-500 text-xs mb-1">{addr.phone}</p>
-                  <p className="text-slate-600 text-xs leading-snug">[{addr.zipCode}] {addr.address} {addr.detailAddress}</p>
+                  <p className="mb-1 text-xs text-muted-foreground">{addr.phone}</p>
+                  <p className="text-xs leading-snug text-muted-foreground">[{addr.zipCode}] {addr.address} {addr.detailAddress}</p>
                   {!addr.isDefault && (
                     <Button variant="link" className="p-0 h-auto text-[11px] mt-2 text-primary" onClick={() => handleSetDefaultAddress(addr.id)}>
                       기본 배송지로 설정
@@ -257,7 +257,7 @@ function ProfileDashboard() {
                   )}
                 </Card>
               ))}
-              {addresses.length === 0 && <p className="text-center py-10 text-slate-400 text-sm">등록된 배송지가 없습니다.</p>}
+              {addresses.length === 0 && <p className="py-10 text-center text-sm text-muted-foreground">등록된 배송지가 없습니다.</p>}
             </div>
           </DialogContent>
         </Dialog>
@@ -305,7 +305,7 @@ function getMyAuctionStateMeta(state: string) {
     case "WON":
       return { label: "낙찰", className: "bg-emerald-600" }
     case "LOST":
-      return { label: "패찰", className: "bg-slate-600" }
+      return { label: "패찰", className: "bg-muted-foreground" }
     case "CANCELED":
       return { label: "경매 취소", className: "bg-orange-600" }
     case "LEADING":
@@ -313,7 +313,7 @@ function getMyAuctionStateMeta(state: string) {
     case "OUTBID":
       return { label: "차순위", className: "bg-rose-600" }
     default:
-      return { label: normalized || "상태없음", className: "bg-slate-400" }
+      return { label: normalized || "상태없음", className: "bg-muted text-muted-foreground border-border" }
   }
 }
 
@@ -328,7 +328,7 @@ function getMyProjectStateMeta(state: string) {
     case "SUCCESS":
       return { label: "성공", className: "bg-blue-600" }
     case "FAILED":
-      return { label: "실패", className: "bg-slate-600" }
+      return { label: "실패", className: "bg-muted-foreground" }
     case "CANCELED":
       return { label: "취소", className: "bg-rose-600" }
     case "REJECTED":
@@ -336,7 +336,7 @@ function getMyProjectStateMeta(state: string) {
     case "STOP":
       return { label: "정지", className: "bg-zinc-600" }
     default:
-      return { label: normalized || "상태없음", className: "bg-slate-400" }
+      return { label: normalized || "상태없음", className: "bg-muted text-muted-foreground border-border" }
   }
 }
 
@@ -347,20 +347,20 @@ function SmallProjectCard({ project, isFirst }: { project: ProjectResponse; isFi
     <Link
       href={`/project/${project.id}`}
       className={[
-        "block p-4 transition-colors border-t border-slate-100 hover:bg-slate-50 hover:border-t-slate-50",
+        "block border-t border-border p-4 transition-colors hover:border-t-border hover:bg-muted/50",
         isFirst ? "border-t-0" : "",
       ].join(" ")}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3 min-w-0 flex-1 mr-4">
-          <div className="relative size-12 rounded-md overflow-hidden shrink-0 bg-slate-100">
+          <div className="relative size-12 shrink-0 overflow-hidden rounded-md bg-muted">
             <Image src={project.imageUrl || "/placeholder.svg"} alt="" fill className="object-cover" />
           </div>
           <div className="min-w-0">
             <p className="text-sm font-medium truncate">{project.title}</p>
             <div className="flex items-center gap-3 mt-1">
               <span className="text-primary font-bold text-[11px]">{percent}%</span>
-              <div className="w-32 max-w-[40vw] h-1 bg-slate-100 rounded-full overflow-hidden">
+              <div className="h-1 w-32 max-w-[40vw] overflow-hidden rounded-full bg-muted">
                 <div className="h-full bg-primary" style={{ width: `${Math.min(percent, 100)}%` }} />
               </div>
             </div>
@@ -381,13 +381,13 @@ function SmallAuctionCard({ auction, isFirst }: { auction: AuctionSummary; isFir
     <Link
       href={`/auction/${auction.id}`}
       className={[
-        "block p-4 transition-colors border-t border-slate-100 hover:bg-slate-50 hover:border-t-slate-50",
+        "block border-t border-border p-4 transition-colors hover:border-t-border hover:bg-muted/50",
         isFirst ? "border-t-0" : "",
       ].join(" ")}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3 min-w-0 flex-1 mr-4">
-          <div className="relative size-12 rounded-md overflow-hidden shrink-0 bg-slate-100">
+          <div className="relative size-12 shrink-0 overflow-hidden rounded-md bg-muted">
             <Image src={auction.imageUrl || "/placeholder.svg"} alt="" fill className="object-cover" />
           </div>
           <div className="min-w-0">
@@ -410,13 +410,13 @@ function BidItem({ bid, isFirst }: { bid: MyBidsSummary; isFirst: boolean }) {
     <Link
       href={`/auction/${bid.auctionId}`}
       className={[
-        "block p-4 transition-colors border-t border-slate-100 hover:bg-slate-50 hover:border-t-slate-50",
+        "block border-t border-border p-4 transition-colors hover:border-t-border hover:bg-muted/50",
         isFirst ? "border-t-0" : "",
       ].join(" ")}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3 min-w-0 flex-1 mr-4">
-          <div className="relative size-12 rounded-md overflow-hidden shrink-0 bg-slate-100">
+          <div className="relative size-12 shrink-0 overflow-hidden rounded-md bg-muted">
             <Image src={bid.auctionThumbnailUrl || "/placeholder.svg"} alt="" fill className="object-cover" />
           </div>
           <div className="min-w-0">
@@ -435,7 +435,7 @@ function BidItem({ bid, isFirst }: { bid: MyBidsSummary; isFirst: boolean }) {
 
 function SupportItem({ support }: { support: SupportResponse }) {
   return (
-    <div className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
+    <div className="flex items-center justify-between p-4 transition-colors hover:bg-muted/50">
       <div className="min-w-0 flex-1 mr-4">
         <p className="text-sm font-medium truncate">{support.projectTitle}</p>
         <p className="text-[10px] text-muted-foreground truncate">{support.rewardTierTitle}</p>
@@ -448,10 +448,10 @@ function SupportItem({ support }: { support: SupportResponse }) {
 function FavCircle({ item, type }: { item: any, type: string }) {
   return (
     <Link href={`/${type}/${item.id}`} className="shrink-0 group text-center">
-      <div className="relative size-16 rounded-full overflow-hidden border-2 border-transparent group-hover:border-primary transition-all mb-1 bg-slate-200">
+      <div className="relative mb-1 size-16 overflow-hidden rounded-full border-2 border-transparent bg-muted transition-all group-hover:border-primary">
         <Image src={item.imageUrl || "/placeholder.svg"} alt="" fill className="object-cover" />
       </div>
-      <p className="text-[10px] font-medium w-16 truncate text-slate-600">{item.title}</p>
+      <p className="w-16 truncate text-[10px] font-medium text-muted-foreground">{item.title}</p>
     </Link>
   )
 }
@@ -537,7 +537,7 @@ function AddressForm({
       </div>
       {!address && (
         <div className="flex items-center space-x-2">
-          <input type="checkbox" id="setAsDefault" {...register("setAsDefault")} className="rounded border-gray-300" />
+          <input type="checkbox" id="setAsDefault" {...register("setAsDefault")} className="rounded border-border" />
           <Label htmlFor="setAsDefault" className="text-sm cursor-pointer">기본 배송지로 설정</Label>
         </div>
       )}

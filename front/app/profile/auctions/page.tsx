@@ -38,7 +38,7 @@ export default function MyAuctionsPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-slate-50/50 pb-20">
+      <div className="min-h-screen bg-background pb-20">
         <Navigation />
         <main className="container mx-auto max-w-6xl px-4 py-8">
           <div className="mb-6 flex items-center justify-between">
@@ -65,7 +65,7 @@ export default function MyAuctionsPage() {
                 <Link key={auction.id} href={`/auction/${auction.id}`}>
                   <Card className="border-none p-4 shadow-sm transition-all hover:shadow-md">
                     <div className="flex items-center gap-4">
-                      <div className="relative size-16 shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                      <div className="relative size-16 shrink-0 overflow-hidden rounded-lg bg-muted">
                         <Image src={auction.imageUrl || "/placeholder.svg"} alt="" fill className="object-cover" />
                       </div>
                       <div className="min-w-0 flex-1">

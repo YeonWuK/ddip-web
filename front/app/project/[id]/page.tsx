@@ -1168,7 +1168,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                               id="setAsDefault"
                               checked={newAddress.setAsDefault}
                               onChange={(e) => setNewAddress({ ...newAddress, setAsDefault: e.target.checked })}
-                              className="rounded border-gray-300"
+                              className="rounded border-border"
                             />
                             <Label htmlFor="setAsDefault" className="cursor-pointer">
                               기본 배송지로 설정

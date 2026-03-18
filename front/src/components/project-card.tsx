@@ -108,7 +108,7 @@ export function ProjectCard({
               </Badge>
             )}
             {statusLabel && (
-              <Badge className={compact ? "bg-black text-white border-black text-xs" : "bg-black text-white border-black"}>
+              <Badge className={compact ? "bg-foreground text-background border-foreground text-xs" : "bg-foreground text-background border-foreground"}>
                 {statusLabel}
               </Badge>
             )}

@@ -101,7 +101,7 @@ export function AuctionCard({
           />
           <div className={`absolute flex gap-1.5 ${compact ? "right-2 top-2" : "right-3 top-3 gap-2"}`}>
             {statusLabel && (
-              <Badge className={compact ? "bg-black text-white border-black text-xs" : "bg-black text-white border-black"}>
+              <Badge className={compact ? "bg-foreground text-background border-foreground text-xs" : "bg-foreground text-background border-foreground"}>
                 {statusLabel}
               </Badge>
             )}

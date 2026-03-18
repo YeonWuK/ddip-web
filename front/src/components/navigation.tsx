@@ -32,6 +32,7 @@ import {
 } from "@/src/components/ui/avatar";
 import { Badge } from "@/src/components/ui/badge";
 import { useAuth } from "@/src/contexts/auth-context";
+import { ThemeToggle } from "@/src/components/theme-toggle";
 import { toast } from "sonner";
 
 export function Navigation() {
@@ -91,6 +92,7 @@ export function Navigation() {
         </div>
 
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           {isLoading ? (
             <div className="size-10" /> // 로딩 중 플레이스홀더
           ) : isAuthenticated ? (
