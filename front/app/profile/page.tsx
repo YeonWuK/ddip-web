@@ -151,10 +151,6 @@ function ProfileDashboard() {
             <div>
               <h1 className="text-2xl font-bold">{user?.nickname}님, 환영합니다!</h1>
               <p className="text-muted-foreground text-sm">{user?.email}</p>
-              <div className="flex gap-2 mt-2">
-                <Badge variant="outline" className="font-normal">정보통신공학</Badge>
-                <Badge variant="outline" className="font-normal">4학년</Badge>
-              </div>
             </div>
           </Card>
 
@@ -295,6 +291,25 @@ function SectionTitle({ title, count, href }: { title: string, count: number, hr
   )
 }
 
+function getMyAuctionStateMeta(state: string) {
+  const normalized = state?.toUpperCase?.() ?? ""
+
+  switch (normalized) {
+    case "WON":
+      return { label: "낙찰", className: "bg-emerald-600" }
+    case "LOST":
+      return { label: "패찰", className: "bg-slate-600" }
+    case "CANCELED":
+      return { label: "경매 취소", className: "bg-orange-600" }
+    case "LEADING":
+      return { label: "최고 입찰", className: "bg-blue-600" }
+    case "OUTBID":
+      return { label: "차순위", className: "bg-rose-600" }
+    default:
+      return { label: normalized || "상태없음", className: "bg-slate-400" }
+  }
+}
+
 function SmallProjectCard({ project }: { project: ProjectResponse }) {
   const percent = Math.round((project.currentAmount / project.targetAmount) * 100);
   return (
@@ -341,15 +356,22 @@ function SmallAuctionCard({ auction }: { auction: AuctionSummary }) {
 }
 
 function BidItem({ bid }: { bid: MyBidsSummary }) {
+  const auctionState = getMyAuctionStateMeta(bid.myAuctionStatus)
+
   return (
     <div className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-      <div className="min-w-0 flex-1 mr-4">
-        <p className="text-sm font-medium truncate">{bid.auctionTitle}</p>
-        <p className="text-[10px] text-muted-foreground">{formatBidDateTime(bid.lastBidAt)}</p>
+      <div className="flex items-center gap-3 min-w-0 flex-1 mr-4">
+        <div className="relative size-12 rounded-md overflow-hidden shrink-0 bg-slate-100">
+          <Image src={bid.auctionThumbnailUrl || "/placeholder.svg"} alt="" fill className="object-cover" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm font-medium truncate">{bid.auctionTitle}</p>
+          <p className="text-[10px] text-muted-foreground">{formatBidDateTime(bid.lastBidAt)}</p>
+        </div>
       </div>
       <div className="text-right shrink-0">
         <p className="text-sm font-bold">{bid.lastBidPrice.toLocaleString()}원</p>
-        {bid.isHighestBidder && <Badge className="text-[9px] h-4 px-1 bg-blue-500">최고가</Badge>}
+        <Badge className={`text-[9px] h-4 px-1 ${auctionState.className}`}>{auctionState.label}</Badge>
       </div>
     </div>
   )
