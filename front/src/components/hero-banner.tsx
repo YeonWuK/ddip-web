@@ -149,8 +149,8 @@ export function HeroBanner() {
           </div>
 
           {/* 통계 정보 */}
-          <div className="grid grid-cols-3 gap-4 rounded-2xl bg-slate-50/90 p-5 md:p-6">
-            <div className="rounded-xl bg-white/60 p-3 text-center shadow-[0_0_0_1px_rgba(15,23,42,0.04)]">
+          <div className="grid grid-cols-3 gap-4 rounded-2xl border border-[#dbe5ff] bg-[#eef3ff]/90 p-5 md:p-6 dark:border-border/50 dark:bg-card/60">
+            <div className="rounded-xl border border-[#e2e8f6] bg-[#f8faff]/70 p-3 text-center shadow-[0_0_0_1px_rgba(148,163,184,0.08)] dark:border-border/40 dark:bg-background/60 dark:shadow-sm">
               <div className="mb-2 flex items-center justify-center">
                 <span className="flex size-9 items-center justify-center rounded-full bg-primary/12 shadow-[0_0_24px_rgba(37,99,235,0.12)]">
                   <TrendingUp className="size-6 text-primary" />
@@ -165,7 +165,7 @@ export function HeroBanner() {
               )}
               <div className="text-xs text-muted-foreground">누적 후원금액</div>
             </div>
-            <div className="rounded-xl bg-white/60 p-3 text-center shadow-[0_0_0_1px_rgba(15,23,42,0.04)]">
+            <div className="rounded-xl border border-[#e2e8f6] bg-[#f8faff]/70 p-3 text-center shadow-[0_0_0_1px_rgba(148,163,184,0.08)] dark:border-border/40 dark:bg-background/60 dark:shadow-sm">
               <div className="mb-2 flex items-center justify-center">
                 <span className="flex size-9 items-center justify-center rounded-full bg-primary/12 shadow-[0_0_24px_rgba(37,99,235,0.12)]">
                   <Users className="size-6 text-primary" />
@@ -180,7 +180,7 @@ export function HeroBanner() {
               )}
               <div className="text-xs text-muted-foreground">참여자 수</div>
             </div>
-            <div className="rounded-xl bg-white/60 p-3 text-center shadow-[0_0_0_1px_rgba(15,23,42,0.04)]">
+            <div className="rounded-xl border border-[#e2e8f6] bg-[#f8faff]/70 p-3 text-center shadow-[0_0_0_1px_rgba(148,163,184,0.08)] dark:border-border/40 dark:bg-background/60 dark:shadow-sm">
               <div className="mb-2 flex items-center justify-center">
                 <span className="flex size-9 items-center justify-center rounded-full bg-primary/12 shadow-[0_0_24px_rgba(37,99,235,0.12)]">
                   <Zap className="size-6 text-primary" />
