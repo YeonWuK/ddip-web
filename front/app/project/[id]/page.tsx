@@ -373,15 +373,18 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 : project.imageUrl 
                   ? [project.imageUrl] 
                   : ["/placeholder.svg"]
+              const currentSrc = images[selectedImageIndex] || "/placeholder.svg"
+              const isExternalUrl = currentSrc.startsWith("http://") || currentSrc.startsWith("https://")
               const hasMultipleImages = images.length > 1
 
               return (
-                <div className="relative mb-6 aspect-video overflow-hidden rounded-xl bg-white">
+                <div className="relative mb-6 aspect-video overflow-hidden rounded-xl bg-muted">
                   <Image
-                    src={images[selectedImageIndex] || "/placeholder.svg"}
+                    src={currentSrc}
                     alt={project.title}
                     fill
                     className="object-contain p-1"
+                    unoptimized={isExternalUrl}
                   />
                   
                   {/* 이미지 네비게이션 버튼 */}

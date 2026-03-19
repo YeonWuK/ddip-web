@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import Image from "next/image"
 import { Button } from "@/src/components/ui/button"
+import { useImageBgColor } from "@/src/lib/use-image-bg-color"
 import { X, Upload } from "lucide-react"
 
 interface ImageUploadProps {
@@ -15,6 +16,7 @@ interface ImageUploadProps {
 export function ImageUpload({ value, onChange, preview = true, className }: ImageUploadProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const imageBgColor = useImageBgColor(previewUrl ?? "")
 
   // value가 변경될 때 미리보기 업데이트
   useEffect(() => {
@@ -56,12 +58,15 @@ export function ImageUpload({ value, onChange, preview = true, className }: Imag
   return (
     <div className={className}>
       {preview && previewUrl ? (
-        <div className="relative aspect-video w-full overflow-hidden rounded-lg border bg-white">
+        <div
+          className="relative aspect-video w-full overflow-hidden rounded-lg border"
+          style={{ backgroundColor: imageBgColor }}
+        >
           <Image
             src={previewUrl}
             alt="미리보기"
             fill
-            className="object-contain p-1"
+            className="object-contain mix-blend-multiply dark:mix-blend-normal"
           />
           <Button
             type="button"

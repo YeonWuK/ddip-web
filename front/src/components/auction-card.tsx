@@ -8,6 +8,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { useState, useEffect } from "react"
 import { isInWishlist, toggleWishlist, WISHLIST_CHANGED_EVENT } from "@/src/lib/wishlist"
+import { useImageBgColor } from "@/src/lib/use-image-bg-color"
 import { toast } from "sonner"
 import type { AuctionStatus } from "@/src/types/api"
 
@@ -53,6 +54,8 @@ export function AuctionCard({
   const normalizedStatus = (status || "").toUpperCase()
   const isNonRunning = normalizedStatus && normalizedStatus !== "RUNNING"
   const statusLabel = isNonRunning ? AUCTION_STATUS_LABELS[normalizedStatus] ?? normalizedStatus : null
+  const imageSrc = image || "/placeholder.svg"
+  const imageBgColor = useImageBgColor(imageSrc)
 
   useEffect(() => {
     setIsFavorite(isInWishlist(numericId, "auction"))
@@ -92,12 +95,15 @@ export function AuctionCard({
           compact ? "py-3 gap-4" : ""
         } ${isNonRunning ? "opacity-90" : ""}`}
       >
-        <div className="relative aspect-video overflow-hidden bg-white">
+        <div
+          className="relative aspect-[4/3] overflow-hidden"
+          style={{ backgroundColor: imageBgColor }}
+        >
           <Image
-            src={image || "/placeholder.svg"}
+            src={imageSrc}
             alt={title}
             fill
-            className="object-contain p-1 transition-transform duration-300 group-hover:scale-105"
+            className="object-contain mix-blend-multiply dark:mix-blend-normal"
           />
           <div className={`absolute flex gap-1.5 ${compact ? "right-2 top-2" : "right-3 top-3 gap-2"}`}>
             {statusLabel && (

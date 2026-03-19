@@ -9,6 +9,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { useState, useEffect } from "react"
 import { isInWishlist, toggleWishlist, WISHLIST_CHANGED_EVENT } from "@/src/lib/wishlist"
+import { useImageBgColor } from "@/src/lib/use-image-bg-color"
 import { toast } from "sonner"
 import type { ProjectStatus } from "@/src/types/api"
 
@@ -55,6 +56,8 @@ export function ProjectCard({
   const isNonOpen = normalizedStatus && normalizedStatus !== "OPEN"
   const statusLabel = isNonOpen ? STATUS_LABELS[normalizedStatus] ?? normalizedStatus : null
   const [isFavorite, setIsFavorite] = useState(false)
+  const imageSrc = image || "/placeholder.svg"
+  const imageBgColor = useImageBgColor(imageSrc)
 
   useEffect(() => {
     setIsFavorite(isInWishlist(numericId, "project"))
@@ -94,12 +97,15 @@ export function ProjectCard({
           compact ? "py-3 gap-4" : ""
         } ${isNonOpen ? "opacity-90" : ""}`}
       >
-        <div className="relative aspect-video overflow-hidden bg-white">
+        <div
+          className="relative aspect-[4/3] overflow-hidden"
+          style={{ backgroundColor: imageBgColor }}
+        >
           <Image
-            src={image || "/placeholder.svg"}
+            src={imageSrc}
             alt={title}
             fill
-            className="object-contain p-1 transition-transform duration-300 group-hover:scale-105"
+            className="object-contain mix-blend-multiply dark:mix-blend-normal"
           />
           <div className={`absolute flex gap-1.5 ${compact ? "right-2 top-2" : "right-3 top-3 gap-2"}`}>
             {normalizedStatus === "OPEN" && (

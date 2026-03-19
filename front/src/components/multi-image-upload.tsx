@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import Image from "next/image"
 import { Button } from "@/src/components/ui/button"
+import { useImageBgColor } from "@/src/lib/use-image-bg-color"
 import { X, Upload, GripVertical, Star } from "lucide-react"
 
 interface MultiImageUploadProps {
@@ -26,6 +27,30 @@ interface MultiImageUploadProps {
   selectedMainIndex?: number
   /** 대표 이미지 변경 콜백 */
   onMainImageChange?: (type: 'existing' | 'new', idOrIndex: number) => void
+}
+
+function PreviewImage({
+  src,
+  alt,
+  onLoad,
+}: {
+  src: string
+  alt: string
+  onLoad?: () => void
+}) {
+  const imageBgColor = useImageBgColor(src)
+
+  return (
+    <div className="absolute inset-0" style={{ backgroundColor: imageBgColor }}>
+      <Image
+        src={src}
+        alt={alt}
+        fill
+        className="object-contain mix-blend-multiply dark:mix-blend-normal"
+        onLoad={onLoad}
+      />
+    </div>
+  )
 }
 
 export function MultiImageUpload({
@@ -146,15 +171,13 @@ export function MultiImageUpload({
             return (
               <div
                 key={key}
-                className={`group relative aspect-video overflow-hidden rounded-lg border bg-white ${
+                className={`group relative aspect-video overflow-hidden rounded-lg border bg-muted ${
                   isMainImage ? 'ring-2 ring-yellow-500 ring-offset-2' : ''
                 }`}
               >
-                <Image
+                <PreviewImage
                   src={imageUrl}
                   alt={`기존 이미지 ${index + 1}`}
-                  fill
-                  className="object-contain p-1"
                 />
                 <Button
                   type="button"
@@ -195,15 +218,13 @@ export function MultiImageUpload({
             return (
               <div
                 key={`new-${index}`}
-                className={`group relative aspect-video overflow-hidden rounded-lg border bg-white ${
+                className={`group relative aspect-video overflow-hidden rounded-lg border bg-muted ${
                   isMainImage ? 'ring-2 ring-yellow-500 ring-offset-2' : ''
                 }`}
               >
-                <Image
+                <PreviewImage
                   src={previewUrl}
                   alt={`새 이미지 ${index + 1}`}
-                  fill
-                  className="object-contain p-1"
                   onLoad={() => URL.revokeObjectURL(previewUrl)}
                 />
                 <Button
