@@ -146,7 +146,7 @@ export function MultiImageUpload({
             return (
               <div
                 key={key}
-                className={`group relative aspect-video overflow-hidden rounded-lg border bg-muted ${
+                className={`group relative aspect-video overflow-hidden rounded-lg border bg-white ${
                   isMainImage ? 'ring-2 ring-yellow-500 ring-offset-2' : ''
                 }`}
               >
@@ -154,7 +154,7 @@ export function MultiImageUpload({
                   src={imageUrl}
                   alt={`기존 이미지 ${index + 1}`}
                   fill
-                  className="object-cover"
+                  className="object-contain p-1"
                 />
                 <Button
                   type="button"
@@ -195,7 +195,7 @@ export function MultiImageUpload({
             return (
               <div
                 key={`new-${index}`}
-                className={`group relative aspect-video overflow-hidden rounded-lg border bg-muted ${
+                className={`group relative aspect-video overflow-hidden rounded-lg border bg-white ${
                   isMainImage ? 'ring-2 ring-yellow-500 ring-offset-2' : ''
                 }`}
               >
@@ -203,7 +203,7 @@ export function MultiImageUpload({
                   src={previewUrl}
                   alt={`새 이미지 ${index + 1}`}
                   fill
-                  className="object-cover"
+                  className="object-contain p-1"
                   onLoad={() => URL.revokeObjectURL(previewUrl)}
                 />
                 <Button

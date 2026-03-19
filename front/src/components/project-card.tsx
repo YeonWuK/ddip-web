@@ -94,12 +94,12 @@ export function ProjectCard({
           compact ? "py-3 gap-4" : ""
         } ${isNonOpen ? "opacity-90" : ""}`}
       >
-        <div className="relative aspect-video overflow-hidden bg-muted">
+        <div className="relative aspect-video overflow-hidden bg-white">
           <Image
             src={image || "/placeholder.svg"}
             alt={title}
             fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            className="object-contain p-1 transition-transform duration-300 group-hover:scale-105"
           />
           <div className={`absolute flex gap-1.5 ${compact ? "right-2 top-2" : "right-3 top-3 gap-2"}`}>
             {normalizedStatus === "OPEN" && (

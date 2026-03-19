@@ -592,7 +592,7 @@ export default function AdminPage() {
                             </Button>
                             {/* 상태별로 가능한 액션만 표시 */}
                             {(project.status === 'DRAFT' || project.status === 'OPEN') && (
-                              <DropdownMenu>
+                              <DropdownMenu modal={false}>
                                 <DropdownMenuTrigger asChild>
                                   <Button size="sm" variant="outline">
                                     <MoreVertical className="size-4" />

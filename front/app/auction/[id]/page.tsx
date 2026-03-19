@@ -442,12 +442,12 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
               const hasMultipleImages = images.length > 1
 
               return (
-                <div className="relative mb-6 aspect-video overflow-hidden rounded-xl bg-muted">
+                <div className="relative mb-6 aspect-video overflow-hidden rounded-xl bg-white">
                   <Image
                     src={currentSrc}
                     alt={auction.title}
                     fill
-                    className="object-cover"
+                    className="object-contain p-1"
                     unoptimized={isExternalUrl}
                   />
                   

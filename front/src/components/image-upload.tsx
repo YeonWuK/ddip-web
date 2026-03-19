@@ -56,12 +56,12 @@ export function ImageUpload({ value, onChange, preview = true, className }: Imag
   return (
     <div className={className}>
       {preview && previewUrl ? (
-        <div className="relative aspect-video w-full overflow-hidden rounded-lg border bg-muted">
+        <div className="relative aspect-video w-full overflow-hidden rounded-lg border bg-white">
           <Image
             src={previewUrl}
             alt="미리보기"
             fill
-            className="object-cover"
+            className="object-contain p-1"
           />
           <Button
             type="button"

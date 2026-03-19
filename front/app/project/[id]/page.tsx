@@ -376,12 +376,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               const hasMultipleImages = images.length > 1
 
               return (
-                <div className="relative mb-6 aspect-video overflow-hidden rounded-xl bg-muted">
+                <div className="relative mb-6 aspect-video overflow-hidden rounded-xl bg-white">
                   <Image
                     src={images[selectedImageIndex] || "/placeholder.svg"}
                     alt={project.title}
                     fill
-                    className="object-cover"
+                    className="object-contain p-1"
                   />
                   
                   {/* 이미지 네비게이션 버튼 */}
