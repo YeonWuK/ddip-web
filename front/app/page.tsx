@@ -377,17 +377,17 @@ export default function HomePage() {
 
         {/* 인기 프로젝트 섹션 */}
         <section className="mb-12">
-          <div className="mb-6 flex items-center justify-between">
-            <div>
+          <div className="mb-6">
+            <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold">인기 프로젝트</h2>
-              <p className="text-muted-foreground">지금 가장 핫한 크라우드펀딩 프로젝트를 만나보세요</p>
+              <Button variant="outline" className="h-9" asChild>
+                <Link href="/projects">
+                  전체보기
+                  <ArrowRight className="ml-2 size-4" />
+                </Link>
+              </Button>
             </div>
-            <Button variant="outline" asChild>
-              <Link href="/projects">
-                전체보기
-                <ArrowRight className="ml-2 size-4" />
-              </Link>
-            </Button>
+            <p className="mt-1 text-muted-foreground">지금 가장 핫한 크라우드펀딩 프로젝트를 만나보세요</p>
           </div>
           
           {loading ? (
@@ -415,17 +415,17 @@ export default function HomePage() {
 
         {/* 인기 경매 섹션 */}
         <section className="mb-12">
-          <div className="mb-6 flex items-center justify-between">
-            <div>
+          <div className="mb-6">
+            <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold">인기 경매</h2>
-              <p className="text-muted-foreground">지금 실시간으로 진행 중인 경매에 참여하세요</p>
+              <Button variant="outline" className="h-9" asChild>
+                <Link href="/auctions">
+                  전체보기
+                  <ArrowRight className="ml-2 size-4" />
+                </Link>
+              </Button>
             </div>
-            <Button variant="outline" asChild>
-              <Link href="/auctions">
-                전체보기
-                <ArrowRight className="ml-2 size-4" />
-              </Link>
-            </Button>
+            <p className="mt-1 text-muted-foreground">지금 실시간으로 진행 중인 경매에 참여하세요</p>
           </div>
           
           {loading ? (

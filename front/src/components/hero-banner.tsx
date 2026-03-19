@@ -149,39 +149,49 @@ export function HeroBanner() {
           </div>
 
           {/* 통계 정보 */}
-          <div className="grid grid-cols-3 gap-4 rounded-lg border bg-card p-6 shadow-sm">
-            <div className="text-center">
+          <div className="grid grid-cols-3 gap-4 rounded-2xl bg-slate-50/90 p-5 md:p-6">
+            <div className="rounded-xl bg-white/60 p-3 text-center shadow-[0_0_0_1px_rgba(15,23,42,0.04)]">
               <div className="mb-2 flex items-center justify-center">
-                <TrendingUp className="size-5 text-primary" />
+                <span className="flex size-9 items-center justify-center rounded-full bg-primary/12 shadow-[0_0_24px_rgba(37,99,235,0.12)]">
+                  <TrendingUp className="size-6 text-primary" />
+                </span>
               </div>
               {loadingStats ? (
                 <div className="text-2xl font-bold text-muted-foreground">...</div>
               ) : (
-                <div className="text-2xl font-bold">
+                <div className="text-2xl font-bold text-primary drop-shadow-[0_1px_10px_rgba(37,99,235,0.12)]">
                   {statistics.totalAmount > 0 ? formatAmountShort(statistics.totalAmount) : "0"}
                 </div>
               )}
               <div className="text-xs text-muted-foreground">누적 후원금액</div>
             </div>
-            <div className="text-center">
+            <div className="rounded-xl bg-white/60 p-3 text-center shadow-[0_0_0_1px_rgba(15,23,42,0.04)]">
               <div className="mb-2 flex items-center justify-center">
-                <Users className="size-5 text-primary" />
+                <span className="flex size-9 items-center justify-center rounded-full bg-primary/12 shadow-[0_0_24px_rgba(37,99,235,0.12)]">
+                  <Users className="size-6 text-primary" />
+                </span>
               </div>
               {loadingStats ? (
                 <div className="text-2xl font-bold text-muted-foreground">...</div>
               ) : (
-                <div className="text-2xl font-bold">{statistics.totalParticipants.toLocaleString()}</div>
+                <div className="text-2xl font-bold text-primary drop-shadow-[0_1px_10px_rgba(37,99,235,0.12)]">
+                  {statistics.totalParticipants.toLocaleString()}
+                </div>
               )}
               <div className="text-xs text-muted-foreground">참여자 수</div>
             </div>
-            <div className="text-center">
+            <div className="rounded-xl bg-white/60 p-3 text-center shadow-[0_0_0_1px_rgba(15,23,42,0.04)]">
               <div className="mb-2 flex items-center justify-center">
-                <Zap className="size-5 text-primary" />
+                <span className="flex size-9 items-center justify-center rounded-full bg-primary/12 shadow-[0_0_24px_rgba(37,99,235,0.12)]">
+                  <Zap className="size-6 text-primary" />
+                </span>
               </div>
               {loadingStats ? (
                 <div className="text-2xl font-bold text-muted-foreground">...</div>
               ) : (
-                <div className="text-2xl font-bold">{statistics.activeProjects.toLocaleString()}</div>
+                <div className="text-2xl font-bold text-primary drop-shadow-[0_1px_10px_rgba(37,99,235,0.12)]">
+                  {statistics.activeProjects.toLocaleString()}
+                </div>
               )}
               <div className="text-xs text-muted-foreground">진행 중인 프로젝트</div>
             </div>

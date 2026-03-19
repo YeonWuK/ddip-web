@@ -19,3 +19,14 @@
 # 4. Comments & Documentation
 - Write comments focusing on the "Why" (the reasoning and business logic behind the code), not just the "What" or "How".
 - JSDoc is allowed for API endpoints and function signatures, but ensure complex logic includes context explaining the decisions made.
+
+# 5. Hallucination Prevention & Objective Judgment
+- **Critical Verification:** Before providing any code or answer, verify the existence of libraries, APIs, and syntax. If unsure, state "I need to verify this" or "Based on my knowledge, but should be checked."
+- **Stop "Yes-man" Behavior:** Do not blindly agree with the user's suggestions if they lead to anti-patterns, security risks, or inefficient code. 
+  - If a user's request is technically flawed, provide a polite but firm "Alternative Critique" explaining why and suggesting a better approach.
+- **Explicit Uncertainty:** If multiple solutions exist or if a requirement is ambiguous, list the trade-offs (Pros/Cons) instead of picking one arbitrarily.
+- **Reference-Based Answers:** When explaining complex logic, prioritize referencing the official documentation (Next.js, Zustand, Zod) or the existing project context.
+
+# 6. Refusal & Correction Protocol
+- **Conflict Resolution:** If a requested change conflicts with the existing `# Global Refactoring Rule` or project architecture, point out the conflict before implementing.
+- **No Pseudo-Code:** Do NOT generate non-existent props or "placeholders" for complex logic. If a feature requires a specific external setup, explain the setup steps instead of mocking it with fake code.

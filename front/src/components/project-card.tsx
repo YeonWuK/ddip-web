@@ -51,6 +51,7 @@ export function ProjectCard({
   compact = false,
 }: ProjectCardProps) {
   const progress = goalAmount > 0 ? (currentAmount / goalAmount) * 100 : 0
+  const isZeroState = currentAmount <= 0 || progress <= 0
   const numericId = Number(id)
   const normalizedStatus = (status || "").toUpperCase()
   const isNonOpen = normalizedStatus && normalizedStatus !== "OPEN"
@@ -98,7 +99,7 @@ export function ProjectCard({
         } ${isNonOpen ? "opacity-90" : ""}`}
       >
         <div
-          className="relative aspect-[4/3] overflow-hidden"
+          className="relative aspect-[4/3] overflow-hidden border border-black/5 bg-slate-50 shadow-[inset_0_-1px_0_rgba(15,23,42,0.06)]"
           style={{ backgroundColor: imageBgColor }}
         >
           <Image
@@ -131,29 +132,44 @@ export function ProjectCard({
               />
             </Button>
           </div>
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/10 via-black/0 to-transparent" />
         </div>
 
         <CardHeader className={compact ? "pb-2 px-4" : "pb-3"}>
-          <h3 className={`line-clamp-2 text-balance font-semibold leading-tight ${compact ? "text-base" : "text-lg"}`}>{title}</h3>
-          <p className={`line-clamp-2 text-pretty text-muted-foreground ${compact ? "text-xs" : "text-sm"}`}>{description}</p>
+          <h3 className={`line-clamp-2 text-balance font-bold leading-tight ${compact ? "text-base" : "text-lg"}`}>{title}</h3>
+          <p
+            className={`line-clamp-2 text-pretty text-muted-foreground ${
+              compact ? "min-h-[2rem] text-xs" : "min-h-[3rem] text-sm"
+            }`}
+          >
+            {description}
+          </p>
         </CardHeader>
 
         <CardContent className={compact ? "space-y-2 px-4" : "space-y-3"}>
           <div>
             <div className={`flex items-baseline justify-between ${compact ? "mb-1" : "mb-2"}`}>
               <div>
-                <span className={`font-bold text-primary ${compact ? "text-lg" : "text-2xl"}`}>{currentAmount.toLocaleString()}</span>
+                <span className={`font-semibold text-primary ${compact ? "text-lg" : "text-2xl"}`}>{currentAmount.toLocaleString()}</span>
                 <span className={`ml-1 text-muted-foreground ${compact ? "text-xs" : "text-sm"}`}>원</span>
               </div>
-              <span className={`font-medium text-muted-foreground ${compact ? "text-xs" : "text-sm"}`}>{progress.toFixed(0)}%</span>
+              <span className={`font-semibold text-blue-600 ${compact ? "text-xs" : "text-sm"}`}>{progress.toFixed(0)}%</span>
             </div>
-            <Progress value={progress} className={compact ? "h-1.5" : "h-2"} />
+            <Progress
+              value={progress}
+              className={`${
+                compact ? "h-1.5 bg-slate-200/90" : "h-2 bg-slate-200/90"
+              } [&>[data-slot=progress-indicator]]:bg-blue-600`}
+            />
+            {isZeroState && (
+              <p className={`mt-1 text-blue-600/90 ${compact ? "text-[11px]" : "text-xs"}`}>첫 후원자가 되어주세요!</p>
+            )}
           </div>
         </CardContent>
 
-        <CardFooter className={`flex items-center justify-end border-t text-muted-foreground ${compact ? "pt-2 px-4 text-xs" : "pt-4 text-sm"}`}>
-          <div className="flex items-center gap-1">
-            <Clock className={compact ? "size-3" : "size-4"} />
+        <CardFooter className={`flex items-center justify-end border-t text-foreground/70 ${compact ? "pt-2 px-4 text-xs" : "pt-4 text-sm"}`}>
+          <div className="flex items-center gap-1.5">
+            <Clock className={compact ? "size-3.5" : "size-4"} />
             <span>{daysLeft}일 남음</span>
           </div>
         </CardFooter>
