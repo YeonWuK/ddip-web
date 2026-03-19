@@ -146,9 +146,9 @@ export function AuctionCard({
           </div>
         </CardContent>
 
-        <CardFooter className={`flex items-center justify-between border-t text-muted-foreground ${compact ? "pt-2 px-4 text-xs" : "pt-4 text-sm"}`}>
+        <CardFooter className={`flex items-center justify-end border-t text-muted-foreground ${compact ? "pt-2 px-4 text-xs" : "pt-4 text-sm"}`}>
           {bidCount > 0 && (
-            <div className="flex items-center gap-1">
+            <div className="mr-auto flex items-center gap-1">
               <Gavel className={compact ? "size-3" : "size-4"} />
               <span>{bidCount}회 입찰</span>
             </div>

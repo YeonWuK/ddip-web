@@ -46,7 +46,7 @@ function PreviewImage({
         src={src}
         alt={alt}
         fill
-        className="object-contain mix-blend-multiply dark:mix-blend-normal"
+        className="object-contain"
         onLoad={onLoad}
       />
     </div>
@@ -204,7 +204,7 @@ export function MultiImageUpload({
                     onClick={() => onMainImageChange?.('existing', imageId)}
                   >
                     <Star className={`size-3 mr-1 ${isMainImage ? 'fill-yellow-400' : ''}`} />
-                    {isMainImage ? '대표' : '대표로'}
+                    {isMainImage ? '대표' : '대표 이미지로'}
                   </Button>
                 )}
               </div>
@@ -245,7 +245,7 @@ export function MultiImageUpload({
                     onClick={() => onMainImageChange?.('new', index)}
                   >
                     <Star className={`size-3 mr-1 ${isMainImage ? 'fill-yellow-400' : ''}`} />
-                    {isMainImage ? '대표' : '대표로'}
+                    {isMainImage ? '대표' : '대표 이미지로'}
                   </Button>
                 )}
               </div>

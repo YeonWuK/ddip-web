@@ -66,7 +66,7 @@ export function ImageUpload({ value, onChange, preview = true, className }: Imag
             src={previewUrl}
             alt="미리보기"
             fill
-            className="object-contain mix-blend-multiply dark:mix-blend-normal"
+            className="object-contain"
           />
           <Button
             type="button"
