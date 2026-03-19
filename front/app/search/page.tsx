@@ -300,9 +300,9 @@ function SearchContent() {
                               <Package className="size-5 text-primary" />
                               <h2 className="text-xl font-semibold">프로젝트 ({filteredProjects.length})</h2>
                             </div>
-                            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                               {projectCards.map((project) => (
-                                <ProjectCard key={project.id} {...project} />
+                                <ProjectCard key={project.id} {...project} compact />
                               ))}
                             </div>
                           </div>
@@ -335,9 +335,9 @@ function SearchContent() {
                         description="다른 키워드로 검색해보세요"
                       />
                     ) : (
-                      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         {projectCards.map((project) => (
-                          <ProjectCard key={project.id} {...project} />
+                          <ProjectCard key={project.id} {...project} compact />
                         ))}
                       </div>
                     )}
