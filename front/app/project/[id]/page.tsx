@@ -85,6 +85,34 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const [adminActionReason, setAdminActionReason] = useState("")
   const openPostcodePopup = useDaumPostcodePopup()
 
+  const fillAddressFromUserInfo = () => {
+    if (!user) {
+      toast.error("로그인 사용자 정보를 찾을 수 없습니다")
+      return
+    }
+
+    const userName = user.name?.trim() || ""
+    const userPhone = user.phone?.trim() || ""
+
+    if (!userName && !userPhone) {
+      toast.info("프로필에 이름/전화번호가 없어 자동 입력할 수 없습니다")
+      return
+    }
+
+    setNewAddress((prev) => ({
+      ...prev,
+      recipientName: userName || prev.recipientName,
+      phone: userPhone || prev.phone,
+    }))
+
+    if (!userName || !userPhone) {
+      toast.info("프로필 정보가 일부만 있어 입력 가능한 항목만 반영했습니다")
+      return
+    }
+
+    toast.success("수령인 이름과 전화번호를 자동 입력했습니다")
+  }
+
   // 프로젝트 데이터 로드
   useEffect(() => {
     const loadProject = async () => {
@@ -674,7 +702,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     <div>
                       <div className="mb-1 flex items-center gap-2 text-muted-foreground">
                         <TrendingUp className="size-4" />
-                        <span className="text-xs">참여 건수</span>
+                        <span className="text-xs">리워드 구매수</span>
                       </div>
                       <p className="text-xl font-bold">
                         {project.rewardTiers.reduce((sum, tier) => sum + tier.soldQuantity, 0).toLocaleString()}건
@@ -1073,24 +1101,29 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                         <div className="space-y-4 border-t pt-4">
                           <div className="flex items-center justify-between">
                             <Label className="text-base font-semibold">배송지 정보</Label>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setShowAddressForm(false)
-                                setNewAddress({
-                                  recipientName: "",
-                                  phone: "",
-                                  zipCode: "",
-                                  address: "",
-                                  detailAddress: "",
-                                  setAsDefault: false,
-                                })
-                              }}
-                            >
-                              취소
-                            </Button>
+                            <div className="flex items-center gap-2">
+                              <Button type="button" variant="outline" size="sm" onClick={fillAddressFromUserInfo}>
+                                사용자 정보와 동일
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setShowAddressForm(false)
+                                  setNewAddress({
+                                    recipientName: "",
+                                    phone: "",
+                                    zipCode: "",
+                                    address: "",
+                                    detailAddress: "",
+                                    setAsDefault: false,
+                                  })
+                                }}
+                              >
+                                취소
+                              </Button>
+                            </div>
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="recipientName">수령인 이름 *</Label>
