@@ -190,6 +190,27 @@ FormData에 `data` 파트(JSON.stringify), `file` 파트(파일 배열)를 각�
 
 ---
 
+## 13. 관리자 UX 버그 — 승인/거절 후 클릭 먹통
+
+### 상황
+`/admin`에서 프로젝트 승인/거절 후 모달이 닫혔는데도 페이지가 클릭되지 않는 문제가 발생했다.
+
+### 근본 원인
+- `actionDialog`를 객체 스프레드(`{ ...actionDialog, open: false }`)로 갱신하는 경로가 여러 개여서 상태 정리가 일관되지 않았다.
+- 비동기 처리 직후 stale state가 섞이면서 Dialog overlay/focus-lock 해제가 완전하지 않은 케이스가 생겼다.
+
+### 해결
+1. `setActionDialog`를 전부 **함수형 업데이트**(`prev => ...`)로 통일
+2. 닫을 때 `open`만 내리지 않고 `type/reason/amount`까지 함께 초기화
+3. `selectedProject/selectedAuction/selectedUser`도 닫힘 시점에 같이 `null`로 정리
+4. 성공 처리/취소 버튼/`onOpenChange(false)` 경로 모두 동일한 초기화 로직 적용
+
+### 결과
+- 승인/거절 후에도 overlay가 남지 않아 페이지 클릭이 정상 동작
+- 모달 상태 관리가 단일 규칙으로 정리되어 재발 가능성 감소
+
+---
+
 ## 요약표
 
 | 주제 | 핵심 한 줄 |
@@ -206,3 +227,4 @@ FormData에 `data` 파트(JSON.stringify), `file` 파트(파일 배열)를 각�
 | multipart | data(JSON) + file 파트, DTO 맞추기 |
 | 에러/로딩 경계 | error.tsx + loading.tsx, 세그먼트별 분리, reset 복구 |
 | 메타데이터 | layout에서 generateMetadata/metadata, 동적 title/og, SEO·SNS |
+| 관리자 UX 버그 | 모달 닫힘 상태 초기화 통일로 승인/거절 후 클릭 먹통 해결 |
