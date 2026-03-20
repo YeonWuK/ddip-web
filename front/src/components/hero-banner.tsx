@@ -131,6 +131,16 @@ export function HeroBanner() {
                     })
                   })
                 }}
+                onKeyDown={(e) => {
+                  if ((e.key === "Backspace" || e.key === "Delete") && searchQuery.length === 0) {
+                    forceScrollToTop()
+                    // 키 입력 이후 발생하는 브라우저 기본 동작까지 덮어쓰기
+                    setTimeout(forceScrollToTop, 0)
+                    requestAnimationFrame(() => {
+                      forceScrollToTop()
+                    })
+                  }
+                }}
                 onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                 className="h-14 rounded-full border-2 border-primary/20 bg-background pl-12 pr-4 text-base shadow-lg transition-all focus:border-primary focus:shadow-xl"
               />
