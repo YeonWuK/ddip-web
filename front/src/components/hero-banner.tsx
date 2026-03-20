@@ -5,7 +5,7 @@ import { Input } from "@/src/components/ui/input"
 import { Search, TrendingUp, Users, Zap, Sparkles } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useAuth } from "@/src/contexts/auth-context"
 import { projectApi, searchApi, type SearchAutoCompleteResponse } from "@/src/services/api"
 import { formatAmountShort } from "@/src/lib/format-amount"
@@ -13,6 +13,7 @@ import { formatAmountShort } from "@/src/lib/format-amount"
 export function HeroBanner() {
   const router = useRouter()
   const { isAuthenticated } = useAuth()
+  const inputRef = useRef<HTMLInputElement>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [suggestions, setSuggestions] = useState<SearchAutoCompleteResponse[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
@@ -72,6 +73,28 @@ export function HeroBanner() {
     router.push(`/search?q=${encodeURIComponent(suggestion)}`)
   }
 
+  const forceScrollToTop = useCallback(() => {
+    window.scrollTo(0, 0)
+    if (document.scrollingElement) {
+      document.scrollingElement.scrollTop = 0
+    }
+    document.documentElement.scrollTop = 0
+    document.body.scrollTop = 0
+
+    // window가 아닌 스크롤 컨테이너를 쓰는 경우도 함께 처리
+    let parent = inputRef.current?.parentElement ?? null
+    while (parent) {
+      const style = window.getComputedStyle(parent)
+      const canScrollY =
+        (style.overflowY === "auto" || style.overflowY === "scroll" || style.overflowY === "overlay") &&
+        parent.scrollHeight > parent.clientHeight
+      if (canScrollY) {
+        parent.scrollTop = 0
+      }
+      parent = parent.parentElement
+    }
+  }, [])
+
   const popularCategories = [
     { name: "테크", href: "/?category=tech" },
     { name: "디자인", href: "/?category=design" },
@@ -89,11 +112,25 @@ export function HeroBanner() {
             <div className="relative">
               <Search className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />
               <Input
+                ref={inputRef}
                 type="search"
                 placeholder="새로운 일상이 필요하신가요?"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onFocus={() => setShowSuggestions(true)}
+                onChange={(e) => {
+                  forceScrollToTop()
+                  setSearchQuery(e.target.value)
+                }}
+                onFocus={() => {
+                  setShowSuggestions(true)
+                  forceScrollToTop()
+                  // 브라우저 기본 자동 스크롤 이후에도 다시 최상단으로 고정
+                  setTimeout(forceScrollToTop, 0)
+                  requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                      forceScrollToTop()
+                    })
+                  })
+                }}
                 onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                 className="h-14 rounded-full border-2 border-primary/20 bg-background pl-12 pr-4 text-base shadow-lg transition-all focus:border-primary focus:shadow-xl"
               />
