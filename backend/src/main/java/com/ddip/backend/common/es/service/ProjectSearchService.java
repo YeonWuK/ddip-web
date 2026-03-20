@@ -44,7 +44,7 @@ public class ProjectSearchService {
                     .query(q -> q
                             .matchPhrase(m -> m
                                     .query(title)
-                                    .field("title")
+                                    .field("title.autocomplete")
                             )
                     )
                     .size(20)
