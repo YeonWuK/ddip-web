@@ -17,9 +17,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Document(indexName = "project", createIndex = true, writeTypeHint = WriteTypeHint.FALSE)
 @Setting(settingPath = "elasticsearch/setting.json")
 @Mapping(mappingPath = "elasticsearch/project-mapping.json")
+@Document(indexName = "project", createIndex = true, writeTypeHint = WriteTypeHint.FALSE)
 public class ProjectDocument {
 
     @Id
