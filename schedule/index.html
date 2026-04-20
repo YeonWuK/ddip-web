@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DDIP 개발 일정표</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+      background: #f0f2f5;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 40px 20px;
+      min-height: 100vh;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+      padding: 40px 44px 48px;
+      width: 960px;
+    }
+
+    .header {
+      margin-bottom: 32px;
+    }
+    .header .badge {
+      display: inline-block;
+      background: #EEF2FF;
+      color: #4F46E5;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      padding: 4px 12px;
+      border-radius: 99px;
+      margin-bottom: 10px;
+    }
+    .header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 6px;
+    }
+    .header p {
+      font-size: 13px;
+      color: #6B7280;
+    }
+
+    /* legend */
+    .legend {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 28px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #374151;
+    }
+    .legend-dot {
+      width: 12px; height: 12px; border-radius: 3px;
+    }
+    .dot-be { background: #6366F1; }
+    .dot-fe { background: #10B981; }
+    .dot-common { background: #F59E0B; }
+
+    /* table */
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    thead th {
+      font-size: 12px;
+      font-weight: 600;
+      color: #6B7280;
+      padding: 0 0 12px;
+      text-align: center;
+    }
+    thead th.label-col { text-align: left; width: 180px; }
+    thead th.tag-col { width: 52px; }
+    thead th.week-col { width: 72px; }
+
+    thead .week-num {
+      font-size: 13px;
+      font-weight: 700;
+      color: #111827;
+      display: block;
+      margin-bottom: 2px;
+    }
+    thead .week-date {
+      font-size: 11px;
+      color: #9CA3AF;
+    }
+
+    /* section label rows */
+    .section-row td {
+      padding: 14px 0 6px;
+    }
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #9CA3AF;
+    }
+
+    /* task rows */
+    .task-row td {
+      padding: 5px 0;
+      vertical-align: middle;
+    }
+    .task-row:last-child td { padding-bottom: 0; }
+
+    .task-name {
+      font-size: 13px;
+      color: #374151;
+      padding-right: 12px;
+      white-space: nowrap;
+    }
+
+    .tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 99px;
+      white-space: nowrap;
+    }
+    .tag-be { background: #EEF2FF; color: #4F46E5; }
+    .tag-fe { background: #ECFDF5; color: #059669; }
+    .tag-common { background: #FFFBEB; color: #D97706; }
+
+    .week-cell {
+      text-align: center;
+      padding: 0 4px;
+    }
+
+    .bar {
+      height: 26px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .bar-be { background: linear-gradient(90deg, #6366F1, #818CF8); }
+    .bar-fe { background: linear-gradient(90deg, #10B981, #34D399); }
+    .bar-common { background: linear-gradient(90deg, #F59E0B, #FCD34D); }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #F3F4F6;
+      margin: 8px 0;
+    }
+
+    /* current week highlight */
+    .current-week {
+      background: #F5F3FF;
+      border-radius: 8px;
+    }
+
+    /* today badge */
+    .today-badge {
+      display: inline-block;
+      background: #6366F1;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 99px;
+      margin-top: 3px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <div class="badge">2025 CAPSTONE PROJECT</div>
+      <h1>DDIP — 개발 일정표</h1>
+      <p>팀 구성: 백엔드 1인 · 프론트엔드 1인 &nbsp;|&nbsp; 총 10주 (2025.03.31 ~ 2025.06.08)</p>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot dot-be"></div>Backend</div>
+      <div class="legend-item"><div class="legend-dot dot-fe"></div>Frontend</div>
+      <div class="legend-item"><div class="legend-dot dot-common"></div>공통</div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th class="label-col">기능</th>
+          <th class="tag-col"></th>
+          <th class="week-col">
+            <span class="week-num">1주차</span>
+            <span class="week-date">3/31</span>
+          </th>
+          <th class="week-col current-week">
+            <span class="week-num">2주차</span>
+            <span class="week-date">4/7</span>
+            <div class="today-badge">현재</div>
+          </th>
+          <th class="week-col">
+            <span class="week-num">3주차</span>
+            <span class="week-date">4/14</span>
+          </th>
+          <th class="week-col">
+            <span class="week-num">4주차</span>
+            <span class="week-date">4/21</span>
+          </th>
+          <th class="week-col">
+            <span class="week-num">5주차</span>
+            <span class="week-date">4/28</span>
+          </th>
+          <th class="week-col">
+            <span class="week-num">6주차</span>
+            <span class="week-date">5/5</span>
+          </th>
+          <th class="week-col">
+            <span class="week-num">7주차</span>
+            <span class="week-date">5/12</span>
+          </th>
+          <th class="week-col">
+            <span class="week-num">8주차</span>
+            <span class="week-date">5/19</span>
+          </th>
+          <th class="week-col">
+            <span class="week-num">9주차</span>
+            <span class="week-date">5/26</span>
+          </th>
+          <th class="week-col">
+            <span class="week-num">10주차</span>
+            <span class="week-date">6/2</span>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <!-- 기반 구축 -->
+        <tr class="section-row">
+          <td colspan="12"><span class="section-label">기반 구축</span></td>
+        </tr>
+
+        <tr class="task-row">
+          <td class="task-name">DB 설계 · 인프라 셋업</td>
+          <td><span class="tag tag-be">BE</span></td>
+          <td class="week-cell"><div class="bar bar-be"></div></td>
+          <td class="week-cell current-week"></td>
+          <td class="week-cell"></td><td class="week-cell"></td><td class="week-cell"></td>
+          <td class="week-cell"></td><td class="week-cell"></td><td class="week-cell"></td>
+          <td class="week-cell"></td><td class="week-cell"></td>
+        </tr>
+        <tr class="task-row">
+          <td class="task-name">프로젝트 셋업 · 공통 컴포넌트</td>
+          <td><span class="tag tag-fe">FE</span></td>
+          <td class="week-cell"><div class="bar bar-fe"></div></td>
+          <td class="week-cell current-week"></td>
+          <td class="week-cell"></td><td class="week-cell"></td><td class="week-cell"></td>
+          <td class="week-cell"></td><td class="week-cell"></td><td class="week-cell"></td>
+          <td class="week-cell"></td><td class="week-cell"></td>
+        </tr>
+
+        <!-- 유저 -->
+        <tr class="section-row">
+          <td colspan="12"><span class="section-label">유저 서비스</span></td>
+        </tr>
+
+        <tr class="task-row">
+          <td class="task-name">회원가입 · 로그인 · OAuth2 · SMS</td>
+          <td><span class="tag tag-be">BE</span></td>
+          <td class="week-cell"></td>
+          <td class="week-cell current-week"><div class="bar bar-be"></div></td>
+          <td class="week-cell"></td><td class="week-cell"></td><td class="week-cell"></td>
+          <td class="week-cell"></td><td class="week-cell"></td><td class="week-cell"></td>
+          <td class="week-cell"></td><td class="week-cell"></td>
+        </tr>
+        <tr class="task-row">
+          <td class="task-name">회원가입 · 로그인 · 소셜 로그인 UI</td>
+          <td><span class="tag tag-fe">FE</span></td>
+          <td class="week-cell"></td>
+          <td class="week-cell current-week"><div class="bar bar-fe"></div></td>
+          <td class="week-cell"></td><td class="week-cell"></td><td class="week-cell"></td>
+          <td class="week-cell"></td><td class="week-cell"></td><td class="week-cell"></td>
+          <td class="week-cell"></td><td class="week-cell"></td>
+        </tr>
+
+        <!-- 크라우드펀딩 -->
+        <tr class="section-row">
+          <td colspan="12"><span class="section-label">크라우드펀딩 프로젝트</span></td>
+        </tr>
+
+        <tr class="task-row">
+          <td class="task-name">프로젝트 CRUD · 이미지 · 스케줄러</td>
+          <td><span class="tag tag-be">BE</span></td>
+          <td class="week-cell"></td>
+          <td class="week-cell current-week"></td>
+          <td class="week-cell"><div class="bar bar-be"></div></td>
+          <td class="week-cell"></td><td class="week-cell"></td>
+          <td class="week-cell"></td><td class="week-cell"></td><td class="week-cell"></td>
+          <td class="week-cell"></td><td class="week-cell"></td>
+        </tr>
+        <tr class="task-row">
+          <td class="task-name">메인 · 프로젝트 목록 · 상세 페이지</td>
+          <td><span class="tag tag-fe">FE</span></td>
+          <td class="week-cell"></td>
+          <td class="week-cell current-week"></td>
+          <td class="week-cell"><div class="bar bar-fe"></div></td>
+          <td class="week-cell"></td><td class="week-cell"></td>
+          <td class="week-cell"></td><td class="week-cell"></td><td class="week-cell"></td>
+          <td class="week-cell"></td><td class="week-cell"></td>
+        </tr>
+
+        <!-- 펀딩/결제 -->
+        <tr class="section-row">
+          <td colspan="12"><span class="section-label">펀딩 참여 · 결제</span></td>
+        </tr>
+
+        <tr class="task-row">
+          <td class="task-name">펀딩 참여 · 취소 · 포인트 API</td>
+          <td><span class="tag tag-be">BE</span></td>
+          <td class="week-cell"></td>
+          <td class="week-cell current-week"></td>
+          <td class="week-cell"></td>
+          <td class="week-cell"><div class="bar bar-be"></div></td>
+          <td class="week-cell"></td>
+          <td class="week-cell"></td><td class="week-cell"></td><td class="week-cell"></td>
+          <td class="week-cell"></td><td class="week-cell"></td>
+        </tr>
+        <tr class="task-row">
+          <td class="task-name">펀딩 신청 · 마이페이지 · 포인트 UI</td>
+          <td><span class="tag tag-fe">FE</span></td>
+          <td class="week-cell"></td>
+          <td class="week-cell current-week"></td>
+          <td class="week-cell"></td>
+          <td class="week-cell"><div class="bar bar-fe"></div></td>
+          <td class="week-cell"></td>
+          <td class="week-cell"></td><td class="week-cell"></td><td class="week-cell"></td>
+          <td class="week-cell"></td><td class="week-cell"></td>
+        </tr>
+
+        <!-- 경매 -->
+        <tr class="section-row">
+          <td colspan="12"><span class="section-label">경매 서비스</span></td>
+        </tr>
+
+        <tr class="task-row">
+          <td class="task-name">경매 CRUD · 이미지 · 상태 관리</td>
+          <td><span class="tag tag-be">BE</span></td>
+          <td class="week-cell"></td>
+          <td class="week-cell current-week"></td>
+          <td class="week-cell"></td><td class="week-cell"></td>
+          <td class="week-cell"><div class="bar bar-be"></div></td>
+          <td class="week-cell"></td><td class="week-cell"></td><td class="week-cell"></td>
+          <td class="week-cell"></td><td class="week-cell"></td>
+        </tr>
+        <tr class="task-row">
+          <td class="task-name">경매 목록 · 상세 · 등록 UI</td>
+          <td><span class="tag tag-fe">FE</span></td>
+          <td class="week-cell"></td>
+          <td class="week-cell current-week"></td>
+          <td class="week-cell"></td><td class="week-cell"></td>
+          <td class="week-cell"><div class="bar bar-fe"></div></td>
+          <td class="week-cell"></td><td class="week-cell"></td><td class="week-cell"></td>
+          <td class="week-cell"></td><td class="week-cell"></td>
+        </tr>
+
+        <!-- 실시간 입찰 -->
+        <tr class="section-row">
+          <td colspan="12"><span class="section-label">실시간 입찰</span></td>
+        </tr>
+
+        <tr class="task-row">
+          <td class="task-name">WebSocket · 분산락 · 입찰 처리</td>
+          <td><span class="tag tag-be">BE</span></td>
+          <td class="week-cell"></td>
+          <td class="week-cell current-week"></td>
+          <td class="week-cell"></td><td class="week-cell"></td><td class="week-cell"></td>
+          <td class="week-cell"><div class="bar bar-be"></div></td>
+          <td class="week-cell"></td><td class="week-cell"></td>
+          <td class="week-cell"></td><td class="week-cell"></td>
+        </tr>
+        <tr class="task-row">
+          <td class="task-name">실시간 입찰 UI · 카운트다운</td>
+          <td><span class="tag tag-fe">FE</span></td>
+          <td class="week-cell"></td>
+          <td class="week-cell current-week"></td>
+          <td class="week-cell"></td><td class="week-cell"></td><td class="week-cell"></td>
+          <td class="week-cell"><div class="bar bar-fe"></div></td>
+          <td class="week-cell"></td><td class="week-cell"></td>
+          <td class="week-cell"></td><td class="week-cell"></td>
+        </tr>
+
+        <!-- 검색 -->
+        <tr class="section-row">
+          <td colspan="12"><span class="section-label">검색 · 자동완성</span></td>
+        </tr>
+
+        <tr class="task-row">
+          <td class="task-name">Elasticsearch · Nori · 자동완성 API</td>
+          <td><span class="tag tag-be">BE</span></td>
+          <td class="week-cell"></td>
+          <td class="week-cell current-week"></td>
+          <td class="week-cell"></td><td class="week-cell"></td><td class="week-cell"></td>
+          <td class="week-cell"></td>
+          <td class="week-cell"><div class="bar bar-be"></div></td>
+          <td class="week-cell"></td><td class="week-cell"></td><td class="week-cell"></td>
+        </tr>
+        <tr class="task-row">
+          <td class="task-name">검색 페이지 · 자동완성 컴포넌트</td>
+          <td><span class="tag tag-fe">FE</span></td>
+          <td class="week-cell"></td>
+          <td class="week-cell current-week"></td>
+          <td class="week-cell"></td><td class="week-cell"></td><td class="week-cell"></td>
+          <td class="week-cell"></td>
+          <td class="week-cell"><div class="bar bar-fe"></div></td>
+          <td class="week-cell"></td><td class="week-cell"></td><td class="week-cell"></td>
+        </tr>
+
+        <!-- 어드민 -->
+        <tr class="section-row">
+          <td colspan="12"><span class="section-label">어드민</span></td>
+        </tr>
+
+        <tr class="task-row">
+          <td class="task-name">회원 · 프로젝트 · 경매 관리 API</td>
+          <td><span class="tag tag-be">BE</span></td>
+          <td class="week-cell"></td>
+          <td class="week-cell current-week"></td>
+          <td class="week-cell"></td><td class="week-cell"></td><td class="week-cell"></td>
+          <td class="week-cell"></td><td class="week-cell"></td>
+          <td class="week-cell"><div class="bar bar-be"></div></td>
+          <td class="week-cell"></td><td class="week-cell"></td>
+        </tr>
+        <tr class="task-row">
+          <td class="task-name">어드민 대시보드 UI</td>
+          <td><span class="tag tag-fe">FE</span></td>
+          <td class="week-cell"></td>
+          <td class="week-cell current-week"></td>
+          <td class="week-cell"></td><td class="week-cell"></td><td class="week-cell"></td>
+          <td class="week-cell"></td><td class="week-cell"></td>
+          <td class="week-cell"><div class="bar bar-fe"></div></td>
+          <td class="week-cell"></td><td class="week-cell"></td>
+        </tr>
+
+        <!-- 공통 -->
+        <tr class="section-row">
+          <td colspan="12"><span class="section-label">마무리</span></td>
+        </tr>
+
+        <tr class="task-row">
+          <td class="task-name">통합 테스트 · 버그 수정</td>
+          <td><span class="tag tag-common">공통</span></td>
+          <td class="week-cell"></td>
+          <td class="week-cell current-week"></td>
+          <td class="week-cell"></td><td class="week-cell"></td><td class="week-cell"></td>
+          <td class="week-cell"></td><td class="week-cell"></td><td class="week-cell"></td>
+          <td class="week-cell"><div class="bar bar-common"></div></td>
+          <td class="week-cell"></td>
+        </tr>
+        <tr class="task-row">
+          <td class="task-name">서버 배포 · 최종 점검</td>
+          <td><span class="tag tag-common">공통</span></td>
+          <td class="week-cell"></td>
+          <td class="week-cell current-week"></td>
+          <td class="week-cell"></td><td class="week-cell"></td><td class="week-cell"></td>
+          <td class="week-cell"></td><td class="week-cell"></td><td class="week-cell"></td>
+          <td class="week-cell"></td>
+          <td class="week-cell"><div class="bar bar-common"></div></td>
+        </tr>
+
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>
