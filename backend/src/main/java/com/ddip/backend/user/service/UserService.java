@@ -8,6 +8,7 @@ import com.ddip.backend.auction.dto.auction.AuctionSummaryDto;
 import com.ddip.backend.auction.dto.bids.BidsSummaryDto;
 import com.ddip.backend.auction.dto.mybids.MyBidsSummaryDto;
 import com.ddip.backend.user.domain.User;
+import com.ddip.backend.user.dto.enums.UserType;
 import com.ddip.backend.user.dto.user.*;
 import com.ddip.backend.user.validation.user.UserNotFoundException;
 import com.ddip.backend.auction.repository.AuctionRepository;
@@ -164,6 +165,16 @@ public class UserService {
     @Transactional(readOnly = true)
     public Page<User> searchUsersForAdmin(AdminUserSearchCondition condition, Pageable pageable) {
         return userRepository.searchUsersForAdmin(condition, pageable);
+    }
+
+    /**
+     * 설문 결과 저장 — 회원가입 완료 후 성향 분류
+     */
+    public void saveUserType(Long userId, UserType userType) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+        user.updateUserType(userType);
+        log.info("UserType saved: userId={}, userType={}", userId, userType);
     }
 
     /**

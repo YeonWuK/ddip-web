@@ -1,0 +1,141 @@
+package com.ddip.backend.recommendation.service;
+
+import com.ddip.backend.pledge.repository.PledgeRepository;
+import com.ddip.backend.project.domain.Project;
+import com.ddip.backend.project.dto.enums.ProjectStatus;
+import com.ddip.backend.project.repository.ProjectRepository;
+import com.ddip.backend.recommendation.config.AhpWeightConfig;
+import com.ddip.backend.recommendation.dto.ProjectCriteriaDto;
+import com.ddip.backend.recommendation.dto.RecommendationResponseDto;
+import com.ddip.backend.user.domain.User;
+import com.ddip.backend.user.dto.enums.UserType;
+import com.ddip.backend.user.repository.UserRepository;
+import com.ddip.backend.user.validation.user.UserNotFoundException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Comparator;
+import java.util.List;
+
+@Slf4j
+@Service
+@Transactional(readOnly = true)
+@RequiredArgsConstructor
+public class RecommendationService {
+
+    private static final int TOP_N = 10;
+
+    private final ProjectRepository projectRepository;
+    private final PledgeRepository pledgeRepository;
+    private final UserRepository userRepository;
+
+    public List<RecommendationResponseDto> recommend(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+
+        // 설문 미완료 시 최신순 반환
+        if (user.getUserType() == null) {
+            log.info("설문 미완료 유저 — 최신순 반환: userId={}", userId);
+            return projectRepository.findAll().stream()
+                    .filter(p -> p.getStatus() == ProjectStatus.OPEN)
+                    .sorted(Comparator.comparing(Project::getCreateTime).reversed())
+                    .limit(TOP_N)
+                    .map(p -> RecommendationResponseDto.of(p, 0.0, null))
+                    .toList();
+        }
+
+        UserType userType = user.getUserType();
+        double[] weights = AhpWeightConfig.getWeights(userType);
+
+        // 1) OPEN 프로젝트 조회
+        List<Project> openProjects = projectRepository.findAll().stream()
+                .filter(p -> p.getStatus() == ProjectStatus.OPEN)
+                .toList();
+
+        if (openProjects.isEmpty()) return List.of();
+
+        // 2) 프로젝트별 기준값 수집
+        List<ProjectCriteriaDto> criteriaList = openProjects.stream()
+                .map(p -> ProjectCriteriaDto.of(p, pledgeRepository.countBackersByProjectId(p.getId())))
+                .toList();
+
+        // 3) TOPSIS 계산
+        double[] scores = topsis(criteriaList, weights);
+
+        // 4) 점수 내림차순 정렬 후 상위 N개 반환
+        record Indexed(int i, double score) {}
+        List<Indexed> ranked = new java.util.ArrayList<>();
+        for (int i = 0; i < scores.length; i++) ranked.add(new Indexed(i, scores[i]));
+        ranked.sort(Comparator.comparingDouble(Indexed::score).reversed());
+
+        return ranked.stream()
+                .limit(TOP_N)
+                .map(r -> RecommendationResponseDto.of(openProjects.get(r.i()), r.score(), userType))
+                .toList();
+    }
+
+    // ───────────────────────────────────────────────────
+    // TOPSIS 구현
+    // ───────────────────────────────────────────────────
+    private double[] topsis(List<ProjectCriteriaDto> criteriaList, double[] weights) {
+        int n = criteriaList.size();
+        int m = weights.length;
+
+        double[][] matrix = new double[n][m];
+        for (int i = 0; i < n; i++) {
+            matrix[i] = criteriaList.get(i).toArray();
+        }
+
+        // Step 1: 벡터 정규화
+        double[] colNorm = new double[m];
+        for (int j = 0; j < m; j++) {
+            double sumSq = 0;
+            for (int i = 0; i < n; i++) sumSq += matrix[i][j] * matrix[i][j];
+            colNorm[j] = Math.sqrt(sumSq);
+        }
+
+        double[][] normalized = new double[n][m];
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < m; j++) {
+                normalized[i][j] = colNorm[j] == 0 ? 0 : matrix[i][j] / colNorm[j];
+            }
+        }
+
+        // Step 2: 가중치 적용
+        double[][] weighted = new double[n][m];
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < m; j++) {
+                weighted[i][j] = normalized[i][j] * weights[j];
+            }
+        }
+
+        // Step 3: 이상해(최고) / 이상악(최저) 계산
+        double[] ideal      = new double[m];
+        double[] antiIdeal  = new double[m];
+        for (int j = 0; j < m; j++) {
+            ideal[j]     = Double.NEGATIVE_INFINITY;
+            antiIdeal[j] = Double.POSITIVE_INFINITY;
+            for (int i = 0; i < n; i++) {
+                ideal[j]     = Math.max(ideal[j],     weighted[i][j]);
+                antiIdeal[j] = Math.min(antiIdeal[j], weighted[i][j]);
+            }
+        }
+
+        // Step 4: 각 프로젝트 근접도 점수 계산
+        double[] scores = new double[n];
+        for (int i = 0; i < n; i++) {
+            double dPlus = 0, dMinus = 0;
+            for (int j = 0; j < m; j++) {
+                dPlus  += Math.pow(weighted[i][j] - ideal[j],     2);
+                dMinus += Math.pow(weighted[i][j] - antiIdeal[j], 2);
+            }
+            dPlus  = Math.sqrt(dPlus);
+            dMinus = Math.sqrt(dMinus);
+            scores[i] = (dPlus + dMinus) == 0 ? 0 : dMinus / (dPlus + dMinus);
+        }
+
+        return scores;
+    }
+}
