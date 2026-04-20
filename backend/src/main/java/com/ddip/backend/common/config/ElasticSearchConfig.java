@@ -22,10 +22,8 @@ public class ElasticSearchConfig extends ElasticsearchConfiguration {
     @NotNull
     @Override
     public ClientConfiguration clientConfiguration() {
-        // connectedTo()는 "host:port" 형식만 허용 — "http://host:port" 에서 스킴 제거
-        String hostAndPort = uri.replaceFirst("^https?://", "");
         return ClientConfiguration.builder()
-                .connectedTo(hostAndPort)
+                .connectedTo(uri)
                 .build();
     }
 
