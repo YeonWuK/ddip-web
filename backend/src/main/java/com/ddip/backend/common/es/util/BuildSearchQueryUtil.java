@@ -12,8 +12,7 @@ import java.time.format.DateTimeFormatter;
 @RequiredArgsConstructor
 public class BuildSearchQueryUtil {
 
-    private static final DateTimeFormatter ES_DATE_FORMATTER =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
+    private static final DateTimeFormatter ES_DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
 
     /**
      * 경매 상세 검색 쿼리
@@ -23,7 +22,7 @@ public class BuildSearchQueryUtil {
         BoolQuery.Builder boolQuery = new BoolQuery.Builder();
 
         if (title != null) {
-            boolQuery.must(MatchQuery.of(m -> m.query("title.ngram").query(title))._toQuery());
+            boolQuery.must(MatchQuery.of(m -> m.query("title.autocomplete").query(title))._toQuery());
         }
 
         if (endAt != null) {
@@ -49,11 +48,12 @@ public class BuildSearchQueryUtil {
         BoolQuery.Builder boolQuery = new BoolQuery.Builder();
 
         if (title != null) {
-            boolQuery.must(MatchQuery.of(m -> m.query("title.ngram").query(title))._toQuery());
+            boolQuery.must(MatchQuery.of(m -> m.query("title.autocomplete").query(title))._toQuery());
         }
 
         if (endAt != null) {
-            String formatted = ES_DATE_FORMATTER.format(endAt);
+            String formatted = endAt.toString();
+
             // And (조건 <= endAt)
             boolQuery.must(
                     Query.of(q -> q

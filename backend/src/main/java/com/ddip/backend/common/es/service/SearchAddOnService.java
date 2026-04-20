@@ -32,7 +32,7 @@ public class SearchAddOnService {
                             .matchPhrase(m -> m
                                     // keyword 와 맞는 제목 매치
                                     .query(keyword)
-                                    .field("title.ngram")
+                                    .field("title.autocomplete")
                             )
                     )
                     .size(5)

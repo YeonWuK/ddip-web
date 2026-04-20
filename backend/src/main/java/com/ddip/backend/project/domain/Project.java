@@ -87,26 +87,20 @@ public class Project extends BaseTimeEntity {
 
     public static Project toEntity(ProjectRequestDto requestDto, Long creatorId) {
         Project project = Project.builder()
-                //Not null
                 .title(requestDto.getTitle())
                 .description(requestDto.getDescription())
                 .targetAmount(requestDto.getTargetAmount())
                 .creatorId(creatorId)
-                // 일정
                 .startAt(requestDto.getStartAt())
                 .endAt(requestDto.getEndAt())
-                // 노출/검색용
-//                .thumbnailUrl(thumbnailUrl)
                 .categoryPath(requestDto.getCategoryPath())
                 .tags(requestDto.getTags())
                 .summary(requestDto.getSummary())
-                // 상태/캐시 값
                 .status(ProjectStatus.DRAFT)
                 .currentAmount(0L)
                 .build();
 
         requestDto.getRewardTiers().forEach(project::addRewardTier);
-
         return project;
     }
 

@@ -73,8 +73,9 @@ services:
       - app-network
 
   backend:
-    image: yeonwoo02/ddip-backend:latest
-    pull_policy: always
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: backend
     depends_on:
       mysql:
