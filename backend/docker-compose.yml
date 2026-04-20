@@ -93,8 +93,11 @@ services:
       - app-network
 
   frontend:
-    image: yeonwoo02/ddip-frontend:latest
-    pull_policy: always
+    build:
+      context: ../../ddip-web/front
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
     container_name: ddip-frontend
     depends_on:
       - backend
