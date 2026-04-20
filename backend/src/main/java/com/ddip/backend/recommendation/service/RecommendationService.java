@@ -2,6 +2,7 @@ package com.ddip.backend.recommendation.service;
 
 import com.ddip.backend.pledge.repository.PledgeRepository;
 import com.ddip.backend.project.domain.Project;
+import com.ddip.backend.project.dto.enums.ProjectCategory;
 import com.ddip.backend.project.dto.enums.ProjectStatus;
 import com.ddip.backend.project.repository.ProjectRepository;
 import com.ddip.backend.recommendation.config.AhpWeightConfig;
@@ -18,6 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -50,21 +53,42 @@ public class RecommendationService {
         double[] weights = AhpWeightConfig.getWeights(userType);
 
         // 1) OPEN 프로젝트 조회
-        List<Project> openProjects = projectRepository.findAll().stream()
+        List<Project> allOpenProjects = projectRepository.findAll().stream()
                 .filter(p -> p.getStatus() == ProjectStatus.OPEN)
                 .toList();
 
-        if (openProjects.isEmpty()) return List.of();
+        if (allOpenProjects.isEmpty()) return List.of();
 
-        // 2) 프로젝트별 기준값 수집
+        // 2) 성향별 카테고리 필터링
+        //    - VALUE_ORIENTED    : ENVIRONMENT, SOCIAL, EDUCATION, CULTURE
+        //    - PRACTICAL_ORIENTED: TECH, HEALTH, FOOD, FASHION
+        //    - TREND_ORIENTED    : 카테고리 무관 (전체 대상, 트렌드 지표로만 정렬)
+        List<ProjectCategory> preferred = AhpWeightConfig.getPreferredCategories(userType);
+        List<Project> openProjects;
+        if (preferred != null && !preferred.isEmpty()) {
+            Set<String> preferredNames = preferred.stream()
+                    .map(Enum::name)
+                    .collect(Collectors.toSet());
+            openProjects = allOpenProjects.stream()
+                    .filter(p -> p.getCategoryPath() != null
+                            && preferredNames.contains(p.getCategoryPath().toUpperCase()))
+                    .toList();
+            // 선호 카테고리 프로젝트가 없으면 빈 리스트 반환 (전체 혼합 방지)
+            if (openProjects.isEmpty()) return List.of();
+        } else {
+            // TREND_ORIENTED: 카테고리 필터 없이 전체 대상
+            openProjects = allOpenProjects;
+        }
+
+        // 3) 프로젝트별 기준값 수집
         List<ProjectCriteriaDto> criteriaList = openProjects.stream()
                 .map(p -> ProjectCriteriaDto.of(p, pledgeRepository.countBackersByProjectId(p.getId())))
                 .toList();
 
-        // 3) TOPSIS 계산
+        // 4) TOPSIS 계산
         double[] scores = topsis(criteriaList, weights);
 
-        // 4) 점수 내림차순 정렬 후 상위 N개 반환
+        // 5) 점수 내림차순 정렬 후 상위 N개 반환
         record Indexed(int i, double score) {}
         List<Indexed> ranked = new java.util.ArrayList<>();
         for (int i = 0; i < scores.length; i++) ranked.add(new Indexed(i, scores[i]));
