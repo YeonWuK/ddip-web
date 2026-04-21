@@ -1,6 +1,6 @@
 package com.ddip.backend.project.dto.es;
 
-import com.ddip.backend.common.es.document.ProjectDocument;
+import com.ddip.backend.project.es.document.ProjectDocument;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

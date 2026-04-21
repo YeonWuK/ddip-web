@@ -1,4 +1,4 @@
-package com.ddip.backend.common.es.document;
+package com.ddip.backend.auction.es.document;
 
 import com.ddip.backend.auction.domain.Auction;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;

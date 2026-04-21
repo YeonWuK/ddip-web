@@ -1,4 +1,4 @@
-package com.ddip.backend.common.es.document;
+package com.ddip.backend.project.es.document;
 
 import com.ddip.backend.project.domain.Project;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
