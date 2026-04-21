@@ -1,6 +1,7 @@
 package com.ddip.backend.user.dto.user;
 
 import com.ddip.backend.user.dto.enums.BankType;
+import com.ddip.backend.user.dto.enums.UserType;
 import com.ddip.backend.common.dto.enums.Role;
 import com.ddip.backend.user.domain.User;
 import lombok.AllArgsConstructor;
@@ -25,6 +26,7 @@ public class UserResponseDto {
     private long pointBalance;
     private BankType bankType;
     private boolean isActive;
+    private UserType userType;   // 성향 설문 결과
 
     public static UserResponseDto from(User user) {
         return UserResponseDto.builder()
@@ -39,6 +41,7 @@ public class UserResponseDto {
                 .role(user.getRole())
                 .bankType(user.getBankType())
                 .isActive(user.isActive())
+                .userType(user.getUserType())
                 .build();
     }
 }

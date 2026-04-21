@@ -104,8 +104,13 @@ public class ProjectService {
     }
 
     private void indexProjectToElasticsearch(Project project, String thumbnailUrl) {
-        ProjectDocument document = ProjectDocument.from(project, thumbnailUrl);
-        projectElasticsearchRepository.save(document);
+        try {
+            ProjectDocument document = ProjectDocument.from(project, thumbnailUrl);
+            projectElasticsearchRepository.save(document);
+        } catch (Exception e) {
+            // ES 색인 실패는 프로젝트 생성을 막지 않음 (검색 기능은 부가 기능)
+            log.warn("Elasticsearch 색인 실패 (프로젝트 생성은 완료됨) projectId={}, error={}", project.getId(), e.getMessage());
+        }
     }
 
 }
