@@ -1,7 +1,7 @@
 package com.ddip.backend.project.service;
 
-import com.ddip.backend.common.es.document.ProjectDocument;
-import com.ddip.backend.common.es.repository.ProjectElasticsearchRepository;
+import com.ddip.backend.project.es.document.ProjectDocument;
+import com.ddip.backend.project.es.repository.ProjectElasticsearchRepository;
 import com.ddip.backend.pledge.service.PledgeService;
 import com.ddip.backend.project.domain.Project;
 import com.ddip.backend.project.domain.ProjectImage;
