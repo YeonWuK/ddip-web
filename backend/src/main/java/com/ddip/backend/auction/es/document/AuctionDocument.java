@@ -25,7 +25,7 @@ public class AuctionDocument {
     @Field(type = FieldType.Text)
     private String title;
 
-    @Field(type = FieldType.Text)
+    @Field(type = FieldType.Keyword)
     private String imageKey;
 
     @Field(type = FieldType.Text)

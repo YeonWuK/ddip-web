@@ -32,7 +32,7 @@ public class ProjectDocument {
     @Field(type = FieldType.Text)
     private String summary;
 
-    @Field(type = FieldType.Text)
+    @Field(type = FieldType.Text, analyzer = "tag_analyzer")
     private String tags;
 
     @Field(type = FieldType.Keyword)
