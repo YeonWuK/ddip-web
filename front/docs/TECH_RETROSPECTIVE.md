@@ -211,6 +211,31 @@ FormData에 `data` 파트(JSON.stringify), `file` 파트(파일 배열)를 각�
 
 ---
 
+## 14. 메인 검색 UX 버그 — 스크롤 최상단 고정 누락 (빈 입력 Backspace 엣지케이스)
+
+### 상황
+메인 화면에서 아래로 스크롤한 뒤 검색창의 **일반 입력/삭제는 최상단 고정이 정상 동작**했다.  
+다만 **아무 것도 입력되지 않은 상태에서 Backspace(삭제)를 누를 때만** 최상단으로 가지 않고 애매한 위치로 이동하는 이슈가 있었다.
+
+### 근본 원인
+- 초기 구현은 `onChange` 중심이라, 값이 바뀌지 않는 키 입력(빈 문자열 + Backspace/Delete) 경로를 놓쳤다.
+- 실제 스크롤 주체가 `window` 하나가 아닐 수 있는데, 특정 지점만 보정해 브라우저 기본 `scroll-into-view`와 충돌했다.
+
+### 해결
+1. `forceScrollToTop` 유틸을 두고, `window` + `document.scrollingElement` + `documentElement` + `body` + 부모 스크롤 컨테이너까지 모두 `scrollTop = 0`으로 보정
+2. `onFocus`에서는 스크롤 보정을 제거하고 자동완성 표시만 처리 (Alt+Tab 복귀 시 의도치 않은 상단 이동 방지)
+3. `onChange`에서 입력 시마다 보정 유지
+4. **핵심 보완**: `onKeyDown`에서 빈 상태의 Backspace/Delete를 별도 처리해 `onChange` 미발생 경로까지 커버
+
+### 결과
+- 입력/삭제 시 최상단 고정이 일관되게 동작
+- 빈 입력 Backspace 엣지케이스까지 해결되어 체감 UX 안정성 향상
+
+### 1분 답변
+> "검색창 스크롤 고정이 케이스별로 깨지는 문제가 있었습니다. 원인은 onChange만으로는 빈 문자열 Backspace 같은 경로를 못 잡는 점과, 스크롤 주체가 window 하나가 아닐 수 있다는 점이었습니다. 그래서 공통 `forceScrollToTop`을 만들고 change/keydown 경로에서 보정해 최상단 고정을 일관되게 만들었고, focus에서는 스크롤 보정을 제거해 Alt+Tab 복귀 같은 비의도성 이동도 없앴습니다."
+
+---
+
 ## 요약표
 
 | 주제 | 핵심 한 줄 |
@@ -228,3 +253,4 @@ FormData에 `data` 파트(JSON.stringify), `file` 파트(파일 배열)를 각�
 | 에러/로딩 경계 | error.tsx + loading.tsx, 세그먼트별 분리, reset 복구 |
 | 메타데이터 | layout에서 generateMetadata/metadata, 동적 title/og, SEO·SNS |
 | 관리자 UX 버그 | 모달 닫힘 상태 초기화 통일로 승인/거절 후 클릭 먹통 해결 |
+| 검색 스크롤 UX 버그 | change/keydown 중심 보정 + focus 스크롤 제거로 최상단 고정과 복귀 안정성 확보 |

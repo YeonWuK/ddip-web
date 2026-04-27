@@ -117,19 +117,12 @@ export function HeroBanner() {
                 placeholder="새로운 일상이 필요하신가요?"
                 value={searchQuery}
                 onChange={(e) => {
+                  setShowSuggestions(true)
                   forceScrollToTop()
                   setSearchQuery(e.target.value)
                 }}
                 onFocus={() => {
                   setShowSuggestions(true)
-                  forceScrollToTop()
-                  // 브라우저 기본 자동 스크롤 이후에도 다시 최상단으로 고정
-                  setTimeout(forceScrollToTop, 0)
-                  requestAnimationFrame(() => {
-                    requestAnimationFrame(() => {
-                      forceScrollToTop()
-                    })
-                  })
                 }}
                 onKeyDown={(e) => {
                   if ((e.key === "Backspace" || e.key === "Delete") && searchQuery.length === 0) {
