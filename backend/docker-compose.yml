@@ -38,7 +38,7 @@ services:
 
   elasticsearch:
     platform: linux/amd64
-    image: yeonwoo02/ddip-elasticsearch:latest
+    image: seohan02/ddip-elasticsearch:latest
     container_name: elasticsearch
     environment:
       - discovery.type=single-node
@@ -73,7 +73,7 @@ services:
       - app-network
 
   backend:
-    image: yeonwoo02/ddip-backend:latest
+    image: seohan02/ddip-backend:latest
     pull_policy: always
     container_name: backend
     depends_on:

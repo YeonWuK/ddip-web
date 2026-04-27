@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "yeonwoo02/ddip-backend"
-        ES_IMAGE = "yeonwoo02/ddip-elasticsearch"
+        IMAGE_NAME = "seohan02/ddip-backend"
+        ES_IMAGE = "seohan02/ddip-elasticsearch"
         IMAGE_TAG = "latest"
         DEPLOY_DIR = "/home/ubuntu/backend"
     }
