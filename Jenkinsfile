@@ -42,6 +42,7 @@ pipeline {
                     string(credentialsId: 'deploy-server', variable: 'DEPLOY_SERVER')
                 ]) {
                     sshagent(['ec2-ssh-key']) {
+                        sh 'scp $WORKSPACE/backend/docker-compose.yml $DEPLOY_SERVER:/home/ubuntu/backend/'
                         sh 'ssh -o StrictHostKeyChecking=no $DEPLOY_SERVER "bash /home/ubuntu/deploy.sh"'
                     }
                 }
