@@ -3,6 +3,7 @@ pipeline {
 
     environment {
         IMAGE_NAME = "yeonwoo02/ddip-backend"
+        ES_IMAGE = "yeonwoo02/ddip-elasticsearch"
         IMAGE_TAG = "latest"
         DEPLOY_DIR = "/home/ubuntu/backend"
     }
@@ -29,29 +30,33 @@ pipeline {
         stage('Build Image') {
             steps {
                 sh 'docker build -t $IMAGE_NAME:$IMAGE_TAG ./backend'
-                sh 'docker build -t yeonwoo02/ddip-elasticsearch:latest ./backend/elasticsearch'
+                sh 'docker build -t $ES_IMAGE:$IMAGE_TAG ./backend/elasticsearch'
             }
         }
 
         stage('Push Image') {
             steps {
                 sh 'docker push $IMAGE_NAME:$IMAGE_TAG'
-                sh 'docker push yeonwoo02/ddip-elasticsearch:latest'
+                sh 'docker push $ES_IMAGE:$IMAGE_TAG'
             }
         }
 
-
-        stage('Deploy to EC2') {
+        stage('Cleanup') {
             steps {
-                sshagent(['ec2-ssh-key']) {
-                    sh '''
-                    ssh -o StrictHostKeyChecking=no ubuntu@$EC2_HOST "
-                      cd $DEPLOY_DIR &&
-                      docker pull $IMAGE_NAME:$IMAGE_TAG &&
-                      docker compose up -d
-                    "
-                    '''
-                }
+                sh 'docker rmi $IMAGE_NAME:$IMAGE_TAG || true'
+                sh 'docker rmi $ES_IMAGE:$IMAGE_TAG || true'
+                sh 'docker image prune -f'
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                sh '''
+                cd $DEPLOY_DIR
+                docker compose pull
+                docker compose up -d
+                docker image prune -f
+                '''
             }
         }
     }
