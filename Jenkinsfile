@@ -5,7 +5,7 @@ pipeline {
         IMAGE_NAME = "seohan02/ddip-backend"
         ES_IMAGE = "seohan02/ddip-elasticsearch"
         IMAGE_TAG = "${BUILD_NUMBER}"
-        DEPLOY_DIR = "/home/ubuntu/backend"
+        DEPLOY_DIR = "${WORKSPACE}/backend"
     }
 
     stages {
