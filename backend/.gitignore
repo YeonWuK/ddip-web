@@ -35,7 +35,10 @@ out/
 
 ### VS Code ###
 .vscode/
+.claude
 
 ### Environment variable files ###
 .env
 .env.*
+
+ddip-key.pem
