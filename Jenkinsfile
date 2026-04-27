@@ -30,7 +30,7 @@ pipeline {
         stage('Build Image') {
             steps {
                 sh 'docker build -t $IMAGE_NAME:$IMAGE_TAG -t $IMAGE_NAME:latest ./backend'
-                sh 'docker build -t $ES_IMAGE:$IMAGE_TAG -t $ES_IMAGE:latest ./backend'
+                sh 'docker build -t $ES_IMAGE:$IMAGE_TAG -t $ES_IMAGE:latest ./backend/elasticsearch'
             }
         }
 
