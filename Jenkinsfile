@@ -4,9 +4,7 @@ pipeline {
     environment {
         IMAGE_NAME = "seohan02/ddip-backend"
         ES_IMAGE = "seohan02/ddip-elasticsearch"
-        IMAGE_TAG = "${BUILD_NUMBER}"
-        DEPLOY_DIR = "${WORKSPACE}/backend"
-    }
+        }
 
     stages {
         stage('Checkout') {
@@ -27,30 +25,26 @@ pipeline {
             }
         }
 
-        stage('Build Image') {
+        stage('Build & Push') {
             steps {
-                sh 'docker build -t $IMAGE_NAME:$IMAGE_TAG -t $IMAGE_NAME:latest ./backend'
-                sh 'docker build -t $ES_IMAGE:$IMAGE_TAG -t $ES_IMAGE:latest ./backend/elasticsearch'
-            }
-        }
-
-        stage('Push Image') {
-            steps {
-                sh 'docker push $IMAGE_NAME:$IMAGE_TAG'
-                sh 'docker push $IMAGE_NAME:latest'
-                sh 'docker push $ES_IMAGE:$IMAGE_TAG'
-                sh 'docker push $ES_IMAGE:latest'
+                sh '''
+                docker build -t $IMAGE_NAME:latest ./backend
+                docker build -t $ES_IMAGE:latest ./backend/elasticsearch
+                docker push $IMAGE_NAME:latest
+                docker push $ES_IMAGE:latest
+                '''
             }
         }
 
         stage('Deploy') {
             steps {
-                sh '''
-                    cp $WORKSPACE/backend/docker-compose.yml /home/ubuntu/backend/
-                    cd /home/ubuntu/backend
-                    docker compose pull
-                    docker compose up -d --remove-orphans
-                '''
+                withCredentials([
+                    string(credentialsId: 'deploy-server', variable: 'DEPLOY_SERVER')
+                ]) {
+                    sshagent(['ec2-ssh-key']) {
+                        sh 'ssh -o StrictHostKeyChecking=no $DEPLOY_SERVER "bash /home/ubuntu/deploy.sh"'
+                    }
+                }
             }
         }
 
