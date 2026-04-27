@@ -2,6 +2,7 @@ package com.ddip.backend.user.domain;
 
 import com.ddip.backend.common.dto.enums.AuthProvider;
 import com.ddip.backend.user.dto.enums.BankType;
+import com.ddip.backend.user.dto.enums.UserType;
 import com.ddip.backend.common.dto.enums.Role;
 import com.ddip.backend.common.dto.oauth2.SocialUserRequestDto;
 import com.ddip.backend.user.dto.user.ProfileRequestDto;
@@ -68,6 +69,10 @@ public class User extends BaseTimeEntity {
     @Column(name = "point_balance")
     private Long pointBalance;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "user_type")
+    private UserType userType; // 설문 완료 전엔 null
+
     public static User from(UserRequestDto dto) {
         return User.builder()
                 .email(dto.getEmail())
@@ -121,6 +126,10 @@ public class User extends BaseTimeEntity {
 
     public void updatePassword(String password) {
         this.password = password;
+    }
+
+    public void updateUserType(UserType userType) {
+        this.userType = userType;
     }
 
     // 포인트 적립/충전

@@ -1,4 +1,4 @@
-package com.ddip.backend.common.es.document;
+package com.ddip.backend.project.es.document;
 
 import com.ddip.backend.project.domain.Project;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Setting(settingPath = "elasticsearch/setting.json")
 @Mapping(mappingPath = "elasticsearch/project-mapping.json")
-@Document(indexName = "project", createIndex = true, writeTypeHint = WriteTypeHint.FALSE)
+@Document(indexName = "project", createIndex = false, writeTypeHint = WriteTypeHint.FALSE)
 public class ProjectDocument {
 
     @Id

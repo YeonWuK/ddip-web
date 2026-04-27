@@ -266,4 +266,17 @@ public class UserApiController {
 
         return ResponseEntity.ok("{\"newAccessToken\": \"" + newAccessToken + "\"}");
     }
+
+    /**
+     * 설문 결과 저장 — 회원가입 완료 후 성향 분류
+     */
+    @PatchMapping("/survey")
+    @Operation(summary = "성향 설문 저장", description = "회원가입 완료 후 성향 설문 결과를 저장합니다.")
+    public ResponseEntity<Void> saveSurvey(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody @Validated SurveyRequestDto request
+    ) {
+        userService.saveUserType(userDetails.getUserId(), request.getUserType());
+        return ResponseEntity.ok().build();
+    }
 }

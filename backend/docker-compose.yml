@@ -37,6 +37,7 @@ services:
       - app-network
 
   elasticsearch:
+    platform: linux/amd64
     build:
       context: ./elasticsearch
       dockerfile: Dockerfile
@@ -61,6 +62,7 @@ services:
       - app-network
 
   kibana:
+    platform: linux/amd64
     image: docker.elastic.co/kibana/kibana:8.6.0
     container_name: kibana
     environment:
@@ -87,6 +89,20 @@ services:
       - "8080:8080"
     env_file:
       - .env
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ../../ddip-web/front
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
+    container_name: ddip-frontend
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
     networks:
       - app-network
 

@@ -1,4 +1,4 @@
-package com.ddip.backend.common.es.document;
+package com.ddip.backend.auction.es.document;
 
 import com.ddip.backend.auction.domain.Auction;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Document(indexName = "auction", createIndex = true, writeTypeHint = WriteTypeHint.FALSE)
+@Document(indexName = "auction", createIndex = false, writeTypeHint = WriteTypeHint.FALSE)
 @Setting(settingPath = "elasticsearch/setting.json")
 @Mapping(mappingPath = "elasticsearch/auction-mapping.json")
 public class AuctionDocument {

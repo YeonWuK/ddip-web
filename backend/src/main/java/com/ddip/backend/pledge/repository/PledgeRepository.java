@@ -22,4 +22,7 @@ public interface PledgeRepository extends JpaRepository<Pledge, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select p from Pledge p where p.id = :id")
     Optional<Pledge> findByIdForUpdate(@Param("id") Long id);
+
+    @Query("select count(distinct p.userId) from Pledge p where p.projectId = :projectId and p.status = 'COMPLETED'")
+    long countBackersByProjectId(@Param("projectId") Long projectId);
 }
