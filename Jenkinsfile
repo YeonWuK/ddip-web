@@ -46,9 +46,10 @@ pipeline {
         stage('Deploy') {
             steps {
                 sh '''
-                cd $DEPLOY_DIR
-                docker compose pull
-                docker compose up -d
+                    cp $WORKSPACE/backend/docker-compose.yml /home/ubuntu/backend/
+                    cd /home/ubuntu/backend
+                    docker compose pull
+                    docker compose up -d --remove-orphans
                 '''
             }
         }
