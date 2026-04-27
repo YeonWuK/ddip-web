@@ -44,7 +44,7 @@ services:
       - discovery.type=single-node
       - xpack.security.enabled=false
       - cluster.name=ddip-es
-      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - ES_JAVA_OPTS=-Xms256m -Xmx256m
     ports:
       - "9200:9200"
       - "9300:9300"
@@ -56,19 +56,6 @@ services:
       timeout: 5s
       retries: 10
       start_period: 30s
-    networks:
-      - app-network
-
-  kibana:
-    platform: linux/amd64
-    image: docker.elastic.co/kibana/kibana:8.6.0
-    container_name: kibana
-    environment:
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-    ports:
-      - "5601:5601"
-    depends_on:
-      - elasticsearch
     networks:
       - app-network
 
