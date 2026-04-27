@@ -19,6 +19,7 @@ import {
   AddressResponse,
 } from '@/src/types/api';
 import { tokenStorage } from '@/src/lib/auth';
+import { toSafeApiErrorMessage } from '@/src/lib/apiErrorMessages';
 import { apiRequest, API_BASE_URL } from '@/src/services/apiClient';
 import { toS3ImageUrl } from '@/src/services/utils/imageUtils';
 
@@ -281,14 +282,11 @@ export const authApi = {
 
       if (!response.ok) {
         const errorText = await response.text();
-        let errorMessage = '이메일 또는 비밀번호가 올바르지 않습니다';
-        
-        try {
-          const errorJson = JSON.parse(errorText);
-          errorMessage = errorJson.message || errorJson.error || errorMessage;
-        } catch {
-          // JSON 파싱 실패 시 기본 메시지 사용
-        }
+        const errorMessage = toSafeApiErrorMessage(
+          response.status,
+          errorText,
+          '이메일 또는 비밀번호가 올바르지 않습니다',
+        );
         throw new Error(errorMessage);
       }
 
@@ -313,9 +311,6 @@ export const authApi = {
       if (responseData.user) {
         // 로그인 응답에 사용자 정보가 포함되어 있는 경우
         user = responseData.user;
-        if (user) {
-          tokenStorage.setUser(user);
-        }
       } else if (responseData.id || responseData.email) {
         // 응답 본문 자체가 사용자 정보인 경우 (UserResponseDto)
         user = {
@@ -327,7 +322,6 @@ export const authApi = {
           phone: responseData.phoneNumber || responseData.phone || null,
           pointBalance: responseData.pointBalance ?? responseData.point_balance ?? 0,
         };
-        tokenStorage.setUser(user);
       } else {
         // 로그인 응답에 사용자 정보가 없으면 null로 설정
         // 사용자 정보는 나중에 필요할 때 /api/users/profile로 조회
@@ -414,8 +408,10 @@ export const authApi = {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: '회원가입 실패' }));
-        throw new Error(errorData.message || '회원가입에 실패했습니다');
+        const errorText = await response.text();
+        throw new Error(
+          toSafeApiErrorMessage(response.status, errorText, '회원가입에 실패했습니다'),
+        );
       }
 
       // 백엔드에서 UserResponseDto 반환 (토큰 없음)
@@ -502,14 +498,9 @@ export const authApi = {
         }
         
         const errorText = await response.text();
-        let errorMessage = '토큰 갱신에 실패했습니다';
-        try {
-          const errorJson = JSON.parse(errorText);
-          errorMessage = errorJson.message || errorJson.error || errorMessage;
-        } catch {
-          // JSON 파싱 실패 시 기본 메시지 사용
-        }
-        throw new Error(errorMessage);
+        throw new Error(
+          toSafeApiErrorMessage(response.status, errorText, '토큰 갱신에 실패했습니다'),
+        );
       }
 
       // 응답에서 새로운 액세스 토큰 추출 (백엔드: newAccessToken 또는 access_token/accessToken)
@@ -526,19 +517,13 @@ export const authApi = {
       // 새로운 액세스 토큰 저장
       tokenStorage.setAccessToken(newAccessToken);
 
-      // 사용자 정보는 기존 정보 유지 또는 새로 조회
-      let user = tokenStorage.getUser();
-      
-      // 응답에 사용자 정보가 포함되어 있는 경우 업데이트
+      let user: UserResponse | null = null;
       if (responseData.user) {
         user = responseData.user;
-        tokenStorage.setUser(responseData.user);
-      } else if (!user) {
-        // 사용자 정보가 없으면 새로 조회
+      } else {
         try {
           user = await authApi.getCurrentUser();
         } catch {
-          // 사용자 정보 조회 실패 시 임시 사용자 정보
           user = {
             id: 0,
             email: null,
@@ -603,9 +588,6 @@ export const authApi = {
         role: normalizeUserRole(backendResponse.role ?? backendResponse.role_level),
         pointBalance: backendResponse.pointBalance ?? backendResponse.point_balance ?? 0,
       };
-      
-      // 사용자 정보를 localStorage에 저장
-      tokenStorage.setUser(user);
       
       return user;
     } catch (error) {
@@ -672,12 +654,15 @@ export const authApi = {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({ code, state }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'OAuth 인증 실패' }));
-        throw new Error(errorData.message || 'OAuth 인증에 실패했습니다');
+        const errorText = await response.text();
+        throw new Error(
+          toSafeApiErrorMessage(response.status, errorText, 'OAuth 인증에 실패했습니다'),
+        );
       }
 
       const data = await response.json();
@@ -741,7 +726,6 @@ export const authApi = {
         user = await authApi.getCurrentUser();
       }
 
-      tokenStorage.setUser(user);
       return user;
     } catch (error) {
       throw error;

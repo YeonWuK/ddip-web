@@ -1,76 +1,60 @@
-// 토큰 저장/관리 유틸리티
+// 액세스 토큰은 JS가 읽을 수 있는 저장소에 두지 않습니다(메모리만 사용).
+// XSS 시에도 refresh/PII를 localStorage에 두지 않도록 이전 키는 정리합니다.
 
-import { UserResponse } from '@/src/types/api'
+const LEGACY_ACCESS_TOKEN_KEY = "ddip_access_token"
+const LEGACY_REFRESH_TOKEN_KEY = "ddip_refresh_token"
+const LEGACY_USER_KEY = "ddip_user"
 
-const ACCESS_TOKEN_KEY = 'ddip_access_token'
-const REFRESH_TOKEN_KEY = 'ddip_refresh_token'
-const USER_KEY = 'ddip_user'
+let memoryAccessToken: string | null = null
+let legacyMigrated = false
+
+function cleanToken(token: string): string {
+  return token.trim().replace(/^["']|["']$/g, "")
+}
+
+function migrateLegacyLocalStorageOnce(): void {
+  if (typeof window === "undefined" || legacyMigrated) return
+  legacyMigrated = true
+  try {
+    const legacyAccess = localStorage.getItem(LEGACY_ACCESS_TOKEN_KEY)
+    if (legacyAccess) {
+      memoryAccessToken = cleanToken(legacyAccess)
+    }
+    localStorage.removeItem(LEGACY_ACCESS_TOKEN_KEY)
+    localStorage.removeItem(LEGACY_REFRESH_TOKEN_KEY)
+    localStorage.removeItem(LEGACY_USER_KEY)
+  } catch {
+    // 저장소 접근 불가 시 무시
+  }
+}
 
 export const tokenStorage = {
-  // Access Token
   getAccessToken: (): string | null => {
-    if (typeof window === 'undefined') return null
-    return localStorage.getItem(ACCESS_TOKEN_KEY)
+    if (typeof window === "undefined") return null
+    migrateLegacyLocalStorageOnce()
+    return memoryAccessToken
   },
 
   setAccessToken: (token: string): void => {
-    if (typeof window === 'undefined') return
-    // 토큰 앞뒤 공백 및 따옴표 제거
-    const cleanToken = token.trim().replace(/^["']|["']$/g, '')
-    localStorage.setItem(ACCESS_TOKEN_KEY, cleanToken)
+    if (typeof window === "undefined") return
+    migrateLegacyLocalStorageOnce()
+    memoryAccessToken = cleanToken(token)
   },
 
   removeAccessToken: (): void => {
-    if (typeof window === 'undefined') return
-    localStorage.removeItem(ACCESS_TOKEN_KEY)
+    if (typeof window === "undefined") return
+    memoryAccessToken = null
   },
 
-  // Refresh Token
-  getRefreshToken: (): string | null => {
-    if (typeof window === 'undefined') return null
-    return localStorage.getItem(REFRESH_TOKEN_KEY)
-  },
-
-  setRefreshToken: (token: string): void => {
-    if (typeof window === 'undefined') return
-    localStorage.setItem(REFRESH_TOKEN_KEY, token)
-  },
-
-  removeRefreshToken: (): void => {
-    if (typeof window === 'undefined') return
-    localStorage.removeItem(REFRESH_TOKEN_KEY)
-  },
-
-  // User
-  getUser: (): UserResponse | null => {
-    if (typeof window === 'undefined') return null
-    try {
-      const userStr = localStorage.getItem(USER_KEY)
-      return userStr ? (JSON.parse(userStr) as UserResponse) : null
-    } catch {
-      return null
-    }
-  },
-
-  setUser: (user: UserResponse): void => {
-    if (typeof window === 'undefined') return
-    try {
-      localStorage.setItem(USER_KEY, JSON.stringify(user))
-    } catch {
-      // 저장 실패 시 무시
-    }
-  },
-
-  removeUser: (): void => {
-    if (typeof window === 'undefined') return
-    localStorage.removeItem(USER_KEY)
-  },
-
-  // 전체 삭제 (로그아웃 시)
   clearAll: (): void => {
-    if (typeof window === 'undefined') return
-    localStorage.removeItem(ACCESS_TOKEN_KEY)
-    localStorage.removeItem(REFRESH_TOKEN_KEY)
-    localStorage.removeItem(USER_KEY)
+    if (typeof window === "undefined") return
+    memoryAccessToken = null
+    try {
+      localStorage.removeItem(LEGACY_ACCESS_TOKEN_KEY)
+      localStorage.removeItem(LEGACY_REFRESH_TOKEN_KEY)
+      localStorage.removeItem(LEGACY_USER_KEY)
+    } catch {
+      // ignore
+    }
   },
 }

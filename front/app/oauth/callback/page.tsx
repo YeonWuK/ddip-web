@@ -40,14 +40,12 @@ function OAuthCallbackContent() {
           return
         }
 
-        // 토큰 저장
+        // 토큰 저장(메모리)
         tokenStorage.setAccessToken(accessToken)
 
-        // 백엔드에서 실제 사용자 정보 조회 (쿼리 파라미터 정보는 임시로만 사용)
+        // 백엔드에서 실제 사용자 정보 조회
         try {
           const currentUser = await authApi.getCurrentUser()
-          tokenStorage.setUser(currentUser)
-          
           // 사용자 정보 갱신 (AuthContext 업데이트)
           await refreshUser()
           

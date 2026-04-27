@@ -56,7 +56,6 @@ export default function CompleteProfilePage() {
         if (token) {
           try {
             const currentUser = await authApi.getCurrentUser();
-            tokenStorage.setUser(currentUser);
             setFormData({
               username: currentUser.name || "",
               nickname: currentUser.nickname || "",

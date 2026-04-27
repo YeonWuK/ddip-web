@@ -35,14 +35,9 @@ function OAuthCallbackContent() {
         // 백엔드로 코드를 전송하여 토큰으로 교환
         const response = await authApi.oauthCallback(provider, code, state || undefined)
 
-        // 토큰 저장
+        // 토큰만 메모리에 유지(PII/refresh는 localStorage에 저장하지 않음)
         tokenStorage.setAccessToken(response.accessToken)
-        if (response.refreshToken) {
-          tokenStorage.setRefreshToken(response.refreshToken)
-        }
-        tokenStorage.setUser(response.user)
 
-        // 사용자 정보 갱신
         await refreshUser()
 
         toast.success("로그인 성공!")
