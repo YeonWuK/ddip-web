@@ -112,11 +112,11 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:3000"));
+        config.setAllowedOrigins(List.of("https://ddip-web.vercel.app"));
         config.setAllowCredentials(true);
+        config.setMaxAge(3600L);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        config.setAllowedHeaders(List.of("*"));
-
+        config.setAllowedHeaders(List.of("Authorization", "X-Requested-With", "Content-Type"));
         config.setExposedHeaders(List.of("Authorization", "access_token"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
