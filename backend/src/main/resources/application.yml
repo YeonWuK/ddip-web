@@ -18,7 +18,7 @@ spring:
             scope:
               - email
               - profile
-            redirect-uri: "https://ddip.store/login/oauth2/code/google"
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
 
           kakao:
             client-id: ${KAKAO_CLIENT_ID}
@@ -26,7 +26,7 @@ spring:
             client-name: Kakao
             authorization-grant-type: authorization_code
             client-authentication-method: client_secret_post
-            redirect-uri: "https://ddip.store/login/oauth2/code/kakao"
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
             scope:
               - profile_nickname
               - account_email
@@ -38,7 +38,7 @@ spring:
             client-name: Naver
             authorization-grant-type: authorization_code
             client-authentication-method: client_secret_post
-            redirect-uri: "https://ddip.store/login/oauth2/code/naver"
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
             scope:
               - nickname
               - email
