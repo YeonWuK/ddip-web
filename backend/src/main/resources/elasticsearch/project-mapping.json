@@ -20,7 +20,7 @@
     },
     "tags": {
       "type": "text",
-      "analyzer": "custom_nori_analyzer"
+      "analyzer": "tag_analyzer"
     },
     "categoryPath": {
       "type": "keyword"

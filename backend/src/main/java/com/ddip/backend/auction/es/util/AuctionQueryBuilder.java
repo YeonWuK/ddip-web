@@ -1,7 +1,9 @@
 package com.ddip.backend.auction.es.util;
 
 import co.elastic.clients.elasticsearch._types.FieldValue;
+import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.query_dsl.*;
+import co.elastic.clients.elasticsearch.core.SearchRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -12,40 +14,34 @@ import java.util.List;
 @Component
 public class AuctionQueryBuilder {
 
-    // ES date 필드 포맷 (auction-mapping.json 포맷과 일치)
     private static final DateTimeFormatter ES_DATE_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
 
     /**
      * 키워드 검색 쿼리
-     * - 노출 상태: RUNNING(진행중) / ENDED(종료) — CANCELED만 제외
+     * - 노출 상태: RUNNING / ENDED — CANCELED 제외
      * - 가중치: title^3 > description^1 (nori 형태소 분석)
      */
-    public Query buildKeywordQuery(String keyword) {
+    public SearchRequest buildKeywordSearchRequest(String keyword, int size, Double searchAfterScore, Long searchAfterId) {
         BoolQuery.Builder boolQuery = new BoolQuery.Builder();
-
         applyKeyword(boolQuery, keyword);
-
-        // CANCELED는 mustNot으로 제외, 나머지(RUNNING/ENDED)는 모두 노출
         boolQuery.mustNot(TermQuery.of(t -> t
                 .field("status")
                 .value(FieldValue.of("CANCELED"))
         )._toQuery());
-
-        return boolQuery.build()._toQuery();
+        return buildSearchAfterRequest(boolQuery.build()._toQuery(), size, searchAfterScore, searchAfterId);
     }
 
     /**
      * 상세 필터 검색 쿼리
-     * - 노출 상태: 전체 (상세 검색에서는 CANCELED 포함 모두 조회 가능)
+     * - 노출 상태: 전체 (CANCELED 포함)
      * - keyword null 허용: 키워드 없이 날짜 필터만으로도 검색 가능
      * - endAt 필터: 해당 날짜/시간 이전에 마감하는 경매로 범위 제한 (null이면 미적용)
      */
-    public Query buildFilterQuery(String keyword, LocalDateTime endAt) {
+    public SearchRequest buildFilterSearchRequest(String keyword, LocalDateTime endAt,
+                                                  int size, Double searchAfterScore, Long searchAfterId) {
         BoolQuery.Builder boolQuery = new BoolQuery.Builder();
-
         applyKeyword(boolQuery, keyword);
-
         if (endAt != null) {
             boolQuery.filter(Query.of(q -> q
                     .range(r -> r
@@ -54,8 +50,7 @@ public class AuctionQueryBuilder {
                                     .lte(ES_DATE_FORMATTER.format(endAt))))
             ));
         }
-
-        return boolQuery.build()._toQuery();
+        return buildSearchAfterRequest(boolQuery.build()._toQuery(), size, searchAfterScore, searchAfterId);
     }
 
     /**
@@ -72,5 +67,23 @@ public class AuctionQueryBuilder {
         } else {
             boolQuery.must(MatchAllQuery.of(m -> m)._toQuery());
         }
+    }
+
+    private SearchRequest buildSearchAfterRequest(Query query, int size, Double searchAfterScore, Long searchAfterId) {
+        SearchRequest.Builder requestBuilder = new SearchRequest.Builder()
+                .index("auction")
+                .query(query)
+                .sort(s -> s.score(sc -> sc.order(SortOrder.Desc)))
+                .sort(s -> s.field(f -> f.field("id").order(SortOrder.Desc)))
+                .size(size + 1);
+
+        if (searchAfterScore != null && searchAfterId != null) {
+            requestBuilder.searchAfter(List.of(
+                    FieldValue.of(searchAfterScore),
+                    FieldValue.of(searchAfterId)
+            ));
+        }
+
+        return requestBuilder.build();
     }
 }

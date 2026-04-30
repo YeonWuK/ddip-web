@@ -21,15 +21,16 @@ public class ProjectQueryBuilder {
     /**
      * 키워드 검색 쿼리
      * - 노출 상태: OPEN(진행중) / SUCCESS(성공) / FAILED(종료) — DRAFT/REJECTED/CANCELED/STOP 제외
-     * - 가중치: title^3 > tags^2 > summary^1 (nori 형태소 분석)
+     * - 가중치: title^3 > tags^2 > summary^1 (nori 형태소 / tag_analyzer)
      * - 인기도 반영: likeCount를 log1p 감쇠 후 relevance 점수에 합산
      */
     public Query buildKeywordQuery(String keyword) {
         BoolQuery.Builder boolQuery = new BoolQuery.Builder();
-
         applyKeyword(boolQuery, keyword);
-        applyPublicStatusFilter(boolQuery);
-
+        boolQuery.filter(TermsQuery.of(t -> t
+                .field("status")
+                .terms(TermsQueryField.of(f -> f.value(PUBLIC_STATUSES)))
+        )._toQuery());
         return wrapWithLikeCount(boolQuery.build()._toQuery());
     }
 
@@ -42,9 +43,7 @@ public class ProjectQueryBuilder {
      */
     public Query buildFilterQuery(String keyword, LocalDate endAt) {
         BoolQuery.Builder boolQuery = new BoolQuery.Builder();
-
         applyKeyword(boolQuery, keyword);
-
         if (endAt != null) {
             boolQuery.filter(Query.of(q -> q
                     .range(r -> r
@@ -53,7 +52,6 @@ public class ProjectQueryBuilder {
                                     .lte(endAt.toString())))
             ));
         }
-
         return wrapWithLikeCount(boolQuery.build()._toQuery());
     }
 
@@ -71,17 +69,6 @@ public class ProjectQueryBuilder {
         } else {
             boolQuery.must(MatchAllQuery.of(m -> m)._toQuery());
         }
-    }
-
-    /**
-     * PUBLIC_STATUSES(OPEN/SUCCESS/FAILED)에 해당하는 문서만 filter로 포함
-     * filter 절이므로 relevance 점수에 영향 없이 순수하게 결과 범위만 제한
-     */
-    private void applyPublicStatusFilter(BoolQuery.Builder boolQuery) {
-        boolQuery.filter(TermsQuery.of(t -> t
-                .field("status")
-                .terms(TermsQueryField.of(f -> f.value(PUBLIC_STATUSES)))
-        )._toQuery());
     }
 
     /**

@@ -19,7 +19,7 @@
       "analyzer": "custom_nori_analyzer"
     },
     "imageKey": {
-      "type": "text"
+      "type": "keyword"
     },
     "seller": {
       "type": "keyword"
