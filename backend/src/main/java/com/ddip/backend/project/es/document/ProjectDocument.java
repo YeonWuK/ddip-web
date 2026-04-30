@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Setting(settingPath = "elasticsearch/setting.json")
 @Mapping(mappingPath = "elasticsearch/project-mapping.json")
-@Document(indexName = "project", createIndex = false, writeTypeHint = WriteTypeHint.FALSE)
+@Document(indexName = "project", createIndex = true, writeTypeHint = WriteTypeHint.FALSE)
 public class ProjectDocument {
 
     @Id
@@ -32,7 +32,7 @@ public class ProjectDocument {
     @Field(type = FieldType.Text)
     private String summary;
 
-    @Field(type = FieldType.Text)
+    @Field(type = FieldType.Text, analyzer = "tag_analyzer")
     private String tags;
 
     @Field(type = FieldType.Keyword)

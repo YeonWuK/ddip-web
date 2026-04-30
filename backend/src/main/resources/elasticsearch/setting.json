@@ -4,6 +4,10 @@
       "custom_nori_tokenizer": {
         "type": "nori_tokenizer",
         "decompound_mode": "mixed"
+      },
+      "tag_tokenizer": {
+        "type": "pattern",
+        "pattern": "[,\\s]+"
       }
     },
     "filter": {
@@ -27,6 +31,11 @@
       "custom_autocomplete_search": {
         "type": "custom",
         "tokenizer": "whitespace",
+        "filter": ["lowercase"]
+      },
+      "tag_analyzer": {
+        "type": "custom",
+        "tokenizer": "tag_tokenizer",
         "filter": ["lowercase"]
       }
     }

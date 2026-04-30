@@ -1,19 +1,20 @@
 package com.ddip.backend.common.controller;
 
-import com.ddip.backend.auction.dto.es.AuctionSearchResponse;
-import com.ddip.backend.common.dto.es.SearchAutoCompleteResponse;
+import com.ddip.backend.auction.dto.es.AuctionSearchCondition;
+import com.ddip.backend.auction.dto.es.AuctionSearchSliceResponse;
 import com.ddip.backend.auction.es.service.AuctionSearchService;
+import com.ddip.backend.common.dto.es.SearchAutoCompleteResponse;
 import com.ddip.backend.common.es.AutoCompleteService;
-import com.ddip.backend.project.es.service.ProjectSearchService;
+import com.ddip.backend.project.dto.es.ProjectSearchCondition;
 import com.ddip.backend.project.dto.es.ProjectSearchResponse;
+import com.ddip.backend.project.es.service.ProjectSearchService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -31,32 +32,28 @@ public class SearchController {
     }
 
     @GetMapping("/auction")
-    public ResponseEntity<List<AuctionSearchResponse>> auctionSearch(@RequestParam("title") String title) {
-        return ResponseEntity.ok(auctionSearchService.searchAuctionsByKeyword(title));
+    public ResponseEntity<AuctionSearchSliceResponse> auctionSearch(@ModelAttribute AuctionSearchCondition condition) {
+        return ResponseEntity.ok(auctionSearchService.searchAuctionsByKeyword(condition));
     }
 
     @GetMapping("/auction/filter")
-    public ResponseEntity<Page<AuctionSearchResponse>> auctionSearchFilter(
-            @RequestParam(required = false) String title,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endAt,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
-    ) {
-        return ResponseEntity.ok(auctionSearchService.searchAuctionByFilter(title, endAt, page, size));
+    public ResponseEntity<AuctionSearchSliceResponse> auctionSearchFilter(@ModelAttribute AuctionSearchCondition condition) {
+        return ResponseEntity.ok(auctionSearchService.searchAuctionByFilter(condition));
     }
 
     @GetMapping("/project")
-    public ResponseEntity<List<ProjectSearchResponse>> projectSearch(@RequestParam("title") String title) {
-        return ResponseEntity.ok(projectSearchService.searchProjectByKeyword(title));
+    public ResponseEntity<Page<ProjectSearchResponse>> projectSearch(
+            @ModelAttribute ProjectSearchCondition condition,
+            @PageableDefault(size = 10) Pageable pageable
+    ) {
+        return ResponseEntity.ok(projectSearchService.searchProjectByKeyword(condition, pageable));
     }
 
     @GetMapping("/project/filter")
     public ResponseEntity<Page<ProjectSearchResponse>> projectSearchFilter(
-            @RequestParam(required = false) String title,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDate endAt,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @ModelAttribute ProjectSearchCondition condition,
+            @PageableDefault(size = 10) Pageable pageable
     ) {
-        return ResponseEntity.ok(projectSearchService.searchProjectByFilter(title, endAt, page, size));
+        return ResponseEntity.ok(projectSearchService.searchProjectByFilter(condition, pageable));
     }
 }
