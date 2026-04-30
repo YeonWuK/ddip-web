@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Document(indexName = "auction", createIndex = false, writeTypeHint = WriteTypeHint.FALSE)
+@Document(indexName = "auction", createIndex = true, writeTypeHint = WriteTypeHint.FALSE)
 @Setting(settingPath = "elasticsearch/setting.json")
 @Mapping(mappingPath = "elasticsearch/auction-mapping.json")
 public class AuctionDocument {
