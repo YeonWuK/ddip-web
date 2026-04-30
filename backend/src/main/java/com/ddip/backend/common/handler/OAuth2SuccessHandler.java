@@ -41,12 +41,12 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         String refreshToken = jwtUtils.generateRefreshToken(email);
         Cookie refreshTokenCookie = new Cookie("refresh_token", refreshToken);
         refreshTokenCookie.setPath("/");
-        refreshTokenCookie.setHttpOnly(false);
-        refreshTokenCookie.setSecure(false);
+        refreshTokenCookie.setHttpOnly(true);
+        refreshTokenCookie.setSecure(true);
         refreshTokenCookie.setMaxAge(Math.toIntExact(jwtUtils.getRefreshExpiration()));
         response.addCookie(refreshTokenCookie);
 
-        String redirectUrl = "http://localhost:3000/oauth/callback?access_token=" + accessToken;
+        String redirectUrl = "https://ddip-web.vercel.app/oauth/callback?access_token=" + accessToken;
         response.sendRedirect(redirectUrl);
     }
 }
