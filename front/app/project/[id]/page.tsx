@@ -989,7 +989,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   <DialogTrigger asChild>
                     <Button size="lg" className="w-full" disabled={!isAuthenticated || !isFundingStarted}>
                       {!isAuthenticated
-                        ? "로그인 후 구매하기"
+                        ? "로그인 후 이용해주세요"
                         : !isFundingStarted
                           ? "시작일 이후 구매 가능"
                           : "리워드 구매하기"}
