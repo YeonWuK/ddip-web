@@ -221,6 +221,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const handleSupport = async () => {
     if (!project) return
 
+    const now = new Date()
+    const projectStartAt = new Date(project.startAt)
+    if (!isNaN(projectStartAt.getTime()) && now < projectStartAt) {
+      toast.error("아직 시작 전인 프로젝트입니다. 시작일 이후에 구매할 수 있습니다.")
+      return
+    }
+
     // 권한 체크
     if (!canSupportProject(project, user)) {
       if (isProjectCreator(project, user)) {
@@ -359,6 +366,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       </div>
     )
   }
+
+  const isFundingStarted = new Date() >= startTime
 
   // DRAFT/REJECTED/STOP: 작성자·어드민이 아니면 비공개 화면
   if (!canViewProject(project, user)) {
@@ -978,8 +987,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   }}
                 >
                   <DialogTrigger asChild>
-                    <Button size="lg" className="w-full" disabled={!isAuthenticated}>
-                      {isAuthenticated ? "리워드 구매하기" : "로그인 후 구매하기"}
+                    <Button size="lg" className="w-full" disabled={!isAuthenticated || !isFundingStarted}>
+                      {!isAuthenticated
+                        ? "로그인 후 구매하기"
+                        : !isFundingStarted
+                          ? "시작일 이후 구매 가능"
+                          : "리워드 구매하기"}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
