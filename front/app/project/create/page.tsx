@@ -2,15 +2,14 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useForm } from "react-hook-form"
+import { FieldErrors, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Navigation } from "@/src/components/navigation"
 import { Button } from "@/src/components/ui/button"
 import { Input } from "@/src/components/ui/input"
 import { Label } from "@/src/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card"
-import { Alert, AlertDescription } from "@/src/components/ui/alert"
-import { AlertCircle, Loader2, Star } from "lucide-react"
+import { Loader2, Star } from "lucide-react"
 import { ProtectedRoute } from "@/src/components/protected-route"
 import { MultiImageUpload } from "@/src/components/multi-image-upload"
 import { RewardTierForm, RewardTierFormData } from "@/src/components/reward-tier-form"
@@ -134,7 +133,6 @@ export default function CreateProjectPage() {
   const {
     register,
     handleSubmit,
-    formState: { errors },
     setValue,
     watch,
   } = useForm<ProjectCreateFormData>({
@@ -178,9 +176,53 @@ export default function CreateProjectPage() {
     }
   }
 
+  const getFirstErrorMessage = (errors: FieldErrors<ProjectCreateFormData>): string | null => {
+    const queue: unknown[] = [errors]
+
+    while (queue.length > 0) {
+      const current = queue.shift()
+      if (!current || typeof current !== "object") continue
+
+      if ("message" in current && typeof (current as { message?: unknown }).message === "string") {
+        return (current as { message: string }).message
+      }
+
+      for (const value of Object.values(current)) {
+        if (value && typeof value === "object") {
+          queue.push(value)
+        }
+      }
+    }
+
+    return null
+  }
+
+  const onInvalid = (errors: FieldErrors<ProjectCreateFormData>) => {
+    const message = getFirstErrorMessage(errors) ?? "입력값을 다시 확인해주세요"
+    toast.error(message)
+  }
+
   const onSubmit = async (data: ProjectCreateFormData) => {
     try {
       setIsSubmitting(true)
+
+      if (!data.summary || data.summary.trim() === "") {
+        toast.error("프로젝트 요약을 입력해주세요")
+        setIsSubmitting(false)
+        return
+      }
+
+      if (!data.categoryPath || data.categoryPath.trim() === "") {
+        toast.error("카테고리를 선택해주세요")
+        setIsSubmitting(false)
+        return
+      }
+
+      if (!data.tags || data.tags.trim() === "") {
+        toast.error("태그를 선택해주세요")
+        setIsSubmitting(false)
+        return
+      }
 
       // 이미지 파일 필수 체크
       if (imageFiles.length === 0) {
@@ -279,10 +321,10 @@ export default function CreateProjectPage() {
               <CardDescription>크라우드펀딩 프로젝트를 등록하세요</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-6">
                 {/* 프로젝트 이미지 */}
                 <div className="space-y-2">
-                  <Label>프로젝트 이미지 *</Label>
+                  <Label>프로젝트 이미지</Label>
                   <MultiImageUpload 
                     value={imageFiles} 
                     onChange={setImageFiles}
@@ -303,40 +345,28 @@ export default function CreateProjectPage() {
 
                 {/* 제목 */}
                 <div className="space-y-2">
-                  <Label htmlFor="title">프로젝트 제목 *</Label>
+                  <Label htmlFor="title">프로젝트 제목</Label>
                   <Input
                     id="title"
                     {...register("title")}
                     placeholder="예: 스마트 홈 IoT 조명 시스템"
                   />
-                  {errors.title && (
-                    <Alert variant="destructive">
-                      <AlertCircle className="size-4" />
-                      <AlertDescription>{errors.title.message}</AlertDescription>
-                    </Alert>
-                  )}
                 </div>
 
                 {/* 요약 */}
                 <div className="space-y-2">
-                  <Label htmlFor="summary">프로젝트 요약 (선택)</Label>
+                  <Label htmlFor="summary">프로젝트 요약</Label>
                   <Input
                     id="summary"
                     {...register("summary")}
                     placeholder="프로젝트를 한 줄로 요약해주세요 (최대 200자)"
                     maxLength={200}
                   />
-                  {errors.summary && (
-                    <Alert variant="destructive">
-                      <AlertCircle className="size-4" />
-                      <AlertDescription>{errors.summary.message}</AlertDescription>
-                    </Alert>
-                  )}
                 </div>
 
                 {/* 설명 */}
                 <div className="space-y-2">
-                  <Label htmlFor="description">프로젝트 설명 *</Label>
+                  <Label htmlFor="description">프로젝트 설명</Label>
                   <textarea
                     id="description"
                     {...register("description")}
@@ -344,12 +374,6 @@ export default function CreateProjectPage() {
                     className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     placeholder="프로젝트에 대한 상세한 설명을 작성해주세요..."
                   />
-                  {errors.description && (
-                    <Alert variant="destructive">
-                      <AlertCircle className="size-4" />
-                      <AlertDescription>{errors.description.message}</AlertDescription>
-                    </Alert>
-                  )}
                 </div>
 
                 {/* 카테고리 경로 */}
@@ -369,12 +393,6 @@ export default function CreateProjectPage() {
                       </option>
                     ))}
                   </select>
-                  {errors.categoryPath && (
-                    <Alert variant="destructive">
-                      <AlertCircle className="size-4" />
-                      <AlertDescription>{errors.categoryPath.message}</AlertDescription>
-                    </Alert>
-                  )}
                 </div>
 
                 {/* 태그 */}
@@ -395,24 +413,18 @@ export default function CreateProjectPage() {
                       </option>
                     ))}
                   </select>
-                  {errors.tags && (
-                    <Alert variant="destructive">
-                      <AlertCircle className="size-4" />
-                      <AlertDescription>{errors.tags.message}</AlertDescription>
-                    </Alert>
-                  )}
                 </div>
 
                 {/* 목표 금액 */}
                 <div className="space-y-2">
-                  <Label htmlFor="targetAmount">목표 금액 (원) *</Label>
+                  <Label htmlFor="targetAmount">목표 금액 (원)</Label>
                   <Input
                     id="targetAmount"
                     type="number"
                     min="1"
                     step="1"
                     {...register("targetAmount", { 
-                      valueAsNumber: true,
+                      setValueAs: (value) => (value === "" ? undefined : Number(value)),
                       onChange: (e) => {
                         if (e.target.value === "0") {
                           e.target.value = ""
@@ -422,18 +434,12 @@ export default function CreateProjectPage() {
                     placeholder="1000000"
                     defaultValue=""
                   />
-                  {errors.targetAmount && (
-                    <Alert variant="destructive">
-                      <AlertCircle className="size-4" />
-                      <AlertDescription>{errors.targetAmount.message}</AlertDescription>
-                    </Alert>
-                  )}
                 </div>
 
                 {/* 기간 */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="startAt">프로젝트 시작일 *</Label>
+                    <Label htmlFor="startAt">프로젝트 시작일</Label>
                     <Input
                       id="startAt"
                       type="date"
@@ -444,40 +450,22 @@ export default function CreateProjectPage() {
                         },
                       })}
                     />
-                    {errors.startAt && (
-                      <Alert variant="destructive">
-                        <AlertCircle className="size-4" />
-                        <AlertDescription>{errors.startAt.message}</AlertDescription>
-                      </Alert>
-                    )}
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="endAt">프로젝트 종료일 *</Label>
+                    <Label htmlFor="endAt">프로젝트 종료일</Label>
                     <Input
                       id="endAt"
                       type="date"
                       min={startDate || today}
                       {...register("endAt")}
                     />
-                    {errors.endAt && (
-                      <Alert variant="destructive">
-                        <AlertCircle className="size-4" />
-                        <AlertDescription>{errors.endAt.message}</AlertDescription>
-                      </Alert>
-                    )}
                   </div>
                 </div>
 
                 {/* 리워드 티어 */}
                 <div className="space-y-2">
                   <RewardTierForm tiers={rewardTiers} onChange={setRewardTiers} />
-                  {errors.rewardTiers && (
-                    <Alert variant="destructive">
-                      <AlertCircle className="size-4" />
-                      <AlertDescription>{errors.rewardTiers.message}</AlertDescription>
-                    </Alert>
-                  )}
                 </div>
 
                 {/* 제출 버튼 */}

@@ -478,7 +478,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               <Alert className="mb-4 border-amber-500/50 bg-amber-500/10">
                 <AlertCircle className="size-4" />
                 <AlertDescription>
-                  <strong>미리보기</strong> — 아직 오픈 전입니다. 내용 확인 후 펀딩을 오픈해주세요.
+                  <strong>미리보기</strong> — 아직 오픈 전입니다. 관리자가 승인하면 프로젝트가 시작됩니다.
                 </AlertDescription>
               </Alert>
             )}

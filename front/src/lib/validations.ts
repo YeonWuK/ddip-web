@@ -4,7 +4,12 @@ import { z } from "zod"
 export const projectCreateSchema = z.object({
   title: z.string().min(1, "제목을 입력해주세요").max(200, "제목은 200자 이하여야 합니다"),
   description: z.string().min(1, "설명을 입력해주세요"),
-  targetAmount: z.number().min(1, "목표 금액은 최소 1원 이상이어야 합니다"),
+  targetAmount: z
+    .number({
+      required_error: "목표 금액을 입력해주세요",
+      invalid_type_error: "목표 금액을 숫자로 입력해주세요",
+    })
+    .min(1, "목표 금액은 최소 1원 이상이어야 합니다"),
   startAt: z.string().min(1, "시작일을 선택해주세요").refine((val) => {
     if (!val) return false
     const date = new Date(val.includes("T") ? val : `${val}T00:00:00`)
@@ -20,8 +25,19 @@ export const projectCreateSchema = z.object({
       z.object({
         title: z.string().min(1, "리워드 제목을 입력해주세요").max(200, "리워드 제목은 200자 이하여야 합니다"),
         description: z.string().min(1, "리워드 설명을 입력해주세요"),
-        price: z.number().min(1, "가격은 최소 1원 이상이어야 합니다"),
-        limitQuantity: z.number().min(1).nullable().optional(),
+        price: z
+          .number({
+            required_error: "리워드 가격을 입력해주세요",
+            invalid_type_error: "리워드 가격은 숫자로 입력해주세요",
+          })
+          .min(1, "가격은 최소 1원 이상이어야 합니다"),
+        limitQuantity: z
+          .number({
+            invalid_type_error: "수량 제한은 숫자로 입력해주세요",
+          })
+          .min(1)
+          .nullable()
+          .optional(),
       })
     )
     .min(1, "최소 1개 이상의 리워드를 추가해주세요"),
@@ -34,9 +50,25 @@ export const projectCreateSchema = z.object({
 export const auctionCreateSchema = z.object({
   title: z.string().min(1, "제목을 입력해주세요").max(100, "제목은 100자 이하여야 합니다"),
   description: z.string().min(10, "설명은 최소 10자 이상이어야 합니다"),
-  startPrice: z.number().min(1000, "시작가는 최소 1,000원 이상이어야 합니다"),
-  bidStep: z.number().min(1000, "입찰 단위는 최소 1,000원 이상이어야 합니다"),
-  buyoutPrice: z.number().min(1000).nullable().optional(),
+  startPrice: z
+    .number({
+      required_error: "시작가를 입력해주세요",
+      invalid_type_error: "시작가는 숫자로 입력해주세요",
+    })
+    .min(1000, "시작가는 최소 1,000원 이상이어야 합니다"),
+  bidStep: z
+    .number({
+      required_error: "입찰 단위를 입력해주세요",
+      invalid_type_error: "입찰 단위는 숫자로 입력해주세요",
+    })
+    .min(1000, "입찰 단위는 최소 1,000원 이상이어야 합니다"),
+  buyoutPrice: z
+    .number({
+      invalid_type_error: "즉시 구매가는 숫자로 입력해주세요",
+    })
+    .min(1000)
+    .nullable()
+    .optional(),
   startAt: z.string().optional(),
   endAt: z.string().min(1, "종료일을 선택해주세요").refine((val) => {
     if (!val) return false

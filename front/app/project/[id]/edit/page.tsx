@@ -586,7 +586,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
                     min="1"
                     step="1"
                     {...register("targetAmount", { 
-                      valueAsNumber: true,
+                      setValueAs: (value) => (value === "" ? undefined : Number(value)),
                       onChange: (e) => {
                         if (e.target.value === "0") {
                           e.target.value = ""

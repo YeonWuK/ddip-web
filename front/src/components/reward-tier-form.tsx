@@ -5,6 +5,7 @@ import { Input } from "@/src/components/ui/input"
 import { Label } from "@/src/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card"
 import { X } from "lucide-react"
+import { toast } from "sonner"
 
 export interface RewardTierFormData {
   id?: number
@@ -20,6 +21,19 @@ interface RewardTierFormProps {
 }
 
 export function RewardTierForm({ tiers, onChange }: RewardTierFormProps) {
+  const handleFieldInvalid =
+    (requiredMessage: string, minMessage?: string) => (e: React.InvalidEvent<HTMLInputElement>) => {
+      e.preventDefault()
+      const { validity } = e.currentTarget
+      if (validity.valueMissing) {
+        toast.error(requiredMessage)
+        return
+      }
+      if (validity.rangeUnderflow && minMessage) {
+        toast.error(minMessage)
+      }
+    }
+
   const addTier = () => {
     onChange([
       ...tiers,
@@ -72,22 +86,24 @@ export function RewardTierForm({ tiers, onChange }: RewardTierFormProps) {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor={`tier-title-${index}`}>리워드 제목 *</Label>
+                  <Label htmlFor={`tier-title-${index}`}>리워드 제목</Label>
                   <Input
                     id={`tier-title-${index}`}
                     value={tier.title}
                     onChange={(e) => updateTier(index, { title: e.target.value })}
+                    onInvalid={handleFieldInvalid("리워드 제목을 입력해주세요")}
                     placeholder="예: 얼리버드 1개"
                     required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor={`tier-description-${index}`}>리워드 설명 *</Label>
+                  <Label htmlFor={`tier-description-${index}`}>리워드 설명</Label>
                   <Input
                     id={`tier-description-${index}`}
                     value={tier.description}
                     onChange={(e) => updateTier(index, { description: e.target.value })}
+                    onInvalid={handleFieldInvalid("리워드 설명을 입력해주세요")}
                     placeholder="예: 스마트 조명 1개 + 전용 리모컨"
                     required
                   />
@@ -95,20 +111,24 @@ export function RewardTierForm({ tiers, onChange }: RewardTierFormProps) {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor={`tier-price-${index}`}>가격 (원) *</Label>
+                    <Label htmlFor={`tier-price-${index}`}>가격 (원)</Label>
                     <Input
                       id={`tier-price-${index}`}
                       type="number"
                       min="1"
                       value={tier.price || ""}
                       onChange={(e) => updateTier(index, { price: Number(e.target.value) })}
+                      onInvalid={handleFieldInvalid(
+                        "리워드 가격을 입력해주세요",
+                        "리워드 가격은 1원 이상이어야 합니다"
+                      )}
                       placeholder="45000"
                       required
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor={`tier-limit-${index}`}>한정 수량 (선택)</Label>
+                    <Label htmlFor={`tier-limit-${index}`}>한정 수량</Label>
                     <Input
                       id={`tier-limit-${index}`}
                       type="number"
