@@ -23,14 +23,7 @@ export default function AuctionsPage() {
   const PAGE_SIZE = 20
 
   const { onBidUpdate } = useAuctionListSocket()
-  const { auctionStatus, auctionSort, setAuctionStatus } = useFilterStore()
-
-  // 상태 필터에 취소됨(CANCELED)이 저장되어 있던 기존 사용자 보정
-  useEffect(() => {
-    if (auctionStatus === "CANCELED") {
-      setAuctionStatus("ALL")
-    }
-  }, [auctionStatus, setAuctionStatus])
+  const { auctionStatus, auctionSort } = useFilterStore()
 
   const filterVisibleAuctions = useCallback(
     (data: AuctionSummary[]) =>
