@@ -9,7 +9,7 @@ import { Input } from "@/src/components/ui/input"
 import { Label } from "@/src/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card"
 import { Alert, AlertDescription } from "@/src/components/ui/alert"
-import { AlertCircle, Loader2 } from "lucide-react"
+import { AlertCircle, Eye, EyeOff, Loader2 } from "lucide-react"
 import { useAuth } from "@/src/contexts/auth-context"
 import { toast } from "sonner"
 import { Separator } from "@/src/components/ui/separator"
@@ -28,6 +28,7 @@ export default function LoginPage() {
   const { login, oauthLogin } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isOAuthLoading, setIsOAuthLoading] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -140,15 +141,31 @@ export default function LoginPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="password">비밀번호</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="비밀번호를 입력하세요"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={isLoading}
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="비밀번호를 입력하세요"
+                    className="pr-10"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={isLoading}
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="text-muted-foreground hover:text-foreground absolute right-0 top-0 flex h-9 w-10 items-center justify-center rounded-md outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+                    onClick={() => setShowPassword((v) => !v)}
+                    disabled={isLoading}
+                    aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 표시"}
+                  >
+                    {showPassword ? (
+                      <Eye className="size-4" aria-hidden />
+                    ) : (
+                      <EyeOff className="size-4" aria-hidden />
+                    )}
+                  </button>
+                </div>
               </div>
 
               <Button type="submit" className="w-full" disabled={isLoading}>

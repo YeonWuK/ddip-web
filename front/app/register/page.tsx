@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Navigation } from "@/src/components/navigation"
@@ -8,8 +8,7 @@ import { Button } from "@/src/components/ui/button"
 import { Input } from "@/src/components/ui/input"
 import { Label } from "@/src/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card"
-import { Alert, AlertDescription } from "@/src/components/ui/alert"
-import { AlertCircle, Loader2 } from "lucide-react"
+import { Check, Eye, EyeOff, Loader2 } from "lucide-react"
 import { useAuth } from "@/src/contexts/auth-context"
 import { toast } from "sonner"
 import { Separator } from "@/src/components/ui/separator"
@@ -20,6 +19,17 @@ const PASSWORD_REGEX = /^(?=.*[0-9])(?=.*[a-z])(?=.*\W)(?=\S+$).{8,16}$/
 const USERNAME_REGEX = /^[가-힣]*$/
 const NICKNAME_REGEX = /^(?=.{2,15}$)(?!.*\.{2,})[가-힣a-zA-Z0-9._-]+(?<!\.)$/
 const PHONE_REGEX = /^\d{3}\d{3,4}\d{4}$/
+
+function getPasswordRuleStatus(password: string) {
+  const len = password.length
+  return {
+    lengthOk: len >= 8 && len <= 16,
+    hasLower: /[a-z]/.test(password),
+    hasDigit: /[0-9]/.test(password),
+    hasSpecial: /\W/.test(password),
+    noWhitespace: password.length === 0 || /^\S+$/.test(password),
+  }
+}
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -37,7 +47,13 @@ export default function RegisterPage() {
   })
   const [isLoading, setIsLoading] = useState(false)
   const [isOAuthLoading, setIsOAuthLoading] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+
+  const passwordRules = useMemo(
+    () => getPasswordRuleStatus(formData.password),
+    [formData.password],
+  )
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({
@@ -48,7 +64,6 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
 
     const email = formData.email.trim()
     const password = formData.password
@@ -56,39 +71,43 @@ export default function RegisterPage() {
     const nickname = formData.nickname.trim()
     const phoneNumber = formData.phoneNumber.replace(/[^0-9]/g, "")
 
-    // 유효성 검사
+    // 유효성 검사 (실패 시 toast만 사용)
     if (!email || !password || !username || !nickname || !phoneNumber) {
-      setError("필수 항목을 모두 입력해주세요")
+      toast.error("필수 항목을 모두 입력해주세요")
       return
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError("비밀번호가 일치하지 않습니다")
+      toast.error("비밀번호가 일치하지 않습니다")
       return
     }
 
     if (!EMAIL_REGEX.test(email)) {
-      setError("이메일 형식이 올바르지 않습니다.")
+      toast.error("이메일 형식이 올바르지 않습니다.")
       return
     }
 
     if (!PASSWORD_REGEX.test(password)) {
-      setError("비밀번호는 8~16자 영문 소문자, 숫자, 특수문자를 사용하세요.")
+      toast.error("비밀번호는 8~16자 영문 소문자, 숫자, 특수문자를 사용하세요.")
       return
     }
 
     if (!USERNAME_REGEX.test(username)) {
-      setError("이름은 한글만 사용 가능합니다.")
+      toast.error("이름은 한글만 사용 가능합니다.")
       return
     }
 
     if (!NICKNAME_REGEX.test(nickname)) {
-      setError("닉네임은 2~15자, 한글/영문/숫자와 . _ - 만 가능하며, 점(.)을 연속으로 쓰거나 마지막에 쓸 수 없습니다.")
+      toast.error(
+        "닉네임은 2~15자, 한글/영문/숫자와 . _ - 만 가능하며, 점(.)을 연속으로 쓰거나 마지막에 쓸 수 없습니다.",
+      )
       return
     }
 
     if (!PHONE_REGEX.test(phoneNumber)) {
-      setError("전화번호는 앞자리는 01이며, 중간 3~4자리, 세번째는 4자리인 전화번호를 입력해주세요.")
+      toast.error(
+        "전화번호는 앞자리는 01이며, 중간 3~4자리, 세번째는 4자리인 전화번호를 입력해주세요.",
+      )
       return
     }
 
@@ -109,7 +128,6 @@ export default function RegisterPage() {
       router.refresh()
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "회원가입에 실패했습니다"
-      setError(errorMessage)
       toast.error(errorMessage)
     } finally {
       setIsLoading(false)
@@ -123,7 +141,6 @@ export default function RegisterPage() {
       // oauthLogin은 리다이렉트를 수행하므로 여기까지 도달하지 않음
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "OAuth 로그인에 실패했습니다"
-      setError(errorMessage)
       toast.error(errorMessage)
       setIsOAuthLoading(null)
     }
@@ -140,13 +157,6 @@ export default function RegisterPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertCircle className="size-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-
               <div className="space-y-2">
                 <Label htmlFor="email">이메일 *</Label>
                 <Input
@@ -163,30 +173,164 @@ export default function RegisterPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="password">비밀번호 *</Label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  placeholder="8~16자 (소문자/숫자/특수문자 포함)"
-                  value={formData.password}
-                  onChange={handleChange}
-                  disabled={isLoading}
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="8~16자, 영문 소문자·숫자·특수문자 조합"
+                    className="pr-10"
+                    value={formData.password}
+                    onChange={handleChange}
+                    disabled={isLoading}
+                    required
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    className="text-muted-foreground hover:text-foreground absolute right-0 top-0 flex h-9 w-10 items-center justify-center rounded-md outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+                    onClick={() => setShowPassword((v) => !v)}
+                    disabled={isLoading}
+                    aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 표시"}
+                  >
+                    {showPassword ? (
+                      <Eye className="size-4" aria-hidden />
+                    ) : (
+                      <EyeOff className="size-4" aria-hidden />
+                    )}
+                  </button>
+                </div>
+                {formData.password.length > 0 && (
+                  <ul className="space-y-1.5 text-xs" aria-live="polite">
+                    <li className="flex items-center gap-2">
+                      <span
+                        className={
+                          passwordRules.lengthOk
+                            ? "text-green-600 dark:text-green-500"
+                            : "text-muted-foreground"
+                        }
+                      >
+                        {passwordRules.lengthOk ? (
+                          <Check className="size-3.5 shrink-0" strokeWidth={2.5} />
+                        ) : (
+                          <span className="inline-block size-3.5 shrink-0 rounded-full border border-current" />
+                        )}
+                      </span>
+                      <span
+                        className={
+                          passwordRules.lengthOk ? "text-foreground" : "text-muted-foreground"
+                        }
+                      >
+                        8~16자
+                      </span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span
+                        className={
+                          passwordRules.hasLower
+                            ? "text-green-600 dark:text-green-500"
+                            : "text-muted-foreground"
+                        }
+                      >
+                        {passwordRules.hasLower ? (
+                          <Check className="size-3.5 shrink-0" strokeWidth={2.5} />
+                        ) : (
+                          <span className="inline-block size-3.5 shrink-0 rounded-full border border-current" />
+                        )}
+                      </span>
+                      <span
+                        className={
+                          passwordRules.hasLower ? "text-foreground" : "text-muted-foreground"
+                        }
+                      >
+                        영문 소문자 포함
+                      </span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span
+                        className={
+                          passwordRules.hasDigit
+                            ? "text-green-600 dark:text-green-500"
+                            : "text-muted-foreground"
+                        }
+                      >
+                        {passwordRules.hasDigit ? (
+                          <Check className="size-3.5 shrink-0" strokeWidth={2.5} />
+                        ) : (
+                          <span className="inline-block size-3.5 shrink-0 rounded-full border border-current" />
+                        )}
+                      </span>
+                      <span
+                        className={
+                          passwordRules.hasDigit ? "text-foreground" : "text-muted-foreground"
+                        }
+                      >
+                        숫자 포함
+                      </span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span
+                        className={
+                          passwordRules.hasSpecial
+                            ? "text-green-600 dark:text-green-500"
+                            : "text-muted-foreground"
+                        }
+                      >
+                        {passwordRules.hasSpecial ? (
+                          <Check className="size-3.5 shrink-0" strokeWidth={2.5} />
+                        ) : (
+                          <span className="inline-block size-3.5 shrink-0 rounded-full border border-current" />
+                        )}
+                      </span>
+                      <span
+                        className={
+                          passwordRules.hasSpecial ? "text-foreground" : "text-muted-foreground"
+                        }
+                      >
+                        특수문자 포함
+                      </span>
+                    </li>
+                    {!passwordRules.noWhitespace && (
+                      <li className="text-destructive flex items-center gap-2">
+                        <span className="inline-block size-3.5 shrink-0 rounded-full border border-current" />
+                        공백은 사용할 수 없습니다
+                      </li>
+                    )}
+                  </ul>
+                )}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">비밀번호 확인 *</Label>
-                <Input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  placeholder="비밀번호를 다시 입력하세요"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  disabled={isLoading}
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="비밀번호를 다시 입력하세요"
+                    className="pr-10"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    disabled={isLoading}
+                    required
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    className="text-muted-foreground hover:text-foreground absolute right-0 top-0 flex h-9 w-10 items-center justify-center rounded-md outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+                    onClick={() => setShowConfirmPassword((v) => !v)}
+                    disabled={isLoading}
+                    aria-label={
+                      showConfirmPassword ? "비밀번호 확인 숨기기" : "비밀번호 확인 표시"
+                    }
+                  >
+                    {showConfirmPassword ? (
+                      <Eye className="size-4" aria-hidden />
+                    ) : (
+                      <EyeOff className="size-4" aria-hidden />
+                    )}
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-2">
