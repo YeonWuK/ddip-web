@@ -32,7 +32,7 @@ export default function ProjectsPage() {
     [projectStatus]
   )
 
-  // 초기 데이터 로드 및 필터/정렬 변경 시 초기화
+  // 초기 데이터 로드 및 상태 필터 변경 시 초기화
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -55,7 +55,7 @@ export default function ProjectsPage() {
     }
 
     loadData()
-  }, [projectStatus, projectSort])
+  }, [projectStatus])
 
   // 상태 주기적 체크 (1분마다) - 첫 페이지만 새로고침
   useEffect(() => {

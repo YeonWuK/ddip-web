@@ -8,7 +8,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { auctionApi } from "@/src/services/api"
 import { useAuctionListSocket } from "@/src/hooks/useAuctionListSocket"
 import { AuctionSummary } from "@/src/types/api"
-import { useFilterStore, filterAndSortAuctions } from "@/src/stores/filterStore"
+import { useFilterStore } from "@/src/stores/filterStore"
 import { Loader2, Gavel } from "lucide-react"
 
 export default function AuctionsPage() {
@@ -73,7 +73,7 @@ export default function AuctionsPage() {
     }
   }, [onBidUpdate, applyBidUpdate])
 
-  // 초기 데이터 로드 및 필터/정렬 변경 시 초기화
+  // 초기 데이터 로드 및 상태 필터 변경 시 초기화
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -95,7 +95,7 @@ export default function AuctionsPage() {
     }
 
     loadData()
-  }, [auctionStatus, auctionSort, filterVisibleAuctions])
+  }, [auctionStatus, filterVisibleAuctions])
 
   // 상태 주기적 체크 (1분마다) - 첫 페이지만 새로고침
   useEffect(() => {
