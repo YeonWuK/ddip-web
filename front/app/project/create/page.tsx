@@ -18,6 +18,108 @@ import { projectApi } from "@/src/services/api"
 import { projectCreateSchema, ProjectCreateFormData } from "@/src/lib/validations"
 import { toast } from "sonner"
 
+const CATEGORY_TAG_OPTIONS: Record<string, string[]> = {
+  "가전제품": [
+    "TV",
+    "냉장고",
+    "세탁기",
+    "건조기",
+    "에어컨",
+    "공기청정기",
+    "청소기",
+    "식기세척기",
+    "전자레인지",
+    "오븐",
+    "인덕션",
+    "정수기",
+    "가습기",
+    "제습기",
+    "안마의자",
+    "기타",
+  ],
+  "디지털/IT": [
+    "스마트폰",
+    "태블릿",
+    "노트북",
+    "데스크탑",
+    "모니터",
+    "키보드",
+    "마우스",
+    "이어폰",
+    "헤드폰",
+    "스마트워치",
+    "카메라",
+    "게임기",
+    "드론",
+    "프린터",
+    "저장장치",
+    "기타",
+  ],
+  "가구/인테리어": [
+    "소파",
+    "침대",
+    "매트리스",
+    "책상",
+    "의자",
+    "수납장",
+    "책장",
+    "조명",
+    "커튼",
+    "카펫",
+    "거울",
+    "테이블",
+    "행거",
+    "인테리어소품",
+    "기타",
+  ],
+  "주방/생활용품": [
+    "조리도구",
+    "식기",
+    "텀블러",
+    "보관용기",
+    "밀폐용기",
+    "세제",
+    "휴지",
+    "수건",
+    "청소용품",
+    "욕실용품",
+    "세탁용품",
+    "생활잡화",
+    "기타",
+  ],
+  "뷰티/패션": [
+    "스킨케어",
+    "메이크업",
+    "향수",
+    "헤어케어",
+    "바디케어",
+    "의류",
+    "신발",
+    "가방",
+    "액세서리",
+    "주얼리",
+    "패션잡화",
+    "기타",
+  ],
+  "스포츠/취미": [
+    "헬스",
+    "요가",
+    "러닝",
+    "자전거",
+    "캠핑",
+    "등산",
+    "낚시",
+    "골프",
+    "수영",
+    "축구",
+    "농구",
+    "악기",
+    "프라모델",
+    "보드게임",
+    "기타",
+  ],
+}
+
 export default function CreateProjectPage() {
   const router = useRouter()
   const [imageFiles, setImageFiles] = useState<File[]>([])
@@ -34,6 +136,7 @@ export default function CreateProjectPage() {
     handleSubmit,
     formState: { errors },
     setValue,
+    watch,
   } = useForm<ProjectCreateFormData>({
     resolver: zodResolver(projectCreateSchema),
     defaultValues: {
@@ -53,6 +156,9 @@ export default function CreateProjectPage() {
   useEffect(() => {
     setValue("rewardTiers", rewardTiers as any)
   }, [rewardTiers, setValue])
+
+  const selectedCategory = watch("categoryPath")
+  const availableTags = selectedCategory ? CATEGORY_TAG_OPTIONS[selectedCategory] ?? [] : []
 
   // 이미지 변경 시 대표 이미지 인덱스 조정
   useEffect(() => {
@@ -248,13 +354,21 @@ export default function CreateProjectPage() {
 
                 {/* 카테고리 경로 */}
                 <div className="space-y-2">
-                  <Label htmlFor="categoryPath">카테고리 경로 (선택)</Label>
-                  <Input
+                  <Label htmlFor="categoryPath">카테고리</Label>
+                  <select
                     id="categoryPath"
-                    {...register("categoryPath")}
-                    placeholder="예: Tech/IoT/SmartHome (최대 100자)"
-                    maxLength={100}
-                  />
+                    {...register("categoryPath", {
+                      onChange: () => setValue("tags", undefined),
+                    })}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    <option value="">카테고리 선택</option>
+                    {Object.keys(CATEGORY_TAG_OPTIONS).map((category) => (
+                      <option key={category} value={category}>
+                        {category}
+                      </option>
+                    ))}
+                  </select>
                   {errors.categoryPath && (
                     <Alert variant="destructive">
                       <AlertCircle className="size-4" />
@@ -265,13 +379,22 @@ export default function CreateProjectPage() {
 
                 {/* 태그 */}
                 <div className="space-y-2">
-                  <Label htmlFor="tags">태그 (선택)</Label>
-                  <Input
+                  <Label htmlFor="tags">태그</Label>
+                  <select
                     id="tags"
                     {...register("tags")}
-                    placeholder="예: IoT, 스마트홈, 조명, 자동화 (쉼표로 구분, 최대 500자)"
-                    maxLength={500}
-                  />
+                    disabled={!selectedCategory}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="">
+                      {selectedCategory ? "태그 선택" : "카테고리를 먼저 선택하세요"}
+                    </option>
+                    {availableTags.map((tag) => (
+                      <option key={tag} value={tag}>
+                        {tag}
+                      </option>
+                    ))}
+                  </select>
                   {errors.tags && (
                     <Alert variant="destructive">
                       <AlertCircle className="size-4" />
