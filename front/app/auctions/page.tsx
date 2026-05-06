@@ -23,7 +23,25 @@ export default function AuctionsPage() {
   const PAGE_SIZE = 20
 
   const { onBidUpdate } = useAuctionListSocket()
-  const { auctionStatus, auctionSort } = useFilterStore()
+  const { auctionStatus, auctionSort, setAuctionStatus } = useFilterStore()
+
+  // 상태 필터에 취소됨(CANCELED)이 저장되어 있던 기존 사용자 보정
+  useEffect(() => {
+    if (auctionStatus === "CANCELED") {
+      setAuctionStatus("ALL")
+    }
+  }, [auctionStatus, setAuctionStatus])
+
+  const filterVisibleAuctions = useCallback(
+    (data: AuctionSummary[]) =>
+      data.filter((auction) => {
+        if (auctionStatus === "ALL") {
+          return ["SCHEDULED", "RUNNING", "ENDED"].includes(auction.status)
+        }
+        return auction.status === auctionStatus
+      }),
+    [auctionStatus]
+  )
 
   const applyBidUpdate = useCallback(({ auctionId, price, bidCount }: { auctionId: number; price: number; bidCount?: number }) => {
     setAuctions((prev) => {
@@ -63,13 +81,13 @@ export default function AuctionsPage() {
         pageRef.current = 1
         
         await auctionApi.checkAllAuctionsStatus()
-        const data = await auctionApi.getAuctions({ 
-          page: 1, 
-          limit: PAGE_SIZE, 
-          status: auctionStatus === 'ALL' ? undefined : auctionStatus 
+        const data = await auctionApi.getAuctions({
+          page: 1,
+          limit: PAGE_SIZE,
         })
-        setAuctions(data)
-        setHasMore(data.length === PAGE_SIZE)
+        const visibleAuctions = filterVisibleAuctions(data)
+        setAuctions(visibleAuctions)
+        setHasMore(visibleAuctions.length === PAGE_SIZE)
       } catch {
       } finally {
         setLoading(false)
@@ -77,7 +95,7 @@ export default function AuctionsPage() {
     }
 
     loadData()
-  }, [auctionStatus, auctionSort])
+  }, [auctionStatus, auctionSort, filterVisibleAuctions])
 
   // 상태 주기적 체크 (1분마다) - 첫 페이지만 새로고침
   useEffect(() => {
@@ -86,12 +104,11 @@ export default function AuctionsPage() {
         await auctionApi.checkAllAuctionsStatus()
         // 첫 페이지만 새로고침 (무한 스크롤 중에는 방해하지 않음)
         if (pageRef.current === 1) {
-          const data = await auctionApi.getAuctions({ 
-            page: 1, 
+          const data = await auctionApi.getAuctions({
+            page: 1,
             limit: PAGE_SIZE,
-            status: auctionStatus === 'ALL' ? undefined : auctionStatus
           })
-          setAuctions(data)
+          setAuctions(filterVisibleAuctions(data))
         }
       } catch {
         // 상태 체크 실패 시 무시
@@ -100,7 +117,7 @@ export default function AuctionsPage() {
 
     const interval = setInterval(checkStatus, 60000)
     return () => clearInterval(interval)
-  }, [auctionStatus])
+  }, [auctionStatus, filterVisibleAuctions])
 
   // 더 많은 데이터 로드
   const loadMore = useCallback(async () => {
@@ -109,16 +126,16 @@ export default function AuctionsPage() {
     try {
       setLoadingMore(true)
       const nextPage = pageRef.current + 1
-      const data = await auctionApi.getAuctions({ 
-        page: nextPage, 
+      const data = await auctionApi.getAuctions({
+        page: nextPage,
         limit: PAGE_SIZE,
-        status: auctionStatus === 'ALL' ? undefined : auctionStatus
       })
-      if (data.length === 0) {
+      const visibleAuctions = filterVisibleAuctions(data)
+      if (visibleAuctions.length === 0) {
         setHasMore(false)
       } else {
-        setAuctions(prev => [...prev, ...data])
-        setHasMore(data.length === PAGE_SIZE)
+        setAuctions(prev => [...prev, ...visibleAuctions])
+        setHasMore(visibleAuctions.length === PAGE_SIZE)
         pageRef.current = nextPage
       }
     } catch {
@@ -126,7 +143,7 @@ export default function AuctionsPage() {
     } finally {
       setLoadingMore(false)
     }
-  }, [loadingMore, hasMore, auctionStatus])
+  }, [loadingMore, hasMore, filterVisibleAuctions])
 
   // Intersection Observer로 무한 스크롤
   useEffect(() => {

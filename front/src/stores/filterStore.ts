@@ -3,11 +3,11 @@ import { persist } from 'zustand/middleware'
 import { ProjectResponse, AuctionResponse } from '@/src/types/api'
 
 // 프로젝트 필터 타입
-export type ProjectStatus = 'ALL' | 'OPEN' | 'SUCCESS' | 'FAILED' | 'CANCELED'
+export type ProjectStatus = 'ALL' | 'OPEN' | 'SUCCESS' | 'FAILED'
 export type ProjectSort = 'latest' | 'popular' | 'ending' | 'amount'
 
 // 경매 필터 타입
-export type AuctionStatus = 'ALL' | 'SCHEDULED' | 'RUNNING' | 'ENDED' | 'CANCELED'
+export type AuctionStatus = 'ALL' | 'SCHEDULED' | 'RUNNING' | 'ENDED'
 export type AuctionSort = 'latest' | 'price' | 'ending' | 'bidCount'
 
 interface FilterState {

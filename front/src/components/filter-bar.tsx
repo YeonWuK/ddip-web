@@ -21,7 +21,6 @@ const projectStatusOptions: { value: ProjectStatus; label: string }[] = [
   { value: 'OPEN', label: '진행중' },
   { value: 'SUCCESS', label: '성공' },
   { value: 'FAILED', label: '실패' },
-  { value: 'CANCELED', label: '취소됨' },
 ]
 
 const projectSortOptions: { value: ProjectSort; label: string }[] = [
@@ -36,7 +35,6 @@ const auctionStatusOptions: { value: AuctionStatus; label: string }[] = [
   { value: 'SCHEDULED', label: '예정' },
   { value: 'RUNNING', label: '진행중' },
   { value: 'ENDED', label: '종료' },
-  { value: 'CANCELED', label: '취소됨' },
 ]
 
 const auctionSortOptions: { value: AuctionSort; label: string }[] = [

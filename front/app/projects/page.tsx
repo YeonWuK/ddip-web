@@ -4,11 +4,10 @@ import { Navigation } from "@/src/components/navigation"
 import { ProjectCard } from "@/src/components/project-card"
 import { EmptyState } from "@/src/components/empty-state"
 import { FilterBar } from "@/src/components/filter-bar"
-import { Button } from "@/src/components/ui/button"
 import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { projectApi } from "@/src/services/api"
 import { ProjectResponse } from "@/src/types/api"
-import { useFilterStore, filterAndSortProjects } from "@/src/stores/filterStore"
+import { useFilterStore } from "@/src/stores/filterStore"
 import { Loader2, Package } from "lucide-react"
 
 export default function ProjectsPage() {
@@ -22,6 +21,17 @@ export default function ProjectsPage() {
   
   const { projectStatus, projectSort } = useFilterStore()
 
+  const filterVisibleProjects = useCallback(
+    (data: ProjectResponse[]) =>
+      data.filter((project) => {
+        if (projectStatus === "ALL") {
+          return ["OPEN", "SUCCESS", "FAILED"].includes(project.status)
+        }
+        return project.status === projectStatus
+      }),
+    [projectStatus]
+  )
+
   // 초기 데이터 로드 및 필터/정렬 변경 시 초기화
   useEffect(() => {
     const loadData = async () => {
@@ -30,13 +40,13 @@ export default function ProjectsPage() {
         pageRef.current = 1
         
         await projectApi.checkAllProjectsStatus()
-        const data = await projectApi.getProjects({ 
-          page: 1, 
-          limit: PAGE_SIZE, 
-          status: projectStatus === 'ALL' ? undefined : projectStatus 
+        const data = await projectApi.getProjects({
+          page: 1,
+          limit: PAGE_SIZE,
         })
-        setProjects(data)
-        const hasMoreData = data.length === PAGE_SIZE
+        const visibleProjects = filterVisibleProjects(data)
+        setProjects(visibleProjects)
+        const hasMoreData = visibleProjects.length === PAGE_SIZE
         setHasMore(hasMoreData)
       } catch {
       } finally {
@@ -54,12 +64,11 @@ export default function ProjectsPage() {
         await projectApi.checkAllProjectsStatus()
         // 첫 페이지만 새로고침 (무한 스크롤 중에는 방해하지 않음)
         if (pageRef.current === 1) {
-          const data = await projectApi.getProjects({ 
-            page: 1, 
+          const data = await projectApi.getProjects({
+            page: 1,
             limit: PAGE_SIZE,
-            status: projectStatus === 'ALL' ? undefined : projectStatus
           })
-          setProjects(data)
+          setProjects(filterVisibleProjects(data))
         }
       } catch {
         // 상태 체크 실패 시 무시
@@ -68,7 +77,7 @@ export default function ProjectsPage() {
 
     const interval = setInterval(checkStatus, 60000)
     return () => clearInterval(interval)
-  }, [projectStatus])
+  }, [projectStatus, filterVisibleProjects])
 
   // 더 많은 데이터 로드
   const loadMore = useCallback(async () => {
@@ -77,16 +86,16 @@ export default function ProjectsPage() {
     try {
       setLoadingMore(true)
       const nextPage = pageRef.current + 1
-      const data = await projectApi.getProjects({ 
-        page: nextPage, 
+      const data = await projectApi.getProjects({
+        page: nextPage,
         limit: PAGE_SIZE,
-        status: projectStatus === 'ALL' ? undefined : projectStatus
       })
-      if (data.length === 0) {
+      const visibleProjects = filterVisibleProjects(data)
+      if (visibleProjects.length === 0) {
         setHasMore(false)
       } else {
-        setProjects(prev => [...prev, ...data])
-        setHasMore(data.length === PAGE_SIZE)
+        setProjects(prev => [...prev, ...visibleProjects])
+        setHasMore(visibleProjects.length === PAGE_SIZE)
         pageRef.current = nextPage
       }
     } catch {
@@ -94,7 +103,7 @@ export default function ProjectsPage() {
     } finally {
       setLoadingMore(false)
     }
-  }, [loadingMore, hasMore, projectStatus])
+  }, [loadingMore, hasMore, filterVisibleProjects])
 
   // Intersection Observer로 무한 스크롤
   useEffect(() => {
@@ -203,7 +212,7 @@ export default function ProjectsPage() {
             <Loader2 className="size-8 animate-spin text-primary" />
           </div>
         ) : projectCards.length === 0 ? (
-          projectStatus !== 'ALL' || projectSort !== 'latest' ? (
+          projectSort !== 'latest' ? (
             <EmptyState
               icon={Package}
               title="필터 조건에 맞는 프로젝트가 없습니다"

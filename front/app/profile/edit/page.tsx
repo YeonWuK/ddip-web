@@ -9,7 +9,7 @@ import { Button } from "@/src/components/ui/button"
 import { Input } from "@/src/components/ui/input"
 import { Label } from "@/src/components/ui/label"
 import { Alert, AlertDescription } from "@/src/components/ui/alert"
-import { AlertCircle, Loader2 } from "lucide-react"
+import { AlertCircle, Eye, EyeOff, Loader2 } from "lucide-react"
 import { authApi, userApi } from "@/src/services/api"
 import { toast } from "sonner"
 
@@ -26,6 +26,8 @@ export default function ProfileEditPage() {
   const router = useRouter()
   const [isBooting, setIsBooting] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [immutable, setImmutable] = useState<Pick<FormState, "email" | "username" | "phoneNumber">>({
     email: "",
@@ -165,19 +167,58 @@ export default function ProfileEditPage() {
                   <div className="pt-2 space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="newPassword">새 비밀번호</Label>
-                      <Input id="newPassword" type="password" value={form.newPassword} onChange={onChange("newPassword")} disabled={isSaving} required />
+                      <div className="relative">
+                        <Input
+                          id="newPassword"
+                          type={showNewPassword ? "text" : "password"}
+                          className="pr-10"
+                          value={form.newPassword}
+                          onChange={onChange("newPassword")}
+                          disabled={isSaving}
+                          required
+                        />
+                        <button
+                          type="button"
+                          className="text-muted-foreground hover:text-foreground absolute right-0 top-0 flex h-9 w-10 items-center justify-center rounded-md outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+                          onClick={() => setShowNewPassword((v) => !v)}
+                          disabled={isSaving}
+                          aria-label={showNewPassword ? "새 비밀번호 숨기기" : "새 비밀번호 표시"}
+                        >
+                          {showNewPassword ? (
+                            <Eye className="size-4" aria-hidden />
+                          ) : (
+                            <EyeOff className="size-4" aria-hidden />
+                          )}
+                        </button>
+                      </div>
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="confirmPassword">새 비밀번호 확인</Label>
-                      <Input
-                        id="confirmPassword"
-                        type="password"
-                        value={form.confirmPassword}
-                        onChange={onChange("confirmPassword")}
-                        disabled={isSaving}
-                        required
-                      />
+                      <div className="relative">
+                        <Input
+                          id="confirmPassword"
+                          type={showConfirmPassword ? "text" : "password"}
+                          className="pr-10"
+                          value={form.confirmPassword}
+                          onChange={onChange("confirmPassword")}
+                          disabled={isSaving}
+                          required
+                        />
+                        <button
+                          type="button"
+                          className="text-muted-foreground hover:text-foreground absolute right-0 top-0 flex h-9 w-10 items-center justify-center rounded-md outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+                          onClick={() => setShowConfirmPassword((v) => !v)}
+                          disabled={isSaving}
+                          aria-label={showConfirmPassword ? "새 비밀번호 확인 숨기기" : "새 비밀번호 확인 표시"}
+                        >
+                          {showConfirmPassword ? (
+                            <Eye className="size-4" aria-hidden />
+                          ) : (
+                            <EyeOff className="size-4" aria-hidden />
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </div>
 
