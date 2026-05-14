@@ -40,4 +40,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-.vercel
+# 로컬 전용 문서(포트폴리오·회고 등). 원격 저장소에는 포함하지 않음
+/docs/
