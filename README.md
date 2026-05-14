@@ -19,6 +19,36 @@
 
 ---
 
+## 주요 화면
+
+실제 서비스 **웹 UI 캡처**를 넣으면 인사·채용 담당자가 기능을 빠르게 파악하기 좋습니다. 아래 이미지는 **레이아웃용 플레이스홀더**이며, 같은 파일명으로 **실제 브라우저 캡처 PNG**를 덮어쓰면 됩니다. 캡처 방법은 [`readme-assets/README.md`](./readme-assets/README.md)를 참고하세요.
+
+### 메인 홈
+
+![메인 홈 — 히어로·인기 프로젝트·경매 큐레이션](./readme-assets/screen-home.png)
+
+### 프로젝트 목록
+
+![프로젝트 목록 — 필터·정렬·무한 스크롤](./readme-assets/screen-projects.png)
+
+### 경매 상세
+
+![경매 상세 — 입찰·입찰 내역](./readme-assets/screen-auction-detail.png)
+
+### 통합 검색
+
+![통합 검색 — 프로젝트·경매 검색 결과](./readme-assets/screen-search.png)
+
+### 마이페이지
+
+![마이페이지 — 후원·입찰·찜 등 탭](./readme-assets/screen-profile.png)
+
+### 관리자
+
+![관리자 — 사용자·프로젝트·경매 운영](./readme-assets/screen-admin.png)
+
+---
+
 ## 주요 기능 (전체)
 
 ### 메인·공통
