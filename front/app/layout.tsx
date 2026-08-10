@@ -2,10 +2,9 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
-import { Toaster } from "@/src/components/ui/sonner"
 import { AuthProvider } from "@/src/contexts/auth-context"
-import { WishlistMonitor } from "@/src/components/wishlist-monitor"
 import { ThemeProvider } from "@/src/components/theme-provider"
+import { DeferredGlobalWidgets } from "@/src/components/deferred-global-widgets"
 import "./globals.css"
 
 const geistSans = Geist({
@@ -51,10 +50,9 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
         <ThemeProvider>
           <AuthProvider>
-            <WishlistMonitor />
+            <DeferredGlobalWidgets />
             {children}
             <Analytics />
-            <Toaster />
           </AuthProvider>
         </ThemeProvider>
       </body>

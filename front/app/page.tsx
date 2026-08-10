@@ -7,12 +7,17 @@ import { AuctionCard } from "@/src/components/auction-card"
 import { EmptyState } from "@/src/components/empty-state"
 import { Button } from "@/src/components/ui/button"
 import Link from "next/link"
+import dynamic from "next/dynamic"
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import { projectApi, auctionApi } from "@/src/services/api"
-import { useAuctionListSocket } from "@/src/hooks/useAuctionListSocket"
 import { ProjectResponse, AuctionSummary } from "@/src/types/api"
 import { Loader2, Package, Gavel, Clock, ArrowRight, Sparkles } from "lucide-react"
+
+const HomeAuctionSocketBridge = dynamic(
+  () => import("@/src/components/home-auction-socket-bridge"),
+  { ssr: false }
+)
 
 export default function HomePage() {
   const searchParams = useSearchParams()
@@ -28,8 +33,6 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true)
   const [priceJustUpdatedIds, setPriceJustUpdatedIds] = useState<Set<number>>(new Set())
   const clearFlashRef = useRef<Record<number, ReturnType<typeof setTimeout>>>({})
-
-  const { onBidUpdate } = useAuctionListSocket()
 
   const applyBidUpdate = useCallback(({ auctionId, price, bidCount }: { auctionId: number; price: number; bidCount?: number }) => {
     const updateAuction = (a: AuctionSummary) =>
@@ -52,13 +55,11 @@ export default function HomePage() {
   }, [])
 
   useEffect(() => {
-    const unsubscribe = onBidUpdate(applyBidUpdate)
     return () => {
-      unsubscribe()
       Object.values(clearFlashRef.current).forEach(clearTimeout)
       clearFlashRef.current = {}
     }
-  }, [onBidUpdate, applyBidUpdate])
+  }, [])
 
   useEffect(() => {
     const loadData = async () => {
@@ -289,6 +290,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen">
+      <HomeAuctionSocketBridge onBidUpdate={applyBidUpdate} />
       <Navigation />
       <HeroBanner />
 

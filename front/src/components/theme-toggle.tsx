@@ -1,26 +1,21 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Check, Laptop, Moon, Sun } from "lucide-react"
+import dynamic from "next/dynamic"
+import { Moon, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
 import { Button } from "@/src/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/src/components/ui/dropdown-menu"
-import { cn } from "@/lib/utils"
+import { DropdownMenu, DropdownMenuTrigger } from "@/src/components/ui/dropdown-menu-core"
 
-const themeOptions = [
-  { key: "light", label: "라이트", icon: Sun },
-  { key: "dark", label: "다크", icon: Moon },
-  { key: "system", label: "시스템", icon: Laptop },
-] as const
+const ThemeToggleMenuContent = dynamic(
+  () => import("@/src/components/theme-toggle-menu-content"),
+  { ssr: false }
+)
 
 export function ThemeToggle() {
   const { theme, setTheme, resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
+  const [menuLoaded, setMenuLoaded] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -49,30 +44,19 @@ export function ThemeToggle() {
         : Sun
 
   return (
-    <DropdownMenu>
+    <DropdownMenu
+      onOpenChange={(open) => {
+        if (open) setMenuLoaded(true)
+      }}
+    >
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" aria-label="테마 선택">
           <CurrentIcon className="size-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-36">
-        {themeOptions.map(({ key, label, icon: Icon }) => {
-          const isActive = theme === key
-          return (
-            <DropdownMenuItem
-              key={key}
-              onClick={() => setTheme(key)}
-              className={cn("justify-between", isActive && "font-medium")}
-            >
-              <span className="flex items-center gap-2">
-                <Icon className="size-4" />
-                {label}
-              </span>
-              {isActive && <Check className="size-4" />}
-            </DropdownMenuItem>
-          )
-        })}
-      </DropdownMenuContent>
+      {menuLoaded && (
+        <ThemeToggleMenuContent theme={theme} setTheme={setTheme} />
+      )}
     </DropdownMenu>
   )
 }

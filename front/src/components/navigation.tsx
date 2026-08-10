@@ -1,30 +1,25 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Button } from "@/src/components/ui/button";
 import {
   Menu,
   User,
-  LogOut,
   Bell,
   Heart,
   House,
-  TrendingUp,
-  Sparkles,
   Rocket,
   Gavel,
   Shield,
   Coins,
-  Settings,
 } from "lucide-react";
 import {
   DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from "@/src/components/ui/dropdown-menu";
+} from "@/src/components/ui/dropdown-menu-core";
 import {
   Avatar,
   AvatarFallback,
@@ -35,9 +30,21 @@ import { useAuth } from "@/src/contexts/auth-context";
 import { ThemeToggle } from "@/src/components/theme-toggle";
 import { toast } from "sonner";
 
+const NavigationProfileMenuContent = dynamic(
+  () => import("@/src/components/navigation-profile-menu-content"),
+  { ssr: false }
+);
+
+const NavigationMobileMenuContent = dynamic(
+  () => import("@/src/components/navigation-mobile-menu-content"),
+  { ssr: false }
+);
+
 export function Navigation() {
   const router = useRouter();
   const { user, isAuthenticated, logout, isLoading } = useAuth();
+  const [profileMenuLoaded, setProfileMenuLoaded] = useState(false);
+  const [mobileMenuLoaded, setMobileMenuLoaded] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -123,7 +130,11 @@ export function Navigation() {
               </Button>
 
               {/* 프로필 드롭다운 */}
-              <DropdownMenu>
+              <DropdownMenu
+                onOpenChange={(open) => {
+                  if (open) setProfileMenuLoaded(true);
+                }}
+              >
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="rounded-full" aria-label="프로필 메뉴">
                     <Avatar className="size-8">
@@ -137,28 +148,9 @@ export function Navigation() {
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <div className="px-2 py-1.5">
-                    <p className="text-sm font-medium">{user?.nickname}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {user?.email}
-                    </p>
-                  </div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/profile">마이페이지</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/profile/edit" className="flex items-center">
-                      <Settings className="mr-2 size-4" />
-                      회원정보 수정
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 size-4" />
-                    로그아웃
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
+                {profileMenuLoaded && (
+                  <NavigationProfileMenuContent user={user} onLogout={handleLogout} />
+                )}
               </DropdownMenu>
             </>
           ) : (
@@ -178,78 +170,23 @@ export function Navigation() {
           )}
 
           {/* 모바일 메뉴 */}
-          <DropdownMenu>
+          <DropdownMenu
+            onOpenChange={(open) => {
+              if (open) setMobileMenuLoaded(true);
+            }}
+          >
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="md:hidden" aria-label="메뉴 열기">
                 <Menu className="size-5" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem asChild>
-                <Link href="/" className="flex items-center gap-2">
-                  <House className="size-4" />홈
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/projects" className="flex items-center gap-2">
-                  <Rocket className="size-4" />크라우드펀딩
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/auctions" className="flex items-center gap-2">
-                  <Gavel className="size-4" />경매
-                </Link>
-              </DropdownMenuItem>
-              {isAuthenticated ? (
-                <>
-                  <DropdownMenuSeparator />
-                  {/* ADMIN 전용 관리자 링크 (모바일) */}
-                  {user?.role === 'ADMIN' && (
-                    <DropdownMenuItem asChild>
-                      <Link href="/admin" className="flex items-center gap-2 text-orange-600">
-                        <Shield className="size-4" />
-                        관리자
-                      </Link>
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem asChild>
-                    <Link href="/profile" className="flex items-center gap-2">
-                      <User className="size-4" />
-                      마이페이지
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/profile/edit" className="flex items-center gap-2">
-                      <Settings className="size-4" />
-                      회원정보 수정
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/profile?tab=favorites"
-                      className="flex items-center gap-2"
-                    >
-                      <Heart className="size-4" />
-                      찜한 항목
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
-                    로그아웃
-                  </DropdownMenuItem>
-                </>
-              ) : (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/login">로그인</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/register">회원가입</Link>
-                  </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
+            {mobileMenuLoaded && (
+              <NavigationMobileMenuContent
+                isAuthenticated={isAuthenticated}
+                user={user}
+                onLogout={handleLogout}
+              />
+            )}
           </DropdownMenu>
         </div>
       </div>
