@@ -108,7 +108,7 @@ export function Navigation() {
                 </div>
               )}
               {/* 알림 아이콘 */}
-              <Button variant="ghost" size="icon" className="relative">
+              <Button variant="ghost" size="icon" className="relative" aria-label="알림">
                 <Bell className="size-5" />
                 <Badge className="absolute right-1 top-1 flex size-4 items-center justify-center p-0 text-[10px]">
                   3
@@ -116,7 +116,7 @@ export function Navigation() {
               </Button>
 
               {/* 찜 아이콘 */}
-              <Button variant="ghost" size="icon" asChild>
+              <Button variant="ghost" size="icon" asChild aria-label="찜한 항목">
                 <Link href="/profile?tab=favorites">
                   <Heart className="size-5" />
                 </Link>
@@ -125,7 +125,7 @@ export function Navigation() {
               {/* 프로필 드롭다운 */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full">
+                  <Button variant="ghost" size="icon" className="rounded-full" aria-label="프로필 메뉴">
                     <Avatar className="size-8">
                       <AvatarImage
                         src={user?.profileImageUrl || undefined}
@@ -163,8 +163,10 @@ export function Navigation() {
             </>
           ) : (
             <>
-              <Button variant="ghost" size="icon" className="md:hidden">
-                <User className="size-5" />
+              <Button variant="ghost" size="icon" className="md:hidden" asChild aria-label="로그인">
+                <Link href="/login">
+                  <User className="size-5" />
+                </Link>
               </Button>
               <Button variant="ghost" className="hidden md:inline-flex" asChild>
                 <Link href="/login">로그인</Link>
@@ -178,7 +180,7 @@ export function Navigation() {
           {/* 모바일 메뉴 */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden">
+              <Button variant="ghost" size="icon" className="md:hidden" aria-label="메뉴 열기">
                 <Menu className="size-5" />
               </Button>
             </DropdownMenuTrigger>
