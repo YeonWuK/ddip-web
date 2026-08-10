@@ -8,9 +8,11 @@ import {
   AuctionListBidUpdateEnvelope,
   isAuctionListUpdate,
 } from '@/src/types/websocket'
+import { useAuth } from '@/src/contexts/auth-context'
 
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8080/ws'
 const LIST_TOPIC = '/topic/auction/list'
+const MAX_RECONNECT_ATTEMPTS = 5
 
 export interface AuctionListBidUpdatePayload {
   auctionId: number
@@ -31,10 +33,12 @@ export interface UseAuctionListSocketReturn {
  * - 메인/경매 목록 화면에서 입찰가 실시간 업데이트 수신
  */
 export function useAuctionListSocket(): UseAuctionListSocketReturn {
+  const { isAuthenticated, isLoading } = useAuth()
   const [connectionStatus, setConnectionStatus] = useState<SocketConnectionStatus>('disconnected')
   const clientRef = useRef<Client | null>(null)
   const subscriptionRef = useRef<{ id: string; unsubscribe: () => void } | null>(null)
   const bidUpdateCallbackRef = useRef<((data: AuctionListBidUpdatePayload) => void) | null>(null)
+  const reconnectAttemptsRef = useRef(0)
 
   const handleMessage = useCallback((message: IMessage) => {
     try {
@@ -70,8 +74,10 @@ export function useAuctionListSocket(): UseAuctionListSocketReturn {
 
   useEffect(() => {
     if (process.env.NEXT_PUBLIC_ENABLE_WEBSOCKET === 'false') return
+    if (isLoading || !isAuthenticated) return
 
     setConnectionStatus('connecting')
+    reconnectAttemptsRef.current = 0
     const client = new Client({
       brokerURL: WS_URL,
       reconnectDelay: 2000,
@@ -79,7 +85,13 @@ export function useAuctionListSocket(): UseAuctionListSocketReturn {
       heartbeatOutgoing: 10000,
     })
 
+    const stopReconnect = () => {
+      client.reconnectDelay = 0
+      client.deactivate()
+    }
+
     client.onConnect = () => {
+      reconnectAttemptsRef.current = 0
       setConnectionStatus('connected')
       const sub = client.subscribe(LIST_TOPIC, handleMessage)
       subscriptionRef.current = { id: sub.id, unsubscribe: sub.unsubscribe }
@@ -91,6 +103,10 @@ export function useAuctionListSocket(): UseAuctionListSocketReturn {
 
     client.onWebSocketClose = () => {
       setConnectionStatus('disconnected')
+      reconnectAttemptsRef.current += 1
+      if (reconnectAttemptsRef.current >= MAX_RECONNECT_ATTEMPTS) {
+        stopReconnect()
+      }
     }
 
     client.activate()
@@ -101,9 +117,10 @@ export function useAuctionListSocket(): UseAuctionListSocketReturn {
       subscriptionRef.current = null
       client.deactivate()
       clientRef.current = null
+      reconnectAttemptsRef.current = 0
       setConnectionStatus('disconnected')
     }
-  }, [handleMessage])
+  }, [handleMessage, isAuthenticated, isLoading])
 
   const onBidUpdate = useCallback((callback: (data: AuctionListBidUpdatePayload) => void) => {
     bidUpdateCallbackRef.current = callback

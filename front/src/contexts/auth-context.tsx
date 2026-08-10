@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react"
 import { UserResponse, AuthResponse, RegisterRequest } from "@/src/types/api"
 import { authApi } from "@/src/services/api"
-import { tokenStorage } from "@/src/lib/auth"
+import { tokenStorage, canAttemptRefreshBootstrap } from "@/src/lib/auth"
 import { tryRestoreAccessTokenFromRefreshCookie } from "@/src/services/apiClient"
 
 interface AuthContextType {
@@ -40,7 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const initAuth = async () => {
       try {
         let token = tokenStorage.getAccessToken()
-        if (!token) {
+        if (!token && canAttemptRefreshBootstrap()) {
           token = await tryRestoreAccessTokenFromRefreshCookie()
         }
 

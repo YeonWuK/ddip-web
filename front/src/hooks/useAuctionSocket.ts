@@ -10,8 +10,10 @@ import {
   isBidEvent,
   isAuctionEndedEvent,
 } from '@/src/types/websocket'
+import { useAuth } from '@/src/contexts/auth-context'
 
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8080/ws'
+const MAX_RECONNECT_ATTEMPTS = 5
 
 /**
  * 실시간 경매 웹소켓 훅 (STOMP)
@@ -20,11 +22,13 @@ const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8080/ws'
  * - 입찰: REST API 사용 (auctionApi.placeBid)
  */
 export function useAuctionSocket(): UseAuctionSocketReturn {
+  const { isAuthenticated, isLoading } = useAuth()
   const [connectionStatus, setConnectionStatus] = useState<SocketConnectionStatus>('disconnected')
   const clientRef = useRef<Client | null>(null)
   const subscriptionRef = useRef<{ id: string; unsubscribe: () => void } | null>(null)
   const currentAuctionIdRef = useRef<number | null>(null)
   const pendingAuctionIdRef = useRef<number | null>(null)
+  const reconnectAttemptsRef = useRef(0)
 
   const bidCallbackRef = useRef<((data: AuctionUpdateWsMessage) => void) | null>(null)
   const endedCallbackRef = useRef<((data: AuctionEndedEventDto) => void) | null>(null)
@@ -45,8 +49,10 @@ export function useAuctionSocket(): UseAuctionSocketReturn {
   // STOMP 클라이언트 연결
   useEffect(() => {
     if (process.env.NEXT_PUBLIC_ENABLE_WEBSOCKET === 'false') return
+    if (isLoading || !isAuthenticated) return
 
     setConnectionStatus('connecting')
+    reconnectAttemptsRef.current = 0
     const client = new Client({
       brokerURL: WS_URL,
       reconnectDelay: 2000,
@@ -54,7 +60,13 @@ export function useAuctionSocket(): UseAuctionSocketReturn {
       heartbeatOutgoing: 10000,
     })
 
+    const stopReconnect = () => {
+      client.reconnectDelay = 0
+      client.deactivate()
+    }
+
     client.onConnect = () => {
+      reconnectAttemptsRef.current = 0
       setConnectionStatus('connected')
       const pid = pendingAuctionIdRef.current
       if (pid !== null) {
@@ -72,6 +84,10 @@ export function useAuctionSocket(): UseAuctionSocketReturn {
 
     client.onWebSocketClose = () => {
       setConnectionStatus('disconnected')
+      reconnectAttemptsRef.current += 1
+      if (reconnectAttemptsRef.current >= MAX_RECONNECT_ATTEMPTS) {
+        stopReconnect()
+      }
     }
 
     client.activate()
@@ -84,9 +100,10 @@ export function useAuctionSocket(): UseAuctionSocketReturn {
       currentAuctionIdRef.current = null
       client.deactivate()
       clientRef.current = null
+      reconnectAttemptsRef.current = 0
       setConnectionStatus('disconnected')
     }
-  }, [])
+  }, [isAuthenticated, isLoading])
 
   /** 구독 해제 (leave) - auctionId는 호환용, 현재 구독만 해제 */
   const leaveAuction = useCallback((_auctionId?: number) => {

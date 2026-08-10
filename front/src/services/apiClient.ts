@@ -4,7 +4,7 @@
  * - 401 발생 시 refresh-token으로 액세스 토큰 자동 갱신 후 재시도
  */
 
-import { tokenStorage } from "@/src/lib/auth"
+import { tokenStorage, hasRefreshSessionHint, canAttemptRefreshBootstrap } from "@/src/lib/auth"
 import { toSafeApiErrorMessage } from "@/src/lib/apiErrorMessages"
 
 // 백엔드 API 기본 URL
@@ -27,6 +27,13 @@ type RefreshMode = "forBootstrap" | "forRetry"
 async function runAccessTokenRefresh(
   mode: RefreshMode
 ): Promise<string | null> {
+  if (mode === "forBootstrap" && !canAttemptRefreshBootstrap()) {
+    return null
+  }
+  if (mode === "forRetry" && !hasRefreshSessionHint()) {
+    return null
+  }
+
   const response = await fetch(`${API_BASE_URL}${REFRESH_TOKEN_ENDPOINT}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -162,9 +169,10 @@ export async function apiRequest<T>(
     credentials: "include",
   })
 
-  // 401: 액세스 토큰 만료 → refresh 후 1회만 재시도
+  // 401: 액세스 토큰 만료 → refresh 후 1회만 재시도 (비로그인·세션 없음은 refresh 생략)
   if (response.status === 401 && !endpoint.includes(REFRESH_TOKEN_ENDPOINT)) {
-    const newToken = await ensureRefreshedToken()
+    const canAttemptRefresh = Boolean(token) || hasRefreshSessionHint()
+    const newToken = canAttemptRefresh ? await ensureRefreshedToken() : null
     if (newToken) {
       const retryHeaders: Record<string, string> = {
         ...headers,
